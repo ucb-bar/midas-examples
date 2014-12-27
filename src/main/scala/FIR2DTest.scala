@@ -1,7 +1,7 @@
 package Designs
 
 import Chisel._
-import Daisy._
+import daisy._
 
 class FIR2DTests(c: FIR2D, elementSize: Int, lineSize: Int, kernelSize: Int) extends Tester(c, false) {
   poke(c.io.in.valid, 1)

@@ -1,9 +1,9 @@
 package DebugMachine
 
 import Chisel._
-import Daisy._
 import Designs._
 import TutorialExamples._
+import daisy._
 import mini.Core
 import mini.Tile
 

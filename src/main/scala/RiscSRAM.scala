@@ -1,7 +1,7 @@
 package Designs
 
 import Chisel._
-import Daisy._
+import daisy._
 
 class RiscSRAM extends Module {
   val io = new Bundle {

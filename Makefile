@@ -34,7 +34,7 @@ harness: $(harness)
 replay-cpp: $(replay_cpp)
 replay-v: $(replay_v)
 
-$(designs) Core Tile: %: %Shim.v %-fpga %-zedboard
+$(designs) Core Tile: %: %-fpga %-zedboard
 
 $(cpp): %Shim.cpp: %.scala 
 	mkdir -p $(logdir)

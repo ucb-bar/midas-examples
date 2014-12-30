@@ -17,10 +17,9 @@ class debug_api_t
   private:
     void poke(uint64_t value);
     uint64_t peek();
-    void poke_steps(size_t n);
+    void poke_steps(size_t n, bool record);
     void poke_all();
     void peek_all();
-    void poke_snap();
     uint32_t trace_mem();
     void read_snap(char* snap);
     void record_ins(FILE *file);
@@ -46,7 +45,6 @@ class debug_api_t
     size_t _step;
     size_t _poke;
     size_t _peek;
-    size_t _snap;
     size_t _mem;
     size_t input_num;
     size_t output_num;

@@ -54,7 +54,7 @@ class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTeste
   runTests(maxcycles, verbose)
 }
 
-class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false) {
+class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false, false) {
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
     do {
@@ -84,10 +84,10 @@ class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTeste
   runTests(maxcycles, verbose)
 }
 
-class TileReplayTests(c: Tile, args: Array[String]) extends ReplayTester(c) {
+class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
+  private var memrw   = false
   private var memtag  = BigInt(0)
   private var memaddr = BigInt(0)
-  private var memmask = BigInt(0)
   private var memcycles = -1
   def tickMem {
     if (memcycles > 0) {
@@ -99,7 +99,6 @@ class TileReplayTests(c: Tile, args: Array[String]) extends ReplayTester(c) {
       if (peek(c.io.mem.req_cmd.valid) == 1) {
         memtag  = peek(c.io.mem.req_cmd.bits.tag)
         memaddr = peek(c.io.mem.req_cmd.bits.addr)
-        memmask = peek(c.io.mem.req_cmd.bits.mask)
         // Memread
         if (peek(c.io.mem.req_cmd.bits.rw) == 0) {
           memcycles = 10
@@ -110,11 +109,11 @@ class TileReplayTests(c: Tile, args: Array[String]) extends ReplayTester(c) {
         val data = peek(c.io.mem.req_data.bits.data)
         poke(c.io.mem.req_cmd.ready, 1)
         poke(c.io.mem.req_data.ready, 1)
-        HexCommon.writeMem(memaddr, data, memmask)
+        HexCommon.writeMem(memaddr, data)
         memcycles = 5
       }
     } else {
-      if (peek(c.io.mem.resp.ready) == 1) {
+      if (!memrw) {
         val read = HexCommon.readMem(memaddr)
         poke(c.io.mem.resp.bits.data, read)
         poke(c.io.mem.resp.bits.tag, memtag)
@@ -122,19 +121,16 @@ class TileReplayTests(c: Tile, args: Array[String]) extends ReplayTester(c) {
       }
       memcycles -= 1
     }
+    step(1)
+    poke(c.io.mem.req_cmd.ready, 0)
+    poke(c.io.mem.req_data.ready, 0)
+    poke(c.io.mem.resp.valid, 0)
   }
 
-  override def replayMem(addr: BigInt, data: BigInt) {
-    HexCommon.writeMem(addr, data)
-  }
-
-  override def runTests(args: Any*) {
-    val maxcycles = args(0) match { case x: Int => x }
-    val verbose = args(1) match { case x: Boolean => x }
+  def runTest(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.core.dpath.regFile.regs, 0, 0)
     do {
       tickMem
-      step(1)
       if (verbose) {
         val pc     = peek(c.core.dpath.ew_pc)
         val inst   = UInt(peek(c.core.dpath.ew_inst), 32)
@@ -154,7 +150,22 @@ class TileReplayTests(c: Tile, args: Array[String]) extends ReplayTester(c) {
             if (ok) "PASSED" else "FAILED", reason, t))
   }
 
-  val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
-  loadSnap(filename, maxcycles, verbose)  
-}
+  override def write(addr: BigInt, data: BigInt) {
+    if (isTrace) println("MEM[%x] <- %08x".format(addr, data))
+    HexCommon.writeMem(addr, data)
+  }
 
+  override def read(addr: BigInt, tag: BigInt) {
+    if (isTrace) println("READ %x, %x".format(addr, tag))
+    memtag  = tag
+    memaddr = addr
+    memcycles = 10
+  }
+
+  override def run {
+    t = 0
+    ok = true
+    val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
+    runTest(maxcycles, verbose)
+  }
+}

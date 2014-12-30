@@ -69,7 +69,6 @@ void debug_api_t::read_io_map_file(std::string filename) {
       else if (head == "STEP:") iss >> _step;
       else if (head == "POKE:") iss >> _poke;
       else if (head == "PEEK:") iss >> _peek;
-      else if (head == "SNAP:") iss >> _snap;
       else if (head == "MEM:") iss >> _mem;
       else if (head == "INPUT:") isInput = true;
       else if (head == "OUTPUT:") isInput = false;
@@ -145,12 +144,8 @@ void debug_api_t::peek_all() {
   }
 }
 
-void debug_api_t::poke_snap() {
-  poke(_snap);
-}
-
-void debug_api_t::poke_steps(size_t n) {
-  poke(n << cmdlen | _step);
+void debug_api_t::poke_steps(size_t n, bool is_record) {
+  poke(n << (cmdlen+1) | is_record << cmdlen | _step);
 }
 
 uint32_t debug_api_t::trace_mem() {
@@ -249,8 +244,7 @@ void debug_api_t::step(size_t n) {
   if (trace) std::cout << "* STEP " << n << " -> " << target << " *" << std::endl;
   fprintf(file, "STEP %d\n", n);
   poke_all();
-  poke_snap();
-  poke_steps(n);
+  poke_steps(n, true);
   while(trace_mem() > 0) {}
   read_snap(snap);
   peek_all();

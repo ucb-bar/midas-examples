@@ -1,5 +1,5 @@
 basedir := $(abspath .)
-srcdir  := $(basedir)/src/main/scala/designs
+srcdir  := $(basedir)/src/main/scala/
 tutdir  := $(basedir)/tutorial/examples
 minidir := $(basedir)/riscv-mini/src/main/scala/designs
 csrcdir := $(basedir)/csrc
@@ -102,7 +102,7 @@ tile_asm_c: $(tile_asm_c)
 tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
 $(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
 	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run TileShim $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+	cd $(basedir) ; sbt "run TileShim $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_asm_v: $(tile_asm_v)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
@@ -111,14 +111,14 @@ tile_asm_v: $(tile_asm_v)
 tile_replay_cpp = $(addprefix Tile., $(addsuffix .cpp.replay, $(asm_p_tests)))
 $(tile_replay_cpp): Tile.%.cpp.replay: Tile.%.cpp.out $(minidir)/Tile.scala
 	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +loadmem=Tile.snap +max-cycles=$(timeout_cycles) +verbose" \
+	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_cpp: $(tile_replay_cpp)
 
 tile_replay_v = $(addprefix Tile., $(addsuffix .v.replay, $(asm_p_tests)))
 $(tile_replay_v): Tile.%.v.replay: Tile.%.v.out $(minidir)/Tile.scala
 	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +loadmem=Tile.snap +max-cycles=$(timeout_cycles) +verbose" \
+	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_v: $(tile_replay_v)
 

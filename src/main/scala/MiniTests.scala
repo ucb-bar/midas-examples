@@ -11,6 +11,7 @@ class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTeste
     pokeAt(c.target.dpath.regFile.regs, 0, 0)
     step(1)
     poke(c.target.io.stall, 0)
+    var prev_pc = BigInt(0)
     do {
       val iaddr = peek(c.target.io.icache.addr)
       val daddr = (peek(c.target.io.dcache.addr) >> 2) << 2
@@ -31,15 +32,16 @@ class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTeste
         poke(c.target.io.dcache.dout, data)
       }
 
-      if (verbose) {
-        val pc     = peek(c.target.dpath.ew_pc).toString(16)
+      val pc = peek(c.target.dpath.ew_pc)
+      if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.target.dpath.ew_inst), 32)
         val wb_en  = peek(c.target.ctrl.io.ctrl.wb_en)
         val wb_val = 
           if (wb_en == 1) peek(c.target.dpath.regWrite) 
           else peekAt(c.target.dpath.regFile.regs, rd(inst)) 
-        println("[%s] %s -> RegFile[%d] = %s".format(
-                pc, instStr(inst), rd(inst), wb_val.toString(16)))
+        println("[%x] %s -> RegFile[%d] = %x".format(
+                pc, instStr(inst), rd(inst), wb_val))
+        prev_pc = pc
       }
     } while (peek(c.target.io.host.tohost) == 0 && t < maxcycles)
     val tohost = peek(c.target.io.host.tohost)
@@ -57,17 +59,19 @@ class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTeste
 class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false, false) {
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
+    var prev_pc = BigInt(0)
     do {
       step(10)
-      if (verbose) {
-        val pc     = peek(c.target.core.dpath.ew_pc)
+      val pc = peek(c.target.core.dpath.ew_pc)
+      if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.target.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
           if (wb_en == 1) peek(c.target.core.dpath.regWrite) 
           else peekAt(c.target.core.dpath.regFile.regs, rd(inst)) 
-        println("[%h] %s -> RegFile[%d] = %h".format(
+        println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
+        prev_pc = pc
       }
     } while (peek(c.target.io.htif.host.tohost) == 0 && t < maxcycles)
 
@@ -97,11 +101,12 @@ class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
       memcycles -= 1
     } else if (memcycles < 0) {
       if (peek(c.io.mem.req_cmd.valid) == 1) {
+        memrw   = if (peek(c.io.mem.req_cmd.bits.rw) == 1) true else false
         memtag  = peek(c.io.mem.req_cmd.bits.tag)
         memaddr = peek(c.io.mem.req_cmd.bits.addr)
         // Memread
-        if (peek(c.io.mem.req_cmd.bits.rw) == 0) {
-          memcycles = 10
+        if (!memrw) { 
+          memcycles = 2
           poke(c.io.mem.req_cmd.ready, 1)
         }
       }
@@ -110,7 +115,7 @@ class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
         poke(c.io.mem.req_cmd.ready, 1)
         poke(c.io.mem.req_data.ready, 1)
         HexCommon.writeMem(memaddr, data)
-        memcycles = 5
+        memcycles = 1
       }
     } else {
       if (!memrw) {
@@ -129,17 +134,19 @@ class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
 
   def runTest(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.core.dpath.regFile.regs, 0, 0)
+    var prev_pc = BigInt(0)
     do {
       tickMem
-      if (verbose) {
-        val pc     = peek(c.core.dpath.ew_pc)
+      val pc     = peek(c.core.dpath.ew_pc)
+      if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
-          if (wb_en == 1) peek(c.core.dpath.regWrite) 
-          else peekAt(c.core.dpath.regFile.regs, rd(inst)) 
-        println("[%h] %s -> RegFile[%d] = %h".format(
+        if (wb_en == 1) peek(c.core.dpath.regWrite) 
+        else peekAt(c.core.dpath.regFile.regs, rd(inst))
+        println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
+        prev_pc = pc
       }
     } while (peek(c.io.htif.host.tohost) == 0 && t < maxcycles)
 
@@ -150,11 +157,6 @@ class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
             if (ok) "PASSED" else "FAILED", reason, t))
   }
 
-  override def write(addr: BigInt, data: BigInt) {
-    if (isTrace) println("MEM[%x] <- %08x".format(addr, data))
-    HexCommon.writeMem(addr, data)
-  }
-
   override def read(addr: BigInt, tag: BigInt) {
     if (isTrace) println("READ %x, %x".format(addr, tag))
     memtag  = tag
@@ -162,10 +164,18 @@ class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
     memcycles = 10
   }
 
+  override def loadMem(mem: List[(BigInt, BigInt)]) {
+    HexCommon.clearMem
+    for ((addr, data) <- mem) {
+      if (isTrace) println("MEM[%x] <- %08x".format(addr, data))
+      HexCommon.writeMem(addr, data)
+    }
+  }
+
   override def run {
     t = 0
-    ok = true
     val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
     runTest(maxcycles, verbose)
+    if (!ok) throw FAILED
   }
 }

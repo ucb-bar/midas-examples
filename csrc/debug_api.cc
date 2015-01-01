@@ -12,8 +12,9 @@
 #define read_reg(r) (dev_vaddr[r])
 #define write_reg(r, v) (dev_vaddr[r] = v)
 
-debug_api_t::debug_api_t(std::string design_, bool trace_)
-  : design(design_), trace(trace_), t(0), snaplen(0), pass(true), fail_t(-1), input_num(0), output_num(0)
+debug_api_t::debug_api_t(std::string _design, bool _trace, bool _check_out)
+  : design(_design), trace(_trace), check_out(_check_out),
+    t(0), snaplen(0), pass(true), fail_t(-1), din_num(0), dout_num(0), win_num(0), wout_num(0), snaps(NULL)
 {
   int fd = open("/dev/mem", O_RDWR|O_SYNC);
   assert(fd != -1);
@@ -39,13 +40,14 @@ debug_api_t::debug_api_t(std::string design_, bool trace_)
   read_chain_map_file(design + ".chain.map");
 
   // Remove snapshot files before getting started
-  snapfilename = design + ".snap";
-  remove(snapfilename.c_str());  
+  open_snap(design + ".snap");
 
   srand(time(NULL));
 }
 
 debug_api_t::~debug_api_t() {
+  fclose(snaps);
+
   std::cout << t << " Cycles";
   if (pass) 
     std::cout << " Passed" << std::endl;
@@ -53,41 +55,60 @@ debug_api_t::~debug_api_t() {
     std::cout << " Failed, first at cycle " << fail_t << std::endl;
 }
 
+void debug_api_t::open_snap(std::string filename) {
+  if (snaps != NULL) fclose(snaps);
+  snaps = fopen(filename.c_str(), "w");
+}
+
 void debug_api_t::read_io_map_file(std::string filename) {
+  enum IOType { DIN, DOUT, WIN, WOUT };
+  IOType iotype = DIN;
   std::ifstream file(filename.c_str());
   std::string line;
-  bool isInput = false;
   if (file) {
     while (getline(file, line)) {
       std::istringstream iss(line);
       std::string head;
       iss >> head;
-      if (head == "HOSTLEN:") iss >> hostlen;
-      else if (head == "ADDRLEN:") iss >> addrlen;
-      else if (head == "MEMLEN:") iss >> memlen;
-      else if (head == "CMDLEN:") iss >> cmdlen;
-      else if (head == "STEP:") iss >> _step;
-      else if (head == "POKE:") iss >> _poke;
-      else if (head == "PEEK:") iss >> _peek;
-      else if (head == "MEM:") iss >> _mem;
-      else if (head == "INPUT:") isInput = true;
-      else if (head == "OUTPUT:") isInput = false;
+      if (head == "DIN:") iotype = DIN;
+      else if (head == "DOUT:") iotype = DOUT;
+      else if (head == "WIN:") iotype = WIN;
+      else if (head == "WOUT:") iotype = WOUT;
       else {
         size_t width;
         iss >> width;
-        size_t n = (width - 1) / hostlen + 1;
-        if (isInput) {
-          input_map[head] = std::vector<size_t>();
-          for (int i = 0 ; i < n ; i++) {
-            input_map[head].push_back(input_num);
-            input_num++;
-          }
-        } else {
-          output_map[head] = std::vector<size_t>();
-          for (int i = 0 ; i < n ; i++) {
-            output_map[head].push_back(output_num);
-            output_num++;
-          }
+        size_t n = (width-1)/hostlen + 1;
+        switch (iotype) {
+          case DIN:
+            din_map[head] = std::vector<size_t>();
+            for (int i = 0 ; i < n ; i++) {
+              din_map[head].push_back(din_num);
+              din_num++;
+            }
+            break;
+          case DOUT:
+            dout_map[head] = std::vector<size_t>();
+            for (int i = 0 ; i < n ; i++) {
+              dout_map[head].push_back(dout_num);
+              dout_num++;
+            }
+            break;
+          case WIN:
+            win_map[head] = std::vector<size_t>();
+            for (int i = 0 ; i < n ; i++) {
+              win_map[head].push_back(win_num);
+              win_num++;
+            }
+            break;
+          case WOUT:
+            wout_map[head] = std::vector<size_t>();
+            for (int i = 0 ; i < n ; i++) {
+              wout_map[head].push_back(wout_num);
+              wout_num++;
+            }
+            break;
+          default:
+            break;
         }
       }
     }
@@ -123,45 +144,78 @@ void debug_api_t::poke(uint64_t value) {
   __sync_synchronize();
 }
 
+bool debug_api_t::peek_ready() {
+  return (uint32_t) read_reg(0) != 0;
+}
+
 uint64_t debug_api_t::peek() {
   __sync_synchronize();
-  while ((uint32_t) read_reg(0) == 0); 
+  while (!peek_ready()); 
   return (uint32_t) read_reg(1);
 }
 
+void debug_api_t::poke_steps(size_t n, bool record) {
+  poke(n << (cmdlen+1) | record << cmdlen | STEP);
+}
+
 void debug_api_t::poke_all() {
-  poke(_poke);
-  for (int i = 0 ; i < input_num ; i++) {
+  poke(POKE);
+  for (int i = 0 ; i < win_num ; i++) {
     poke((poke_map.find(i) != poke_map.end()) ? poke_map[i] : 0);
   }
 }
 
 void debug_api_t::peek_all() {
   peek_map.clear();
-  poke(_peek);
-  for (int i = 0 ; i < output_num ; i++) {
+  poke(PEEK);
+  for (int i = 0 ; i < wout_num ; i++) {
     peek_map[i] = peek();
   }
 }
 
-void debug_api_t::poke_steps(size_t n, bool is_record) {
-  poke(n << (cmdlen+1) | is_record << cmdlen | _step);
+void debug_api_t::peek_trace() {
+  poke(TRACE);
+  trace_mem();
 }
 
-uint32_t debug_api_t::trace_mem() {
-  uint32_t count = peek();
-  for (int i = 0 ; i < count ; i++) {
-    uint32_t addr = 0;
+void debug_api_t::trace_mem() {
+  std::vector<uint64_t> waddr;
+  std::vector<uint64_t> wdata;
+  uint32_t wcount = peek();
+  for (int i = 0 ; i < wcount ; i++) {
+    uint64_t addr = 0;
+    for (int k = 0 ; k < addrlen ; k += hostlen) {
+      addr |= peek() << k;
+    }
+    waddr.push_back(addr);
+  }
+  for (int i = 0 ; i < wcount ; i++) {
+    uint64_t data = 0;
+    for (int k = 0 ; k < memlen ; k += hostlen) {
+      data |= peek() << k;
+    }
+    wdata.push_back(data);
+  }
+  for (int i = 0 ; i < wcount ; i++) {
+    uint64_t addr = waddr[i];
+    uint64_t data = wdata[i];
+    mem_writes[addr] = data;
+  }
+  waddr.clear();
+  wdata.clear();
+
+  uint32_t rcount = peek();
+  for (int i = 0 ; i < rcount ; i++) {
+    uint64_t addr = 0;
     for (int k = 0 ; k < addrlen ; k += hostlen) {
       addr = (addr << hostlen) | peek();
     }
-    uint32_t data = 0;
-    for (int k = 0 ; k < memlen ; k += hostlen) {
-      data = (data << hostlen) | peek();
+    uint64_t tag = 0;
+    for (int k = 0 ; k < taglen ; k += hostlen) {
+      tag = (tag << hostlen) | peek();
     }
-    mem[addr] = data;
+    mem_reads[tag] = addr;
   }
-  return count;
 }
 
 static inline char* int_to_bin(uint32_t value, size_t size) {
@@ -180,9 +234,8 @@ void debug_api_t::read_snap(char *snap) {
   }
 }
 
-void debug_api_t::record_ins(FILE *file) {
-  for (std::map<std::string, std::vector<size_t> >::iterator it = input_map.begin() ; 
-       it != input_map.end() ; it++) {
+void debug_api_t::record_io() {
+  for (iomap_t::iterator it = win_map.begin() ; it != win_map.end() ; it++) {
     std::string signal = it->first;
     std::vector<size_t> ids = it->second;
     uint32_t data = 0;
@@ -190,26 +243,25 @@ void debug_api_t::record_ins(FILE *file) {
       size_t id = ids[i];
       data = (data << hostlen) | ((poke_map.find(id) != poke_map.end()) ? poke_map[id] : 0);
     } 
-    fprintf(file, "POKE %s %x\n", signal.c_str(), data);
+    fprintf(snaps, "%d %s %x\n", SNAP_POKE, signal.c_str(), data);
   }
+  if (check_out) {
+    for (iomap_t::iterator it = wout_map.begin() ; it != wout_map.end() ; it++) {
+      std::string signal = it->first;
+      std::vector<size_t> ids = it->second;
+      uint32_t data = 0;
+      for (int i = 0 ; i < ids.size() ; i++) {
+        size_t id = ids[i];
+        assert(peek_map.find(id) != peek_map.end());
+        data = (data << hostlen) | peek_map[id];
+      } 
+      fprintf(snaps, "%d %s %x\n", SNAP_EXPECT, signal.c_str(), data);
+    }
+  }
+  fprintf(snaps, "%d\n", SNAP_FIN);
 }
 
-void debug_api_t::record_outs(FILE *file) {
-  for (std::map<std::string, std::vector<size_t> >::iterator it = output_map.begin() ; 
-       it != output_map.end() ; it++) {
-    std::string signal = it->first;
-    std::vector<size_t> ids = it->second;
-    uint32_t data = 0;
-    for (int i = 0 ; i < ids.size() ; i++) {
-      size_t id = ids[i];
-      assert(peek_map.find(id) != peek_map.end());
-      data = (data << hostlen) | peek_map[id];
-    } 
-    fprintf(file, "EXPECT %s %x\n", signal.c_str(), data);
-  }
-}
-
-void debug_api_t::record_snap(FILE *file, char *snap) {
+void debug_api_t::record_snap(char *snap) {
   size_t offset = 0;
   for (int i = 0 ; i < signals.size() ; i++) {
     std::string signal = signals[i];
@@ -221,45 +273,60 @@ void debug_api_t::record_snap(FILE *file, char *snap) {
       for (int i = 0 ; i < width ; i++) {
         value = (value << 1) | (bin[i] - '0'); // index?
       }
-      fprintf(file, "POKE %s %x\n", signal.c_str(), value);
+      fprintf(snaps, "%d %s %x\n", SNAP_POKE, signal.c_str(), value);
       delete[] bin;
     }
     offset += width;
   }
+}
 
-  for (std::map<uint32_t, uint32_t>::iterator it = mem.begin() ; it != mem.end() ; it++) {
+void debug_api_t::record_mem() {
+  for (map_t::iterator it = mem_writes.begin() ; it != mem_writes.end() ; it++) {
     uint32_t addr = it->first;
     uint32_t data = it->second;
-    fprintf(file, "LOAD %x %08x\n", addr, data);
+    fprintf(snaps, "%d %x %08x\n", SNAP_WRITE, addr, data);
   }
-  mem.clear();
+
+  for (map_t::iterator it = mem_reads.begin() ; it != mem_reads.end(); it++) {
+    uint32_t tag = it->first;
+    uint32_t addr = it->second;
+    fprintf(snaps, "%d %x %08x\n", SNAP_READ, addr, tag);
+  }
+
+  mem_writes.clear();
+  mem_reads.clear();
 }
 
 void debug_api_t::step(size_t n) {
-  FILE *file = fopen(snapfilename.c_str(), "a");
-  char *snap = new char[snaplen];
-  record_ins(file);
-
   uint64_t target = t + n;
+  if (t > 0) record_io();
   if (trace) std::cout << "* STEP " << n << " -> " << target << " *" << std::endl;
-  fprintf(file, "STEP %d\n", n);
+  if (check_out) fprintf(snaps, "%d %d\n", SNAP_STEP, n);
   poke_all();
-  poke_steps(n, true);
-  while(trace_mem() > 0) {}
+  poke_steps(n);
+  bool fin = false;
+  while (!fin) {
+    if (peek_ready()) {
+      uint32_t resp = peek();
+      if (resp == RESP_FIN) fin = true;
+      else if (resp == RESP_TRACE) { trace_mem(); }
+      else if (resp == RESP_PEEKD) { /* TODO */ }
+    }
+  }
+  char *snap = new char[snaplen];
   read_snap(snap);
   peek_all();
-
-  record_outs(file);
-  record_snap(file, snap);
-  t += n;
+  peek_trace();
+  record_snap(snap);
+  record_mem();
   delete[] snap;
-  fclose(file);
+  t += n;
 }
 
 void debug_api_t::poke(std::string path, uint64_t value) {
-  assert(input_map.find(path) != input_map.end());
+  assert(win_map.find(path) != win_map.end());
   if (trace) std::cout << "* POKE " << path << " <- " << value << " *" << std::endl;
-  std::vector<size_t> ids = input_map[path];
+  std::vector<size_t> ids = win_map[path];
   uint64_t mask = (1 << hostlen) - 1;
   for (int i = 0 ; i < ids.size() ; i++) {
     size_t id = ids[ids.size()-1-i];
@@ -270,9 +337,9 @@ void debug_api_t::poke(std::string path, uint64_t value) {
 }
 
 uint64_t debug_api_t::peek(std::string path) {
-  assert(output_map.find(path) != output_map.end());
+  assert(wout_map.find(path) != wout_map.end());
   uint64_t value = 0;
-  std::vector<size_t> ids = output_map[path];
+  std::vector<size_t> ids = wout_map[path];
   for (int i = 0 ; i < ids.size() ; i++) {
     size_t id = ids[ids.size()-1-i];
     assert(peek_map.find(id) != peek_map.end());
@@ -288,7 +355,7 @@ bool debug_api_t::expect(std::string path, uint64_t expected) {
   pass &= ok;
   if (!ok && fail_t < 0) fail_t = t;
   if (trace) std::cout << "* EXPECT " << path << " -> " << value << " == " << expected 
-                       << (ok ? "PASS" : "FAIL") << " *" << std::endl;
+                       << (ok ? " PASS" : " FAIL") << " *" << std::endl;
   return ok;
 }
 
@@ -328,7 +395,7 @@ void debug_api_t::load_mem(std::string filename) {
 }
 
 void debug_api_t::write_mem(uint64_t addr, uint64_t data) {
-  poke((1 << cmdlen) | _mem);
+  poke((1 << cmdlen) | MEM);
   uint64_t mask = (1<<hostlen)-1;
   for (int i = (addrlen-1)/hostlen+1 ; i > 0 ; i--) {
     poke((addr >> (hostlen * (i-1))) & mask);
@@ -337,11 +404,11 @@ void debug_api_t::write_mem(uint64_t addr, uint64_t data) {
     poke((data >> (hostlen * (i-1))) & mask);
   }
 
-  mem[addr] = data;
+  mem_writes[addr] = data;
 }
 
 uint64_t debug_api_t::read_mem(uint64_t addr) {
-  poke((0 << cmdlen) | _mem);
+  poke((0 << cmdlen) | MEM);
   uint64_t mask = (1<<hostlen)-1;
   for (int i = (addrlen-1)/hostlen+1 ; i > 0 ; i--) {
     poke((addr >> (hostlen * (i-1))) & mask);

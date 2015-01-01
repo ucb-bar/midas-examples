@@ -44,12 +44,18 @@ $(harness): %Shim-harness.v: %.scala
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*Shim $(V_FLAGS)" | tee $(logdir)/$*Shim.v.out
 
-$(replay_cpp): %.cpp: %.scala %Shim.cpp
+$(resdir)/%.snap:
+	make -j $*Shim-harness.v
+	cp $(gendir)/$(notdir $@) $@
+
+$(replay_cpp): %.cpp: $(resdir)/%.snap %.scala
 	mkdir -p $(logdir)
+	cp $< $(gendir)/
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 
-$(replay_v): %.v: %.scala %Shim-harness.v
+$(replay_v): %.v: $(resdir)/%.snap %.scala
 	mkdir -p $(logdir)
+	cp $< $(gendir)/
 	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
 
 $(v): %Shim.v: %.scala
@@ -121,6 +127,17 @@ $(tile_replay_v): Tile.%.v.replay: Tile.%.v.out $(minidir)/Tile.scala
 	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_v: $(tile_replay_v)
+
+tile_suffix = $(shell date +%Y-%m-%d_%H-%M)
+Tile.cpp:
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)-$(tile_suffix).out
+
+Tile.v:
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)-$(tile_suffix).out
 
 clean:
 	rm -rf $(gendir) $(logdir) $(resdir) 

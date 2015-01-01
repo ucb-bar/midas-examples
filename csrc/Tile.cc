@@ -7,7 +7,7 @@
 class Tile_t: debug_api_t
 {
 public:
-  Tile_t(int argc, char** argv): debug_api_t("Tile", false) {
+  Tile_t(int argc, char** argv): debug_api_t("Tile", false, false) {
     std::string filename;
     for (int i = 0 ; i < argc ; i++) {
       std::string arg = argv[i];
@@ -18,13 +18,13 @@ public:
       }
     }
     testname = filename.substr(filename.rfind("/")+1);
-    snapfilename = testname + ".snap";
 
     load_mem(filename);
+    open_snap(testname + ".snap");
   }
   void run() {
     do {
-      step(10);
+      step(50);
     } while (peek("Tile.io_htif_host_tohost") == 0 && t < timeout);
     uint64_t tohost = peek("Tile.io_htif_host_tohost");
     std::ostringstream reason;
@@ -44,7 +44,6 @@ public:
     std::cout << "after " << t << " simulation cycles" << std::endl;
   }
 private:
-  std::map<uint64_t, uint64_t> mem;
   std::string testname;
   uint64_t timeout;
 };

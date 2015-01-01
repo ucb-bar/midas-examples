@@ -6,50 +6,80 @@
 #include <vector>
 #include <map>
 
+typedef std::map< uint32_t, uint32_t > map_t;
+typedef std::map< std::string, std::vector<size_t> > iomap_t;
+
+// Constants
+enum DEBUG_CMD {
+  STEP, POKE, PEEK, POKED, PEEKD, TRACE, MEM,
+};
+
+enum SNAP_CMD {
+  SNAP_FIN, SNAP_STEP, SNAP_POKE, SNAP_EXPECT, SNAP_WRITE, SNAP_READ,
+};
+
+enum STEP_RESP {
+  RESP_FIN, RESP_TRACE, RESP_PEEKD,
+};
+
+const size_t hostlen = 32;
+const size_t addrlen = 32;
+const size_t taglen = 5;
+const size_t memlen = 32;
+const size_t cmdlen = 6;
+
+
 class debug_api_t
 {
   public:
-    debug_api_t(std::string design): debug_api_t(design, true) {}
-    debug_api_t(std::string design, bool trace_);
+    // debug_api_t(std::string design): debug_api_t(design, true) {}
+    debug_api_t(std::string design, bool _trace = true, bool _check_out = true);
     ~debug_api_t();
     virtual void run() = 0;
 
   private:
-    void poke(uint64_t value);
-    uint64_t peek();
-    void poke_steps(size_t n, bool record);
-    void poke_all();
-    void peek_all();
-    uint32_t trace_mem();
-    void read_snap(char* snap);
-    void record_ins(FILE *file);
-    void record_outs(FILE *file);
-    void record_snap(FILE *file, char *snap);
     void read_io_map_file(std::string filename);
     void read_chain_map_file(std::string filename);
 
-    std::map<uint32_t, uint32_t> mem;
-    std::map<size_t, uint32_t> poke_map;
-    std::map<size_t, uint32_t> peek_map;
-    std::map<std::string, std::vector<size_t> > input_map;
-    std::map<std::string, std::vector<size_t> > output_map;
-    std::vector<std::string> signals;
-    std::vector<size_t> widths;
+    void poke(uint64_t value);
+    bool peek_ready();
+    uint64_t peek();
+    void poke_steps(size_t n, bool record = true);
+    void poke_all();
+    void peek_all();
+    void peek_trace();
+    void trace_mem();
+    void read_snap(char* snap);
+    void record_io();
+    void record_snap(char *snap);
+    void record_mem();
+
     std::string design;
 
-    size_t hostlen;
-    size_t addrlen;
-    size_t memlen;
-    size_t cmdlen;
-    size_t snaplen;
-    size_t _step;
-    size_t _poke;
-    size_t _peek;
-    size_t _mem;
-    size_t input_num;
-    size_t output_num;
+    std::vector<std::string> signals;
+    std::vector<size_t> widths;
 
-    bool trace;
+    map_t poke_map;
+    map_t peek_map;
+
+    map_t mem_writes;
+    map_t mem_reads;
+
+    iomap_t din_map;
+    iomap_t dout_map;
+    iomap_t win_map;
+    iomap_t wout_map;
+
+    size_t din_num;
+    size_t dout_num;
+    size_t win_num;
+    size_t wout_num;
+    size_t snaplen;
+
+    FILE *snaps;
+
+    bool check_out;
+    bool trace; 
     bool pass;
     int64_t fail_t;
     
@@ -57,7 +87,7 @@ class debug_api_t
     const static uintptr_t dev_paddr = 0x43C00000;
 
   protected:
-    std::string snapfilename;
+    void open_snap(std::string filename);
     void step(size_t n);
     void poke(std::string path, uint64_t value);
     uint64_t peek(std::string path);

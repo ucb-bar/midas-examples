@@ -12,11 +12,11 @@ designs := GCD Parity Stack Router Risc RiscSRAM FIR2D \
 	ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
 VPATH   := $(srcdir):$(tutdir):$(minidir):$(gendir):$(logdir)
 memgen  := $(basedir)/scripts/fpga_mem_gen
-C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --debug
+C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --debug --configDump
 V_FLAGS := $(C_FLAGS) --v
-FPGA_FLAGS := --targetDir $(gendir) --backend fpga
+FPGA_FLAGS := --targetDir $(gendir) --backend fpga --configDump
 CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := -static -O2
+CXXFLAGS := -static -O2 -std=c++11
 
 default: GCD
 
@@ -65,7 +65,7 @@ $(v): %Shim.v: %.scala
 	if [ -a $(gendir)/$(basename $@).conf ]; then \
           $(memgen) $(gendir)/$(basename $@).conf >> $(gendir)/$(basename $@).v; \
         fi
-	cd $(gendir) ; cp $*.io.map $*.chain.map $(resdir)
+	cd $(gendir) ; cp $*Shim.prm $*.io.map $*.chain.map $(resdir)
 
 $(fpga): %-fpga: %Shim.v
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
@@ -128,7 +128,7 @@ $(tile_replay_v): Tile.%.v.replay: Tile.%.v.out $(minidir)/Tile.scala
         | tee $(logdir)/$(notdir $@)
 tile_replay_v: $(tile_replay_v)
 
-tile_suffix = $(shell date +%Y-%m-%d_%H-%M)
+tile_suffix = $(shell date +%Y-%m-%d_%H-%M-%S)
 Tile.cpp:
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +max-cycles=$(timeout_cycles)" \

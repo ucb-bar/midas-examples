@@ -22,24 +22,17 @@ enum STEP_RESP {
   RESP_FIN, RESP_TRACE, RESP_PEEKD,
 };
 
-const size_t hostlen = 32;
-const size_t addrlen = 32;
-const size_t taglen = 5;
-const size_t memlen = 32;
-const size_t cmdlen = 6;
-
-
 class debug_api_t
 {
   public:
-    // debug_api_t(std::string design): debug_api_t(design, true) {}
     debug_api_t(std::string design, bool _trace = true, bool _check_out = true);
     ~debug_api_t();
     virtual void run() = 0;
 
   private:
-    void read_io_map_file(std::string filename);
-    void read_chain_map_file(std::string filename);
+    void read_params(std::string filename);
+    void read_io_map(std::string filename);
+    void read_chain_map(std::string filename);
 
     void poke(uint64_t value);
     bool peek_ready();
@@ -75,6 +68,11 @@ class debug_api_t
     size_t win_num;
     size_t wout_num;
     size_t snaplen;
+    size_t hostlen;
+    size_t addrlen;
+    size_t memlen;
+    size_t taglen;
+    size_t cmdlen;
 
     FILE *snaps;
 

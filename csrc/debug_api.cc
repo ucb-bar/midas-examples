@@ -36,8 +36,9 @@ debug_api_t::debug_api_t(std::string _design, bool _trace, bool _check_out)
   }
 
   // Read mapping files
-  read_io_map_file(design + ".io.map");
-  read_chain_map_file(design + ".chain.map");
+  read_params(design + "Shim.prm");
+  read_io_map(design + ".io.map");
+  read_chain_map(design + ".chain.map");
 
   // Remove snapshot files before getting started
   open_snap(design + ".snap");
@@ -60,7 +61,31 @@ void debug_api_t::open_snap(std::string filename) {
   snaps = fopen(filename.c_str(), "w");
 }
 
-void debug_api_t::read_io_map_file(std::string filename) {
+void debug_api_t::read_params(std::string filename) {
+  std::ifstream file(filename.c_str());
+  std::string line;
+  if (file) {
+    while(getline(file, line)) {
+      std::string pair = line.substr(1, line.length()-1);
+      size_t colon_idx = pair.find(",");
+      if (colon_idx < pair.length()) {
+        std::string param = pair.substr(0, colon_idx);
+        size_t value = std::stoi(pair.substr(colon_idx+1));
+        if (param == "HTIF_WIDTH") hostlen = value;
+        else if (param == "MIF_ADDR_BITS") addrlen = value;
+        else if (param == "MIF_DATA_BITS") memlen = value;
+        else if (param == "MIF_TAG_BITS") taglen = value;
+        else if (param == "CMD_BITS") cmdlen = value;
+      }
+    }
+  } else {
+    std::cerr << "Cannot open " << filename << std::endl;
+    exit(0);
+  }
+  file.close();
+}
+
+void debug_api_t::read_io_map(std::string filename) {
   enum IOType { DIN, DOUT, WIN, WOUT };
   IOType iotype = DIN;
   std::ifstream file(filename.c_str());
@@ -119,7 +144,7 @@ void debug_api_t::read_io_map_file(std::string filename) {
   file.close();
 }
 
-void debug_api_t::read_chain_map_file(std::string filename) {
+void debug_api_t::read_chain_map(std::string filename) {
   std::ifstream file(filename.c_str());
   std::string line;
   if (file) {

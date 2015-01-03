@@ -1,17 +1,18 @@
 #ifndef __DEBUG_API_H
 #define __DEBUG_API_H
 
-#include <stdint.h>
 #include <string>
 #include <vector>
 #include <map>
+#include <queue>
 
 typedef std::map< uint32_t, uint32_t > map_t;
+typedef std::map< uint32_t, std::queue<uint32_t> > qmap_t;
 typedef std::map< std::string, std::vector<size_t> > iomap_t;
 
 // Constants
 enum DEBUG_CMD {
-  STEP, POKE, PEEK, POKED, PEEKD, TRACE, MEM,
+  STEP, POKE, PEEK, POKEQ, PEEKQ, TRACE, MEM,
 };
 
 enum SNAP_CMD {
@@ -19,7 +20,7 @@ enum SNAP_CMD {
 };
 
 enum STEP_RESP {
-  RESP_FIN, RESP_TRACE, RESP_PEEKD,
+  RESP_FIN, RESP_TRACE, RESP_PEEKQ,
 };
 
 class debug_api_t
@@ -40,7 +41,10 @@ class debug_api_t
     void poke_steps(size_t n, bool record = true);
     void poke_all();
     void peek_all();
+    void pokeq_all();
+    void peekq_all();
     void peek_trace();
+    void trace_qout();
     void trace_mem();
     void read_snap(char* snap);
     void record_io();
@@ -54,17 +58,19 @@ class debug_api_t
 
     map_t poke_map;
     map_t peek_map;
+    qmap_t pokeq_map;
+    qmap_t peekq_map;
 
     map_t mem_writes;
     map_t mem_reads;
 
-    iomap_t din_map;
-    iomap_t dout_map;
+    iomap_t qin_map;
+    iomap_t qout_map;
     iomap_t win_map;
     iomap_t wout_map;
 
-    size_t din_num;
-    size_t dout_num;
+    size_t qin_num;
+    size_t qout_num;
     size_t win_num;
     size_t wout_num;
     size_t snaplen;
@@ -73,6 +79,7 @@ class debug_api_t
     size_t memlen;
     size_t taglen;
     size_t cmdlen;
+    size_t tracelen;
 
     FILE *snaps;
 
@@ -86,9 +93,12 @@ class debug_api_t
 
   protected:
     void open_snap(std::string filename);
-    void step(size_t n);
+    void step(size_t n, bool record = true);
     void poke(std::string path, uint64_t value);
+    void pokeq(std::string path, uint64_t value);
     uint64_t peek(std::string path);
+    uint64_t peekq(std::string path);
+    bool peekq_valid(std::string);
     bool expect(std::string path, uint64_t expected);
     bool expect(bool ok, std::string s);
     void load_mem(std::string filename);

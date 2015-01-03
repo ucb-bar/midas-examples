@@ -55,6 +55,9 @@ object DebugMachine {
       case "TileShim" => 
         chiselMainTest(chiselArgs, () => DaisyShim(new Tile, mini.Config.params))(
           c => new TileDaisyTests(c, testArgs))
+      case "TileDShim" => 
+        chiselMainTest(chiselArgs, () => DaisyShim(new Tile, mini.Config.params, false))(
+          c => new TileDTests(c, testArgs))
 
       case "RiscSRAM" =>
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new DaisyReplay(c))

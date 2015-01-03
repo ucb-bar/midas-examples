@@ -88,6 +88,62 @@ class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTeste
   runTests(maxcycles, verbose)
 }
 
+class TileDTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false) {
+  private var memrw   = false
+  private var memtag  = BigInt(0)
+  private var memaddr = BigInt(0)
+  def serveMem {
+    if (peekqValid(c.target.io.mem.req_cmd.bits.rw) && 
+        peekqValid(c.target.io.mem.req_cmd.bits.tag) && 
+        peekqValid(c.target.io.mem.req_cmd.bits.addr)) {
+      memrw   = if (peekq(c.target.io.mem.req_cmd.bits.rw) == 1) true else false
+      memtag  = peekq(c.target.io.mem.req_cmd.bits.tag)
+      memaddr = peekq(c.target.io.mem.req_cmd.bits.addr)
+      step(1, false)
+      // Memread
+      if (!memrw) { 
+        val read = HexCommon.readMem(memaddr)
+        pokeq(c.target.io.mem.resp.bits.data, read)
+        pokeq(c.target.io.mem.resp.bits.tag, memtag)
+      }
+    }
+    if (peekqValid(c.target.io.mem.req_data.bits.data) && memrw) {
+      val data = peekq(c.target.io.mem.req_data.bits.data)
+      HexCommon.writeMem(memaddr, data)
+    } 
+  }
+
+  def runTests(maxcycles: Int, verbose: Boolean) {
+    pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
+    var prev_pc = BigInt(0)
+    do {
+      serveMem
+      step(1, false)
+      val pc = peek(c.target.core.dpath.ew_pc)
+      if (verbose && pc != prev_pc) {
+        val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
+        val wb_en  = peek(c.target.core.ctrl.io.ctrl.wb_en)
+        val wb_val = 
+          if (wb_en == 1) peek(c.target.core.dpath.regWrite) 
+          else peekAt(c.target.core.dpath.regFile.regs, rd(inst)) 
+        println("[%x] %s -> RegFile[%d] = %x".format(
+                pc, instStr(inst), rd(inst), wb_val))
+        prev_pc = pc
+      }
+    } while (peek(c.target.io.htif.host.tohost) == 0 && t < maxcycles)
+
+    val tohost = peek(c.target.io.htif.host.tohost)
+    val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
+    ok &= tohost == 1
+    println("*** %s *** (%s) after %d simulation cycles".format(
+            if (ok) "PASSED" else "FAILED", reason, t))
+  }
+
+  val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
+  HexCommon.loadMem(filename)
+  runTests(maxcycles, verbose)
+}
+
 class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
   private var memrw   = false
   private var memtag  = BigInt(0)

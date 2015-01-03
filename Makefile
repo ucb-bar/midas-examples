@@ -24,7 +24,7 @@ cpp     := $(addsuffix Shim.cpp, $(designs))
 harness := $(addsuffix Shim-harness.v, $(designs))
 v       := $(addsuffix Shim.v, $(designs) Core Tile)
 fpga    := $(addsuffix -fpga, $(designs) Core Tile)
-driver  := $(addsuffix -zedboard, $(designs) Core Tile)
+driver  := $(addsuffix -zedboard, $(designs) Core Tile TileD)
 
 replay_cpp := $(addsuffix .cpp, $(designs))
 replay_v   := $(addsuffix .v,   $(designs))
@@ -34,7 +34,7 @@ harness: $(harness)
 replay-cpp: $(replay_cpp)
 replay-v: $(replay_v)
 
-$(designs) Core Tile: %: %-fpga %-zedboard
+$(designs) Core Tile TileD: %: %-fpga %-zedboard
 
 $(cpp): %Shim.cpp: %.scala 
 	mkdir -p $(logdir)
@@ -138,6 +138,35 @@ Tile.v:
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)-$(tile_suffix).out
+
+tiled_asm_c = $(addprefix TileD., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(tiled_asm_c): TileD.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run TileDShim $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+tiled_asm_c: $(tiled_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tiled_asm_c)); echo;
+
+tiled_asm_v = $(addprefix TileD., $(addsuffix .v.out, $(asm_p_tests)))
+$(tiled_asm_v): TileD.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run TileDShim $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+tiled_asm_v: $(tiled_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tiled_asmd_v)); echo;
+
+TileDShim-v:
+	mkdir -p $(logdir) $(resdir)
+	sbt "run $(basename $@) $(FPGA_FLAGS)"
+	if [ -a $(gendir)/$(basename $@).conf ]; then \
+          $(memgen) $(gendir)/$(basename $@).conf >> $(gendir)/$(basename $@).v; \
+        fi
+	cd $(gendir) ; cp TileShim.prm Tile.io.map Tile.chain.map $(resdir)
+
+TileD-fpga: TileDShim-v
+	cd $(zeddir); make clean; make $(bitstream) DESIGN=Tile; cp $(bitstream) $(resdir)
 
 clean:
 	rm -rf $(gendir) $(logdir) $(resdir) 

@@ -4,10 +4,10 @@
 #include <iostream>
 #include <stdlib.h>
 
-class Core_t: debug_api_t
+class Tile_t: debug_api_t
 {
 public:
-  Core_t(int argc, char** argv): debug_api_t("Core", false) {
+  Tile_t(int argc, char** argv): debug_api_t("Tile", false) {
     for (int i = 0 ; i < argc ; i++) {
       std::string arg = argv[i];
       if (arg.substr(0, 12) == "+max-cycles=") {
@@ -19,31 +19,33 @@ public:
     testname = filename.substr(filename.rfind("/")+1);
     load_mem();
   }
-  void run() {
-    poke("Core.io_stall", 1);
-    step(1);
-    poke("Core.io_stall", 0);
-    do {
-      uint64_t iaddr = peek("Core.io_icache_addr");
-      uint64_t daddr = (peek("Core.io_dcache_addr") >> 2) << 2;
-      uint64_t data  = peek("Core.io_dcache_din");
-      uint64_t dwe   = peek("Core.io_dcache_we");
-      bool ire = peek("Core.io_icache_re") == 1;
-      bool dre = peek("Core.io_dcache_re") == 1;
-
-      step(1);
-
-      if (dwe > 1) {
-        write(daddr, data, dwe);
-      } else if (ire) {
-        uint64_t inst = read(iaddr);
-        poke("Core.io_icache_dout", inst);
-      } else if (dre) {
-        uint64_t data = read(daddr);
-        poke("Core.io_dcache_dout", data);
+  void serve_mem() {
+    static bool memrw = false;
+    static uint64_t memtag = 0;
+    static uint64_t memaddr = 0;
+    if (peekq_valid("Tile.io_mem_req_cmd_bits_rw") &&
+        peekq_valid("Tile.io_mem_req_cmd_bits_tag") &&
+        peekq_valid("Tile.io_mem_req_cmd_bits_addr")) {    
+      memrw   = peekq("Tile.io_mem_req_cmd_bits_rw");
+      memtag  = peekq("Tile.io_mem_req_cmd_bits_tag");
+      memaddr = peekq("Tile.io_mem_req_cmd_bits_addr");
+      step(1, false);
+      if (!memrw) {
+        uint64_t memdata = read(memaddr);
+        pokeq("Tile.io_mem_resp_bits_data", memdata);
+        pokeq("Tile.io_mem_resp_bits_tag", memtag);
       }
-    } while (peek("Core.io_host_tohost") == 0 && t < timeout);
-    uint64_t tohost = peek("Core.io_host_tohost");
+    }
+    if (peekq_valid("Tile.io_mem_req_data_bits_data")) {
+      write(memaddr, peekq("Tile.io_mem_req_data_bits_data"));
+    }
+  }
+  void run() {
+    do {
+      serve_mem();
+      step(1, false);
+    } while (peek("Tile.io_htif_host_tohost") == 0 && t < timeout);
+    uint64_t tohost = peek("Tile.io_htif_host_tohost");
     std::ostringstream reason;
     std::ostringstream result;
     if (t > timeout) {
@@ -97,17 +99,15 @@ private:
     return data;
   }
 
-  void write(uint64_t addr, uint64_t data, uint64_t mask) {
+  void write(uint64_t addr, uint64_t data) {
     for (int i = 3 ; i >= 0 ; i--) {
-      if (((mask >> i) & 1) > 0) {
-        mem[addr+i] = (data >> (8*i)) & 0xff;
-      }
+      mem[addr+i] = (data >> (8*i)) & 0xff;
     }
   }
 };
 
 int main(int argc, char** argv) {
-  Core_t Core(argc, argv);
-  Core.run();
+  Tile_t Tile(argc, argv);
+  Tile.run();
   return 0;
 }

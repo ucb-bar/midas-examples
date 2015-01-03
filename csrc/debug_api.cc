@@ -13,8 +13,9 @@
 #define write_reg(r, v) (dev_vaddr[r] = v)
 
 debug_api_t::debug_api_t(std::string _design, bool _trace, bool _check_out)
-  : design(_design), trace(_trace), check_out(_check_out),
-    t(0), snaplen(0), pass(true), fail_t(-1), din_num(0), dout_num(0), win_num(0), wout_num(0), snaps(NULL)
+  : design(_design), trace(_trace), check_out(_check_out), t(0), pass(true), fail_t(-1), 
+    qin_num(0), qout_num(0), win_num(0), wout_num(0), snaplen(0), snaps(NULL),
+    hostlen(0), addrlen(0), memlen(0), taglen(0), tracelen(0)
 {
   int fd = open("/dev/mem", O_RDWR|O_SYNC);
   assert(fd != -1);
@@ -76,6 +77,7 @@ void debug_api_t::read_params(std::string filename) {
         else if (param == "MIF_DATA_BITS") memlen = value;
         else if (param == "MIF_TAG_BITS") taglen = value;
         else if (param == "CMD_BITS") cmdlen = value;
+        else if (param == "TRACE_LEN") tracelen = value;
       }
     }
   } else {
@@ -86,8 +88,8 @@ void debug_api_t::read_params(std::string filename) {
 }
 
 void debug_api_t::read_io_map(std::string filename) {
-  enum IOType { DIN, DOUT, WIN, WOUT };
-  IOType iotype = DIN;
+  enum IOType { QIN, QOUT, WIN, WOUT };
+  IOType iotype = QIN;
   std::ifstream file(filename.c_str());
   std::string line;
   if (file) {
@@ -95,8 +97,8 @@ void debug_api_t::read_io_map(std::string filename) {
       std::istringstream iss(line);
       std::string head;
       iss >> head;
-      if (head == "DIN:") iotype = DIN;
-      else if (head == "DOUT:") iotype = DOUT;
+      if (head == "QIN:") iotype = QIN;
+      else if (head == "QOUT:") iotype = QOUT;
       else if (head == "WIN:") iotype = WIN;
       else if (head == "WOUT:") iotype = WOUT;
       else {
@@ -104,18 +106,18 @@ void debug_api_t::read_io_map(std::string filename) {
         iss >> width;
         size_t n = (width-1)/hostlen + 1;
         switch (iotype) {
-          case DIN:
-            din_map[head] = std::vector<size_t>();
+          case QIN:
+            qin_map[head] = std::vector<size_t>();
             for (int i = 0 ; i < n ; i++) {
-              din_map[head].push_back(din_num);
-              din_num++;
+              qin_map[head].push_back(qin_num);
+              qin_num++;
             }
             break;
-          case DOUT:
-            dout_map[head] = std::vector<size_t>();
+          case QOUT:
+            qout_map[head] = std::vector<size_t>();
             for (int i = 0 ; i < n ; i++) {
-              dout_map[head].push_back(dout_num);
-              dout_num++;
+              qout_map[head].push_back(qout_num);
+              qout_num++;
             }
             break;
           case WIN:
@@ -136,6 +138,15 @@ void debug_api_t::read_io_map(std::string filename) {
             break;
         }
       }
+    }
+    for (int i = 0 ; i < win_num ; i++) {
+      poke_map[i] = 0;
+    }
+    for (int i = 0 ; i < qin_num ; i++) {
+      pokeq_map[i] = std::queue<uint32_t>();
+    }
+    for (int i = 0 ; i < qout_num ; i++) {
+      peekq_map[i] = std::queue<uint32_t>();
     }
   } else {
     std::cerr << "Cannot open " << filename << std::endl;
@@ -175,7 +186,7 @@ bool debug_api_t::peek_ready() {
 
 uint64_t debug_api_t::peek() {
   __sync_synchronize();
-  while (!peek_ready()); 
+  while (!peek_ready()) ;
   return (uint32_t) read_reg(1);
 }
 
@@ -186,7 +197,7 @@ void debug_api_t::poke_steps(size_t n, bool record) {
 void debug_api_t::poke_all() {
   poke(POKE);
   for (int i = 0 ; i < win_num ; i++) {
-    poke((poke_map.find(i) != poke_map.end()) ? poke_map[i] : 0);
+    poke(poke_map[i]);
   }
 }
 
@@ -195,6 +206,32 @@ void debug_api_t::peek_all() {
   poke(PEEK);
   for (int i = 0 ; i < wout_num ; i++) {
     peek_map[i] = peek();
+  }
+}
+
+void debug_api_t::pokeq_all() {
+  if (qin_num > 0) poke(POKEQ);
+  for (int i = 0 ; i < qin_num ; i++) {
+    uint32_t count = (pokeq_map[i].size() < tracelen) ? pokeq_map[i].size() : tracelen;
+    poke(count);
+    for (int k = 0 ; k < count ; k++) {
+      poke(pokeq_map[i].front());
+      pokeq_map[i].pop();
+    }
+  }
+}
+
+void debug_api_t::peekq_all() {
+  if (qout_num > 0) poke(PEEKQ);
+  trace_qout();
+}
+
+void debug_api_t::trace_qout() {
+  for (int i = 0 ; i < qout_num ; i++) {
+    uint32_t count = peek();
+    for (int k = 0 ; k < count ; k++) {
+      peekq_map[i].push(peek());
+    }
   }
 }
 
@@ -322,28 +359,32 @@ void debug_api_t::record_mem() {
   mem_reads.clear();
 }
 
-void debug_api_t::step(size_t n) {
+void debug_api_t::step(size_t n, bool record) {
   uint64_t target = t + n;
-  if (t > 0) record_io();
+  if (record && t > 0) record_io();
   if (trace) std::cout << "* STEP " << n << " -> " << target << " *" << std::endl;
   if (check_out) fprintf(snaps, "%d %d\n", SNAP_STEP, n);
   poke_all();
-  poke_steps(n);
+  pokeq_all();
+  poke_steps(n, record);
   bool fin = false;
   while (!fin) {
     if (peek_ready()) {
       uint32_t resp = peek();
       if (resp == RESP_FIN) fin = true;
-      else if (resp == RESP_TRACE) { trace_mem(); }
-      else if (resp == RESP_PEEKD) { /* TODO */ }
+      else if (resp == RESP_TRACE) trace_mem();
+      else if (resp == RESP_PEEKQ) trace_qout();
     }
   }
   char *snap = new char[snaplen];
-  read_snap(snap);
+  if (record) read_snap(snap);
   peek_all();
-  peek_trace();
-  record_snap(snap);
-  record_mem();
+  peekq_all();
+  if (record) {
+    peek_trace();
+    record_snap(snap);
+    record_mem();
+  }
   delete[] snap;
   t += n;
 }
@@ -372,6 +413,46 @@ uint64_t debug_api_t::peek(std::string path) {
   }
   if (trace) std::cout << "* PEEK " << path << " -> " << value << " *" << std::endl;
   return value;
+}
+
+void debug_api_t::pokeq(std::string path, uint64_t value) {
+  if (trace) std::cout << "* POKEQ " << path << " <- " << value << " *" << std::endl;
+  assert(qin_map.find(path) != qin_map.end());
+  std::vector<size_t> ids = qin_map[path];
+  uint64_t mask = (1 << hostlen) - 1;
+  for (int i = 0 ; i < ids.size() ; i++) {
+    size_t id = ids[ids.size()-1-i];
+    size_t shift = hostlen * i;
+    uint32_t data = (value >> shift) & mask;
+    assert(pokeq_map.find(id) != pokeq_map.end());
+    pokeq_map[id].push(data);
+  }
+}
+
+uint64_t debug_api_t::peekq(std::string path) {
+  assert(qout_map.find(path) != qout_map.end());
+  std::vector<size_t> ids = qout_map[path];
+  uint64_t value = 0;
+  for (int i = 0 ; i < ids.size() ; i++) {
+    size_t id = ids[ids.size()-1-i];
+    assert(peekq_map.find(id) != peekq_map.end());
+    value = value << hostlen | peekq_map[id].front();
+    peekq_map[id].pop();
+  }
+  if (trace) std::cout << "* PEEKQ " << path << " -> " << value << " *" << std::endl;
+  return value;
+}
+
+bool debug_api_t::peekq_valid(std::string path) {
+  assert(qout_map.find(path) != qout_map.end());
+  std::vector<size_t> ids = qout_map[path];
+  bool valid = true;
+  for (int i = 0 ; i < ids.size() ; i++) {
+    size_t id = ids[ids.size()-1-i];
+    assert(peekq_map.find(id) != peekq_map.end());
+    valid &= !peekq_map[id].empty();
+  }
+  return valid;
 }
 
 bool debug_api_t::expect(std::string path, uint64_t expected) {

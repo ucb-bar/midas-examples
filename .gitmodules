@@ -10,6 +10,6 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/donggyukim/riscv-mini.git
-[submodule "daisy"]
-	path = daisy
-	url = https://github.com/donggyukim/daisy.git
+[submodule "strober"]
+	path = strober
+	url = https://github.com/donggyukim/strober.git

@@ -1,11 +1,11 @@
 package Designs
 
 import Chisel._
-import daisy._
+import strober._
 import mini._
 import TestCommon._
 
-class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTester(c, false) {
+class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTester(c, false) {
   def runTests(maxcycles: Int, verbose: Boolean) = {
     poke(c.target.io.stall, 1)
     pokeAt(c.target.dpath.regFile.regs, 0, 0)
@@ -56,7 +56,7 @@ class CoreDaisyTests(c: DaisyShim[Core], args: Array[String]) extends DaisyTeste
   runTests(maxcycles, verbose)
 }
 
-class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false, false) {
+class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c, false, false) {
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
     var prev_pc = BigInt(0)
@@ -88,7 +88,7 @@ class TileDaisyTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTeste
   runTests(maxcycles, verbose)
 }
 
-class TileDTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c, false) {
+class TileDTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c, false) {
   private var memrw   = false
   private var memtag  = BigInt(0)
   private var memaddr = BigInt(0)
@@ -144,7 +144,7 @@ class TileDTests(c: DaisyShim[Tile], args: Array[String]) extends DaisyTester(c,
   runTests(maxcycles, verbose)
 }
 
-class TileReplay(c: Tile, args: Array[String]) extends DaisyReplay(c, false) {
+class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   private var memrw   = false
   private var memtag  = BigInt(0)
   private var memaddr = BigInt(0)

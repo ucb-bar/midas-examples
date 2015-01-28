@@ -1,9 +1,9 @@
-#include "debug_api.h"
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+#include <fesvr/simif_zedboard.h>
 
-class Core_t: debug_api_t
+class Core_t: simif_zedboard_t
 {
 public:
   Core_t(int argc, char** argv): debug_api_t("Core", false) {

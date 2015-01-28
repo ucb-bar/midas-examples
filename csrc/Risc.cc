@@ -1,10 +1,14 @@
-#include "debug_api.h"
+#include <fesvr/simif_zedboard.h>
 
-class Risc_t: debug_api_t
+class Risc_t: simif_zedboard_t
 {
 public:
-  Risc_t(): debug_api_t("Risc") {}
-  void run() {
+  Risc_t(std::vector<std::string> args, bool _log): 
+    simif_zedboard_t(args, _log) {
+      prefix = "Risc";
+    }
+
+  virtual int run() {
     std::vector<uint32_t> app;
     app.push_back(I(1, 1, 0, 1));
     app.push_back(I(0, 1, 1, 1));
@@ -18,25 +22,26 @@ public:
     int k = 0;
     do {
       tick(); k += 1;
-    } while (peek("Risc.io_valid") == 0 && k < 10);
+    } while (simif_t::peek("Risc.io_valid") == 0 && k < 10);
     expect(k < 10, "TIME LIMIT");
     expect("Risc.io_out", 4);
+    return 0;
   }
 private:
   void wr(uint32_t addr, uint32_t data) {
-    poke("Risc.io_isWr", 1);
-    poke("Risc.io_wrAddr", addr);
-    poke("Risc.io_wrData", data);
+    simif_t::poke("Risc.io_isWr", 1);
+    simif_t::poke("Risc.io_wrAddr", addr);
+    simif_t::poke("Risc.io_wrData", data);
     step(1);
   }
   void boot() {
-    poke("Risc.io_isWr", 0);
-    poke("Risc.io_boot", 1);
+    simif_t::poke("Risc.io_isWr", 0);
+    simif_t::poke("Risc.io_boot", 1);
     step(1);
   }
   void tick() {
-    poke("Risc.io_isWr", 0);
-    poke("Risc.io_boot", 0);
+    simif_t::poke("Risc.io_isWr", 0);
+    simif_t::poke("Risc.io_boot", 0);
     step(1);
   }
   uint32_t I(uint32_t op, uint32_t rc, uint32_t ra, uint32_t rb) {
@@ -44,9 +49,9 @@ private:
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  Risc_t Risc;
-  Risc.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  Risc_t Risc(args, true);
+  return Risc.run();
 }

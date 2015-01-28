@@ -7,6 +7,7 @@ gendir  := $(basedir)/generated
 logdir  := $(basedir)/logs
 resdir  := $(basedir)/results
 zeddir  := $(basedir)/fpga-zynq/zedboard
+fesvrdir := $(basedir)/fesvr
 bitstream := fpga-images-zedboard/boot.bin
 designs := GCD Parity Stack Router Risc RiscSRAM FIR2D \
 	ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
@@ -16,7 +17,8 @@ C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --debug
 V_FLAGS := $(C_FLAGS) --v
 FPGA_FLAGS := --targetDir $(gendir) --backend fpga
 CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := -static -O2
+CXXFLAGS := $(CXXFLAGS) -O2 -std=c++11 -I$(fesvrdir)/fesvr -c 
+LDFLAGS := $(LDFLAGS) -L$(fesvrdir) -Wl,-rpath,/usr/local/lib -lfesvr -lpthread
 
 default: GCD
 
@@ -64,9 +66,13 @@ $(v): %Shim.v: %.scala
 $(fpga): %-fpga: %Shim.v
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
 
-$(driver): %-zedboard: $(csrcdir)/%.cc $(csrcdir)/debug_api.cc $(csrcdir)/debug_api.h
+$(driver): %-zedboard: $(csrcdir)/%.cc 
 	mkdir -p $(resdir)
-	cd $(resdir); $(CXX) $(CXXFLAGS) $^ -o $@
+	cd $(fesvrdir) ; ./configure --host=arm-xilinx-linux-gnueabi ; make
+	cp $(fesvrdir)/libfesvr.so $(resdir)/
+	$(CXX) $(CXXFLAGS) $^ -o $(resdir)/$*.o
+	$(CXX) $(LDFLAGS) $(resdir)/$*.o -o $(resdir)/$@
+	rm -rf $(resdir)/$*.o
 
 tests_isa_dir  := $(basedir)/riscv-mini/tests/isa
 timeout_cycles := 10000

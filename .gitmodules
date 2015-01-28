@@ -10,3 +10,6 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/donggyukim/riscv-mini.git
+[submodule "fesvr"]
+	path = fesvr
+	url = https://github.com/ucb-bar/riscv-fesvr.git

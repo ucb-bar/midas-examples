@@ -7,8 +7,9 @@ gendir  := $(basedir)/generated
 logdir  := $(basedir)/logs
 resdir  := $(basedir)/results
 zeddir  := $(basedir)/fpga-zynq/zedboard
+fesvrdir := $(basedir)/fesvr
 bitstream := fpga-images-zedboard/boot.bin
-designs := GCD Parity Stack Router Risc RiscSRAM FIR2D \
+designs := GCD Parity Stack Router Risc RiscSRAM \
 	ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
 VPATH   := $(srcdir):$(tutdir):$(minidir):$(gendir):$(logdir)
 memgen  := $(basedir)/scripts/fpga_mem_gen
@@ -16,7 +17,8 @@ C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --debug --c
 V_FLAGS := $(C_FLAGS) --v
 FPGA_FLAGS := --targetDir $(gendir) --backend fpga --configDump
 CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := -static -O2 -std=c++11
+CXXFLAGS := $(CXXFLAGS) -O2 -std=c++11 -I$(fesvrdir)/fesvr 
+LDFLAGS  := $(LDFLAGS) -L$(fesvrdir) -Wl,-rpath,/usr/local/lib -lfesvr -lpthread
 
 default: GCD
 
@@ -24,7 +26,9 @@ cpp     := $(addsuffix Strober.cpp, $(designs))
 harness := $(addsuffix Strober-harness.v, $(designs))
 v       := $(addsuffix Strober.v, $(designs) Core Tile)
 fpga    := $(addsuffix -fpga, $(designs) Core Tile)
+param   := $(addsuffix .h, $(designs) Core Tile TileD)
 driver  := $(addsuffix -zedboard, $(designs) Core Tile TileD)
+samples := $(addprefix $(resdir)/, $(addsuffix .sample, $(designs)))
 
 replay_cpp := $(addsuffix .cpp, $(designs))
 replay_v   := $(addsuffix .v,   $(designs))
@@ -37,42 +41,48 @@ replay-v: $(replay_v)
 $(designs) Core Tile TileD: %: %-fpga %-zedboard
 
 $(cpp): %Strober.cpp: %.scala 
-	mkdir -p $(logdir)
+	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 
 $(harness): %Strober-harness.v: %.scala 
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*Strober $(V_FLAGS)" | tee $(logdir)/$*Strober.v.out
 
-$(resdir)/%.snap:
-	make -j $*Strober.cpp
+$(samples): $(resdir)/%.sample: %Strober.cpp
 	cp $(gendir)/$(notdir $@) $@
 
-$(replay_cpp): %.cpp: $(resdir)/%.snap %.scala
-	mkdir -p $(logdir)
+$(replay_cpp): %.cpp: $(resdir)/%.sample %.scala
+	mkdir -p $(logdir) $(gendir)
 	cp $< $(gendir)/
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 
-$(replay_v): %.v: $(resdir)/%.snap %.scala
-	mkdir -p $(logdir)
+$(replay_v): %.v: $(resdir)/%.sample %.scala
+	mkdir -p $(logdir) $(gendir)
 	cp $< $(gendir)/
 	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
 
 $(v): %Strober.v: %.scala
-	rm -rf $(gendir)/$@
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(FPGA_FLAGS)"
 	if [ -a $(gendir)/$(basename $@).conf ]; then \
           $(memgen) $(gendir)/$(basename $@).conf >> $(gendir)/$(basename $@).v; \
         fi
-	cd $(gendir) ; cp $*Strober.prm $*.io.map $*.chain.map $(resdir)
+	cd $(gendir) ; cp $*.io.map $*.chain.map $(resdir)
 
 $(fpga): %-fpga: %Strober.v
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
 
-$(driver): %-zedboard: $(csrcdir)/%.cc $(csrcdir)/debug_api.cc $(csrcdir)/debug_api.h
+$(gendir)/%-zedboard.h: %Strober.v
+	echo "#ifndef __$*_H" > $@
+	echo "#define __$*_H" >> $@
+	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$*Strober.prm >> $@
+	echo "#endif // __$*_H" >> $@
+
+$(driver): %-zedboard: $(csrcdir)/%.cc $(gendir)/%-zedboard.h
 	mkdir -p $(resdir)
-	cd $(resdir); $(CXX) $(CXXFLAGS) $^ -o $@
+	cd $(fesvrdir) ; ./configure --host=arm-xilinx-linux-gnueabi ; make
+	cp $(fesvrdir)/libfesvr.so $(resdir)/
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -include$(word 2, $^) $< $(csrcdir)/api.cc -o $(resdir)/$(notdir $@)
 
 tests_isa_dir  := $(basedir)/riscv-mini/tests/isa
 timeout_cycles := 10000
@@ -81,7 +91,7 @@ include riscv-mini/Makefrag-sim
 core_asm_c = $(addprefix Core., $(addsuffix .cpp.out, $(asm_p_tests)))
 $(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala
 	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run CoreStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+	cd $(basedir) ; sbt "run CoreStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
 core_asm_c: $(core_asm_c)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
@@ -114,30 +124,23 @@ tile_asm_v: $(tile_asm_v)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
 	$(addprefix $(logdir)/, $(tile_asm_v)); echo;
 
+$(resdir)/Tile.%.sample: Tile.%.cpp.out
+	mkdir -p $(resdir)
+	cp $(gendir)/$(notdir $@) $@
+
 tile_replay_cpp = $(addprefix Tile., $(addsuffix .cpp.replay, $(asm_p_tests)))
-$(tile_replay_cpp): Tile.%.cpp.replay: Tile.%.cpp.out $(minidir)/Tile.scala
+$(tile_replay_cpp): Tile.%.cpp.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
 	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +max-cycles=$(timeout_cycles) +verbose" \
+	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +loadmem=$(tests_isa_dir)/$*.hex +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_cpp: $(tile_replay_cpp)
 
 tile_replay_v = $(addprefix Tile., $(addsuffix .v.replay, $(asm_p_tests)))
-$(tile_replay_v): Tile.%.v.replay: Tile.%.v.out $(minidir)/Tile.scala
+$(tile_replay_v): Tile.%.v.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_v: $(tile_replay_v)
-
-tile_suffix = $(shell date +%Y-%m-%d_%H-%M-%S)
-Tile.cpp:
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)-$(tile_suffix).out
-
-Tile.v:
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)-$(tile_suffix).out
 
 tiled_asm_c = $(addprefix TileD., $(addsuffix .cpp.out, $(asm_p_tests)))
 $(tiled_asm_c): TileD.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
@@ -175,4 +178,4 @@ cleanall:
 	rm -rf project/target target
 	$(MAKE) -C chisel clean	
 
-.PHONY: all cpp v $(v) $(fpga) clean cleanall
+.PHONY: all cpp v $(fpga) clean cleanall

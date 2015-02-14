@@ -1,10 +1,11 @@
-#include "debug_api.h"
+#include "api.h"
 
-class Parity_t: debug_api_t
+class Parity_t: API_t
 {
 public:
-  Parity_t(): debug_api_t("Parity") {}
-  void run() {
+  Parity_t(std::vector<std::string> args): 
+    API_t(args, "Parity", true, true) { }
+  int run() {
     uint32_t isOdd = 0; 
     for (int i = 0 ; i < 10 ; i++) {
       uint32_t bit = rand_next(2);
@@ -12,13 +13,14 @@ public:
       step(1);
       isOdd = (isOdd + bit) % 2;
       expect("Parity.io_out", isOdd);
-    } 
+    }
+    return 0; 
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  Parity_t Parity;
-  Parity.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  Parity_t Parity(args);
+  return Parity.run();
 }

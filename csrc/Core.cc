@@ -1,28 +1,17 @@
-#include "debug_api.h"
 #include <fstream>
-#include <sstream>
-#include <iostream>
-#include <stdlib.h>
+#include "api.h"
 
-class Core_t: debug_api_t
+class Core_t: API_t
 {
 public:
-  Core_t(int argc, char** argv): debug_api_t("Core", false) {
-    for (int i = 0 ; i < argc ; i++) {
-      std::string arg = argv[i];
-      if (arg.substr(0, 12) == "+max-cycles=") {
-        timeout = atoll(argv[i]+12);
-      } else if (arg.substr(0, 9) == "+loadmem=") {
-        filename = argv[i]+9;
-      }
-    }
-    testname = filename.substr(filename.rfind("/")+1);
+  Core_t(std::vector<std::string> args):
+    API_t(args, "Core", false, false) { }
+  int run() {
     load_mem();
-  }
-  void run() {
     poke("Core.io_stall", 1);
     step(1);
     poke("Core.io_stall", 0);
+    uint64_t tohost = 0;
     do {
       uint64_t iaddr = peek("Core.io_icache_addr");
       uint64_t daddr = (peek("Core.io_dcache_addr") >> 2) << 2;
@@ -34,42 +23,34 @@ public:
       step(1);
 
       if (dwe > 1) {
-        write(daddr, data, dwe);
+        write_mem(daddr, data, dwe);
       } else if (ire) {
-        uint64_t inst = read(iaddr);
+        uint64_t inst = read_mem(iaddr);
         poke("Core.io_icache_dout", inst);
       } else if (dre) {
-        uint64_t data = read(daddr);
+        uint64_t data = read_mem(daddr);
         poke("Core.io_dcache_dout", data);
       }
-    } while (peek("Core.io_host_tohost") == 0 && t < timeout);
-    uint64_t tohost = peek("Core.io_host_tohost");
-    std::ostringstream reason;
-    std::ostringstream result;
-    if (t > timeout) {
-      reason << "timeout";
-      result << "FAILED";
-    } else if (tohost != 1) {
-      reason << "tohost = " << tohost;
-      result << "FAILED";
+      tohost = peek("Core.io_host_tohost"); 
+    } while (tohost == 0 && !timeout());
+
+    int exitcode = tohost >> 1;
+    if (exitcode) {
+      fprintf(stderr, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
+    } else if (timeout()) {
+      fprintf(stderr, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
     } else {
-      reason << "tohost = " << tohost;
-      result <<"PASSED";
+      fprintf(stderr, "*** PASSED *** after %llu cycles\n", cycles());
     }
-    std::cout << "ISA: " << testname << std::endl;
-    std::cout << "*** " << result.str() << " *** (" << reason.str() << ") ";
-    std::cout << "after " << t << " simulation cycles" << std::endl;
+    return exitcode;
   }
 private:
   std::map<uint64_t, uint64_t> mem;
-  std::string testname;
-  std::string filename;
-  uint64_t timeout;
 
   void load_mem() {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(loadmem.c_str());
     if (!in) {
-      std::cerr << "could not open " << filename << std::endl;
+      fprintf(stderr, "could not open %s\n", loadmem.c_str());
       exit(-1);
     }
 
@@ -89,7 +70,7 @@ private:
     }
   }
 
-  uint64_t read(uint64_t addr) {
+  uint64_t read_mem(uint64_t addr) {
     uint64_t data = 0;
     for (int i = 0 ; i < 4 ; i++) {
       data |= mem[addr+i] << (8*i);
@@ -97,7 +78,7 @@ private:
     return data;
   }
 
-  void write(uint64_t addr, uint64_t data, uint64_t mask) {
+  void write_mem(uint64_t addr, uint64_t data, uint64_t mask) {
     for (int i = 3 ; i >= 0 ; i--) {
       if (((mask >> i) & 1) > 0) {
         mem[addr+i] = (data >> (8*i)) & 0xff;
@@ -107,7 +88,7 @@ private:
 };
 
 int main(int argc, char** argv) {
-  Core_t Core(argc, argv);
-  Core.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  Core_t Core(args);
+  return Core.run();
 }

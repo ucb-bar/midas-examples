@@ -46,9 +46,6 @@ object StroberExample {
       case "MemorySearchStrober" =>
         chiselMainTest(chiselArgs, () => Strober(new MemorySearch))(
           c => new MemorySearchStroberTests(c))
-      case "FIR2DStrober" =>
-        chiselMainTest(chiselArgs, () => Strober(new FIR2D(32, 8, 3)))(
-          c => new FIR2DStroberTests(c, 32, 8, 3))
       case "CoreStrober" => 
         chiselMainTest(chiselArgs, () => Strober(new Core, mini.Config.params))(
           c => new CoreStroberTests(c, testArgs))
@@ -79,8 +76,6 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => Module(new EnableShiftRegister))(c => new Replay(c))
       case "MemorySearch" =>
         chiselMainTest(chiselArgs, () => Module(new MemorySearch))(c => new Replay(c))
-      case "FIR2D" =>
-        chiselMainTest(chiselArgs, () => Module(new FIR2D(32, 8, 3)))(c => new Replay(c))
       case "Tile" => 
         chiselMainTest(chiselArgs, () => Module(new Tile)(mini.Config.params))(
           c => new TileReplay(c, testArgs))

@@ -1,10 +1,11 @@
-#include "debug_api.h"
+#include "api.h"
 
-class ResetShiftRegister_t: debug_api_t
+class ResetShiftRegister_t: API_t
 {
 public:
-  ResetShiftRegister_t(): debug_api_t("ResetShiftRegister") {}
-  void run() {
+  ResetShiftRegister_t(std::vector <std::string> args): 
+    API_t(args, "ResetShiftRegister", true, true) { }
+  int run() {
     std::vector<uint32_t> ins(4, 0);
     int k = 0;
     for (int i = 0 ; i < 16 ; i++) {
@@ -20,13 +21,14 @@ public:
       int expected = 0;
       if (t > 4) expected = ins[(k + 1) % 4];
       expect("ResetShiftRegister.io_out", expected);
-    } 
+    }
+    return 0; 
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
+  std::vector<std::string> args(argv + 1, argv + argc);
   ResetShiftRegister_t ResetShiftRegister;
-  ResetShiftRegister.run();
-  return 0;
+  return ResetShiftRegister.run();
 }

@@ -57,11 +57,12 @@ class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTes
 }
 
 class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c, false, false) {
+  stepSize = 10
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
     var prev_pc = BigInt(0)
     do {
-      step(10)
+      step(stepSize)
       val pc = peek(c.target.core.dpath.ew_pc)
       if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
@@ -83,6 +84,7 @@ class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTes
   }
 
   val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
+  prefix = "." + filename.split('/').last.split('.').head
   // slowLoadMem(filename)
   fastLoadMem(filename)
   runTests(maxcycles, verbose)
@@ -99,7 +101,7 @@ class TileDTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c,
       memrw   = if (peekq(c.target.io.mem.req_cmd.bits.rw) == 1) true else false
       memtag  = peekq(c.target.io.mem.req_cmd.bits.tag)
       memaddr = peekq(c.target.io.mem.req_cmd.bits.addr)
-      step(1, false)
+      step(1)
       // Memread
       if (!memrw) { 
         val read = HexCommon.readMem(memaddr)
@@ -118,7 +120,7 @@ class TileDTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c,
     var prev_pc = BigInt(0)
     do {
       serveMem
-      step(1, false)
+      step(1)
       val pc = peek(c.target.core.dpath.ew_pc)
       if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
@@ -193,13 +195,13 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
     var prev_pc = BigInt(0)
     do {
       tickMem
-      val pc     = peek(c.core.dpath.ew_pc)
+      val pc = peek(c.core.dpath.ew_pc)
       if (verbose && pc != prev_pc) {
         val inst   = UInt(peek(c.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
-        if (wb_en == 1) peek(c.core.dpath.regWrite) 
-        else peekAt(c.core.dpath.regFile.regs, rd(inst))
+          if (wb_en == 1) peek(c.core.dpath.regWrite) 
+          else peekAt(c.core.dpath.regFile.regs, rd(inst))
         println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
         prev_pc = pc
@@ -230,8 +232,14 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
 
   override def run {
     t = 0
-    val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
+    val (path, maxcycles, verbose) = HexCommon.parseOpts(args)
     runTest(maxcycles, verbose)
     if (!ok) throw FAILED
+  }
+
+  override def begin {
+    val (path, maxcycles, verbose) = HexCommon.parseOpts(args)
+    val filename = c.name + "." + path.split('/').last.split('.').head + ".sample"
+    doTest(filename) 
   }
 }

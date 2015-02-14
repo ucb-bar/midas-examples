@@ -1,10 +1,11 @@
-#include "debug_api.h"
+#include "api.h"
 
-class RiscSRAM_t: debug_api_t
+class RiscSRAM_t: API_t
 {
 public:
-  RiscSRAM_t(): debug_api_t("RiscSRAM") {}
-  void run() {
+  RiscSRAM_t(std::vector<std::string> args): 
+    API_t(args, "RiscSRAM", true, true) {}
+  int run() {
     std::vector<uint32_t> app;
     app.push_back(I(1, 1, 0, 1));
     app.push_back(I(0, 1, 1, 1));
@@ -21,6 +22,7 @@ public:
     } while (peek("RiscSRAM.io_valid") == 0 && k < 40);
     expect(k < 40, "TIME LIMIT");
     expect("RiscSRAM.io_out", 4);
+    return 0;
   }
 private:
   void wr(uint32_t addr, uint32_t data) {
@@ -44,9 +46,9 @@ private:
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  RiscSRAM_t RiscSRAM;
-  RiscSRAM.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  RiscSRAM_t RiscSRAM(args);
+  return RiscSRAM.run();
 }

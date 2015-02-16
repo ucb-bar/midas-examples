@@ -1,0 +1,34 @@
+cpp        := $(addsuffix Strober.cpp, $(tut))
+harness    := $(addsuffix Strober-harness.v, $(tut))
+replay_cpp := $(addsuffix .cpp, $(tut))
+replay_v   := $(addsuffix .v,   $(tut))
+samples    := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut)))
+
+cpp:        $(cpp)
+harness:    $(harness)
+replay-cpp: $(replay_cpp)
+replay-v:   $(replay_v)
+
+# Tests
+$(cpp): %Strober.cpp: %.scala 
+	mkdir -p $(logdir) $(resdir)
+	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+	cp $(gendir)/$*.sample $(resdir)/
+
+$(harness): %Strober-harness.v: %.scala 
+	mkdir -p $(logdir) $(resdir)
+	sbt "run $*Strober $(V_FLAGS)" | tee $(logdir)/$*Strober.v.out
+	cp $(gendir)/$*.sample $(resdir)/
+
+# Replay
+$(replay_cpp): %.cpp: $(resdir)/%.sample %.scala
+	mkdir -p $(logdir) $(gendir)
+	cp $< $(gendir)/
+	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+
+$(replay_v): %.v: $(resdir)/%.sample %.scala
+	mkdir -p $(logdir) $(gendir)
+	cp $< $(gendir)/
+	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
+
+.PHONY: cpp harness replay-cpp replay-v

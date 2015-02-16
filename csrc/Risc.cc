@@ -1,10 +1,12 @@
-#include "debug_api.h"
+#include "simif_zedboard.h"
 
-class Risc_t: debug_api_t
+class Risc_t: simif_zedboard_t
 {
 public:
-  Risc_t(): debug_api_t("Risc") {}
-  void run() {
+  Risc_t(std::vector<std::string> args): 
+    simif_zedboard_t(args, "Risc", true, true) { }
+
+  virtual int run() {
     std::vector<uint32_t> app;
     app.push_back(I(1, 1, 0, 1));
     app.push_back(I(0, 1, 1, 1));
@@ -21,6 +23,7 @@ public:
     } while (peek("Risc.io_valid") == 0 && k < 10);
     expect(k < 10, "TIME LIMIT");
     expect("Risc.io_out", 4);
+    return 0;
   }
 private:
   void wr(uint32_t addr, uint32_t data) {
@@ -44,9 +47,9 @@ private:
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  Risc_t Risc;
-  Risc.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  Risc_t Risc(args);
+  return Risc.run();
 }

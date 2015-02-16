@@ -1,13 +1,14 @@
-package DebugMachine
+package StroberExample
 
 import Chisel._
-import Daisy._
 import Designs._
 import TutorialExamples._
 import mini.Core
 import mini.Tile
+import mini.TileD
+import strober._
 
-object DebugMachine {
+object StroberExample {
   def main(args: Array[String]) {
     val (chiselArgs, testArgs) = args.tail partition (_.head != '+')
     val res = args(0) match {
@@ -16,45 +17,45 @@ object DebugMachine {
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(
           c => new RiscSRAMTests(c))
       */
-      case "RiscSRAMShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new RiscSRAM))(
-          c => new RiscSRAMDaisyTests(c))
-      case "RiscShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new Risc))(
-          c => new RiscDaisyTests(c))
-      case "GCDShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new GCD))(
-          c => new GCDDaisyTests(c))
-      case "ParityShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new Parity))(
-          c => new ParityDaisyTests(c))
-      case "StackShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new Stack(8)))(
-          c => new StackDaisyTests(c))
-      case "RouterShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new Router))(
-          c => new RouterDaisyTests(c))
-      case "ShiftRegisterShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new ShiftRegister))(
-          c => new ShiftRegisterDaisyTests(c))
-      case "ResetShiftRegisterShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new ResetShiftRegister))(
-          c => new ResetShiftRegisterDaisyTests(c))
-      case "EnableShiftRegisterShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new EnableShiftRegister))(
-          c => new EnableShiftRegisterDaisyTests(c))
-      case "MemorySearchShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new MemorySearch))(
-          c => new MemorySearchDaisyTests(c))
-      case "FIR2DShim" =>
-        chiselMainTest(chiselArgs, () => DaisyShim(new FIR2D(32, 8, 3)))(
-          c => new FIR2DDaisyTests(c, 32, 8, 3))
-      case "CoreShim" => 
-        chiselMainTest(chiselArgs, () => DaisyShim(new Core, mini.Config.params))(
-          c => new CoreDaisyTests(c, testArgs))
-      case "TileShim" => 
-        chiselMainTest(chiselArgs, () => DaisyShim(new Tile, mini.Config.params))(
-          c => new TileDaisyTests(c, testArgs))
+      case "RiscSRAMStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new RiscSRAM))(
+          c => new RiscSRAMStroberTests(c))
+      case "RiscStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new Risc))(
+          c => new RiscStroberTests(c))
+      case "GCDStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new GCD))(
+          c => new GCDStroberTests(c))
+      case "ParityStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new Parity))(
+          c => new ParityStroberTests(c))
+      case "StackStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new Stack(8)))(
+          c => new StackStroberTests(c))
+      case "RouterStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new Router))(
+          c => new RouterStroberTests(c))
+      case "ShiftRegisterStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new ShiftRegister))(
+          c => new ShiftRegisterStroberTests(c))
+      case "ResetShiftRegisterStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new ResetShiftRegister))(
+          c => new ResetShiftRegisterStroberTests(c))
+      case "EnableShiftRegisterStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new EnableShiftRegister))(
+          c => new EnableShiftRegisterStroberTests(c))
+      case "MemorySearchStrober" =>
+        chiselMainTest(chiselArgs, () => Strober(new MemorySearch))(
+          c => new MemorySearchStroberTests(c))
+      case "CoreStrober" => 
+        chiselMainTest(chiselArgs, () => Strober(new Core, mini.Config.params))(
+          c => new CoreStroberTests(c, testArgs))
+      case "TileStrober" => 
+        chiselMainTest(chiselArgs, () => Strober(new Tile, mini.Config.params))(
+          c => new TileStroberTests(c, testArgs))
+      case "TileDStrober" => 
+        chiselMainTest(chiselArgs, () => Strober(new TileD, mini.Config.params, false))(
+          c => new TileDTests(c, testArgs))
 
       case "RiscSRAM" =>
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new Replay(c))
@@ -76,11 +77,9 @@ object DebugMachine {
         chiselMainTest(chiselArgs, () => Module(new EnableShiftRegister))(c => new Replay(c))
       case "MemorySearch" =>
         chiselMainTest(chiselArgs, () => Module(new MemorySearch))(c => new Replay(c))
-      case "FIR2D" =>
-        chiselMainTest(chiselArgs, () => Module(new FIR2D(32, 8, 3)))(c => new Replay(c))
       case "Tile" => 
         chiselMainTest(chiselArgs, () => Module(new Tile)(mini.Config.params))(
-          c => new TileReplayTests(c, testArgs))
+          c => new TileReplay(c, testArgs))
       case _ =>
     }
   }

@@ -10,3 +10,9 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/donggyukim/riscv-mini.git
+[submodule "strober"]
+	path = strober
+	url = https://github.com/donggyukim/strober.git
+[submodule "strober-driver"]
+	path = strober-driver
+	url = https://github.com/donggyukim/strober-driver.git

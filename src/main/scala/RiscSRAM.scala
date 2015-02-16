@@ -1,7 +1,7 @@
 package Designs
 
 import Chisel._
-import Daisy._
+import strober._
 
 class RiscSRAM extends Module {
   val io = new Bundle {
@@ -188,7 +188,7 @@ class RiscSRAMTests(c: RiscSRAM) extends Tester(c) {
   expect(c.io.out, 40)
 }
 
-class RiscSRAMDaisyTests(c: DaisyShim[RiscSRAM]) extends DaisyTester(c/*, isTrace = false*/) {  
+class RiscSRAMStroberTests(c: Strober[RiscSRAM]) extends StroberTester(c/*, isTrace = false*/) {  
   def wr(addr: UInt, data: UInt)  = {
     poke(c.target.io.isWr,   1)
     poke(c.target.io.wrAddr, addr.litValue())

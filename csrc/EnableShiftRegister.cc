@@ -1,16 +1,18 @@
-#include "debug_api.h"
+#include "simif_zedboard.h"
 
-class EnableShiftRegister_t: debug_api_t
+class EnableShiftRegister_t: simif_zedboard_t
 {
 public:
-  EnableShiftRegister_t(): debug_api_t("EnableShiftRegister") {}
-  void run() {
+  EnableShiftRegister_t(std::vector<std::string> args):
+    simif_zedboard_t(args, "EnableShiftRegister", true, true) { }
+ 
+  virtual int run() {
     std::vector<uint32_t> reg(4, 0);
     for (int i = 0 ; i < 16 ; i++) {
       uint32_t in    = rand_next(2);
       uint32_t shift = rand_next(2);
-      poke("EnableShiftRegister.io_in",    in);
-      poke("EnableShiftRegister.io_shift", shift);
+      simif_t::poke("EnableShiftRegister.io_in",    in);
+      simif_t::poke("EnableShiftRegister.io_shift", shift);
       step(1);
       if (shift) {
         for (int j = 3 ; j > 0 ; j--) {
@@ -19,13 +21,14 @@ public:
         reg[0] = in;
       }
       expect("EnableShiftRegister.io_out", reg[3]);
-    } 
+    }
+    return 0; 
   }
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  EnableShiftRegister_t EnableShiftRegister;
-  EnableShiftRegister.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  EnableShiftRegister_t EnableShiftRegister(args);
+  return EnableShiftRegister.run();
 }

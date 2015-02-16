@@ -1,10 +1,12 @@
-#include "debug_api.h"
 #include <stack>
-class Stack_t: debug_api_t
+#include "simif_zedboard.h"
+
+class Stack_t: simif_zedboard_t
 {
 public:
-  Stack_t(int size_): debug_api_t("Stack"), size(size_) {}
-  void run() {
+  Stack_t(std::vector<std::string> args, int size_): 
+    simif_zedboard_t(args, "Stack", true, true), size(size_) {}
+  int run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 
     uint32_t dataOut = 0; 
@@ -34,12 +36,12 @@ public:
     } 
   }
 private:
-  int size;
+  const int size;
 };
 
-int main() 
+int main(int argc, char** argv) 
 {
-  Stack_t Stack(8);
-  Stack.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  Stack_t Stack(args, 8);
+  return Stack.run();
 }

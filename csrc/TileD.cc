@@ -1,37 +1,42 @@
 #include <fstream>
+#include <sstream>
+#include <iostream>
+#include <stdlib.h>
 #include "simif_zedboard.h"
 
-class Core_t: simif_zedboard_t
+class TileD_t: simif_zedboard_t
 {
 public:
-  Core_t(std::vector<std::string> args):
-    simif_zedboard_t(args, "Core", false, false) { }
+  TileD_t(std::vector<std::string> args):  
+    simif_zedboard_t(args, "TileD", false, false) { }
+  void serve_mem() {
+    static bool memrw = false;
+    static uint64_t memtag = 0;
+    static uint64_t memaddr = 0;
+    if (peekq_valid("TileD.io_mem_req_cmd_bits_rw") &&
+        peekq_valid("TileD.io_mem_req_cmd_bits_tag") &&
+        peekq_valid("TileD.io_mem_req_cmd_bits_addr")) {    
+      memrw   = peekq("TileD.io_mem_req_cmd_bits_rw");
+      memtag  = peekq("TileD.io_mem_req_cmd_bits_tag");
+      memaddr = peekq("TileD.io_mem_req_cmd_bits_addr");
+      step(1);
+      if (!memrw) {
+        uint64_t memdata = read(memaddr);
+        pokeq("TileD.io_mem_resp_bits_data", memdata);
+        pokeq("TileD.io_mem_resp_bits_tag", memtag);
+      }
+    }
+    if (peekq_valid("TileD.io_mem_req_data_bits_data")) {
+      write(memaddr, peekq("TileD.io_mem_req_data_bits_data"));
+    }
+  }
   int run() {
     load_mem();
-    poke("Core.io_stall", 1);
-    step(1);
-    poke("Core.io_stall", 0);
     uint64_t tohost = 0;
     do {
-      uint64_t iaddr = peek("Core.io_icache_addr");
-      uint64_t daddr = (peek("Core.io_dcache_addr") >> 2) << 2;
-      uint64_t data  = peek("Core.io_dcache_din");
-      uint64_t dwe   = peek("Core.io_dcache_we");
-      bool ire = peek("Core.io_icache_re") == 1;
-      bool dre = peek("Core.io_dcache_re") == 1;
-
+      serve_mem();
       step(1);
-
-      if (dwe > 1) {
-        write_mem(daddr, data, dwe);
-      } else if (ire) {
-        uint64_t inst = read_mem(iaddr);
-        poke("Core.io_icache_dout", inst);
-      } else if (dre) {
-        uint64_t data = read_mem(daddr);
-        poke("Core.io_dcache_dout", data);
-      }
-      tohost = peek("Core.io_host_tohost"); 
+      tohost = peek("TileD.io_htif_host_tohost");
     } while (tohost == 0 && !timeout());
 
     int exitcode = tohost >> 1;
@@ -50,7 +55,7 @@ private:
   void load_mem() {
     std::ifstream in(loadmem.c_str());
     if (!in) {
-      fprintf(stderr, "could not open %s\n", loadmem.c_str());
+      std::cerr << "could not open " << loadmem << std::endl;
       exit(-1);
     }
 
@@ -70,7 +75,7 @@ private:
     }
   }
 
-  uint64_t read_mem(uint64_t addr) {
+  uint64_t read(uint64_t addr) {
     uint64_t data = 0;
     for (int i = 0 ; i < 4 ; i++) {
       data |= mem[addr+i] << (8*i);
@@ -78,17 +83,15 @@ private:
     return data;
   }
 
-  void write_mem(uint64_t addr, uint64_t data, uint64_t mask) {
+  void write(uint64_t addr, uint64_t data) {
     for (int i = 3 ; i >= 0 ; i--) {
-      if (((mask >> i) & 1) > 0) {
-        mem[addr+i] = (data >> (8*i)) & 0xff;
-      }
+      mem[addr+i] = (data >> (8*i)) & 0xff;
     }
   }
 };
 
 int main(int argc, char** argv) {
   std::vector<std::string> args(argv + 1, argv + argc);
-  Core_t Core(args);
-  return Core.run();
+  TileD_t TileD(args);
+  return TileD.run();
 }

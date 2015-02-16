@@ -1,11 +1,11 @@
 package Designs
 
 import Chisel._
-import Daisy._
+import strober._
 import TutorialExamples._
 import scala.collection.mutable.{Stack => ScalaStack}
 
-class GCDDaisyTests(c: DaisyShim[GCD]) extends DaisyTester(c) {
+class GCDStroberTests(c: Strober[GCD]) extends StroberTester(c) {
   val (a, b, z) = (64, 48, 16)
   do {
     val first = if (t == 0) 1 else 0
@@ -17,7 +17,7 @@ class GCDDaisyTests(c: DaisyShim[GCD]) extends DaisyTester(c) {
   expect(c.target.io.z, z)
 }
 
-class ParityDaisyTests(c: DaisyShim[Parity]) extends DaisyTester(c) {
+class ParityStroberTests(c: Strober[Parity]) extends StroberTester(c) {
   writeMem(4, 0xdeadbeef)
   var isOdd = 0
   for (t <- 0 until 10) {
@@ -30,7 +30,7 @@ class ParityDaisyTests(c: DaisyShim[Parity]) extends DaisyTester(c) {
   println(readMem(4).toString(16))
 }
 
-class StackDaisyTests(c: DaisyShim[Stack]) extends DaisyTester(c) {  
+class StackStroberTests(c: Strober[Stack]) extends StroberTester(c) {  
   var nxtDataOut = 0
   var dataOut = 0
   val stack = new ScalaStack[Int]()
@@ -62,7 +62,7 @@ class StackDaisyTests(c: DaisyShim[Stack]) extends DaisyTester(c) {
   }
 }
 
-class ShiftRegisterDaisyTests(c: DaisyShim[ShiftRegister]) extends DaisyTester(c) {  
+class ShiftRegisterStroberTests(c: Strober[ShiftRegister]) extends StroberTester(c) {  
   val reg     = Array.fill(4){ 0 }
   for (t <- 0 until 64) {
     val in = rnd.nextInt(2)
@@ -75,7 +75,7 @@ class ShiftRegisterDaisyTests(c: DaisyShim[ShiftRegister]) extends DaisyTester(c
   }
 }
 
-class EnableShiftRegisterDaisyTests(c: DaisyShim[EnableShiftRegister]) extends DaisyTester(c) {  
+class EnableShiftRegisterStroberTests(c: Strober[EnableShiftRegister]) extends StroberTester(c) {  
   val reg = Array.fill(4){ 0 }
   for (t <- 0 until 16) {
     val in    = rnd.nextInt(2)
@@ -92,7 +92,7 @@ class EnableShiftRegisterDaisyTests(c: DaisyShim[EnableShiftRegister]) extends D
   }
 }
 
-class MemorySearchDaisyTests(c: DaisyShim[MemorySearch]) extends DaisyTester(c) {
+class MemorySearchStroberTests(c: Strober[MemorySearch]) extends StroberTester(c) {
   val list = c.target.elts.map(int(_)) 
   val n = 8
   val maxT = n * (list.length + 3)
@@ -111,7 +111,7 @@ class MemorySearchDaisyTests(c: DaisyShim[MemorySearch]) extends DaisyTester(c) 
   }
 }
 
-class ResetShiftRegisterDaisyTests(c: DaisyShim[ResetShiftRegister]) extends DaisyTester(c) {  
+class ResetShiftRegisterStroberTests(c: Strober[ResetShiftRegister]) extends StroberTester(c) {  
   val ins = Array.fill(5){ 0 }
   var k   = 0
   for (n <- 0 until 16) {
@@ -128,7 +128,7 @@ class ResetShiftRegisterDaisyTests(c: DaisyShim[ResetShiftRegister]) extends Dai
   }
 }
 
-class RiscDaisyTests(c: DaisyShim[Risc]) extends DaisyTester(c) {  
+class RiscStroberTests(c: Strober[Risc]) extends StroberTester(c) {  
   def wr(addr: UInt, data: UInt)  = {
     poke(c.target.io.isWr,   1)
     poke(c.target.io.wrAddr, addr.litValue())
@@ -163,7 +163,7 @@ class RiscDaisyTests(c: DaisyShim[Risc]) extends DaisyTester(c) {
   expect(c.target.io.out, 4)
 }
 
-class RouterDaisyTests(c: DaisyShim[Router]) extends DaisyTester(c) {  
+class RouterStroberTests(c: Strober[Router]) extends StroberTester(c) {  
   def rd(addr: Int, data: Int) = {
     poke(c.target.io.in.valid,        0)
     poke(c.target.io.writes.valid,    0)

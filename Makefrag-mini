@@ -55,7 +55,7 @@ tile_replay_v = $(addprefix Tile., $(addsuffix .v.replay, $(asm_p_tests)))
 $(tile_replay_v): Tile.%.v.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
 	mkdir -p $(logdir) $(gendir)
 	cp $< $(gendir)/
-	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
+	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +loadmem=$(tests_isa_dir)/$*.hex +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 tile_replay_v: $(tile_replay_v)
 

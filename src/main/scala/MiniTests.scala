@@ -190,6 +190,7 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
     poke(c.io.mem.resp.valid, 0)
   }
 
+  var sampleIdx = 0
   def runTest(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.core.dpath.regFile.regs, 0, 0)
     var prev_pc = BigInt(0)
@@ -211,8 +212,9 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
     val tohost = peek(c.io.htif.host.tohost)
     val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     ok &= tohost == 1
-    println("*** %s *** (%s) after %d simulation cycles".format(
-            if (ok) "PASSED" else "FAILED", reason, t))
+    println("Sample %d -> *** %s *** (%s) after %d simulation cycles".format(
+            sampleIdx, if (ok) "PASSED" else "FAILED", reason, t))
+    sampleIdx += 1
   }
 
   override def read(addr: BigInt, tag: BigInt) {
@@ -225,8 +227,8 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   override def loadMem(mem: List[(BigInt, BigInt)]) {
     HexCommon.clearMem
     for ((addr, data) <- mem) {
-      if (isTrace)  println("MEM[%x] <- %08x".format(addr, data))
-      HexCommon.writeMem(addr, data)
+      if (isTrace) println("MEM[%x] <- %08x".format(addr, data))
+      HexCommon.writeMem(addr, data, 0xffff)
     }
   }
 

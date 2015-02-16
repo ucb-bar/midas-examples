@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class ShiftRegister_t: API_t
+class ShiftRegister_t: simif_zedboard_t
 {
 public:
   ShiftRegister_t(std::vector<std::string> args): 
-    API_t(args, "ShiftRegister", true, true) {}
+    simif_zedboard_t(args, "ShiftRegister", true, true) {}
 
   int run() {
     std::vector<uint32_t> reg(4, 0);

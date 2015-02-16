@@ -1,11 +1,11 @@
-#include "api.h"
 #include <stack>
+#include "simif_zedboard.h"
 
-class Stack_t: API_t
+class Stack_t: simif_zedboard_t
 {
 public:
   Stack_t(std::vector<std::string> args, int size_): 
-    API_t(args, "Stack", true, true), size(size_) {}
+    simif_zedboard_t(args, "Stack", true, true), size(size_) {}
   int run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 

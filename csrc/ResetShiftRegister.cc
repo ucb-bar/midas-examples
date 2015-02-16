@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class ResetShiftRegister_t: API_t
+class ResetShiftRegister_t: simif_zedboard_t
 {
 public:
   ResetShiftRegister_t(std::vector <std::string> args): 
-    API_t(args, "ResetShiftRegister", true, true) { }
+    simif_zedboard_t(args, "ResetShiftRegister", true, true) { }
   int run() {
     std::vector<uint32_t> ins(4, 0);
     int k = 0;

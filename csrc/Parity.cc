@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class Parity_t: API_t
+class Parity_t: simif_zedboard_t
 {
 public:
   Parity_t(std::vector<std::string> args): 
-    API_t(args, "Parity", true, true) { }
+    simif_zedboard_t(args, "Parity", true, true) { }
   int run() {
     uint32_t isOdd = 0; 
     for (int i = 0 ; i < 10 ; i++) {

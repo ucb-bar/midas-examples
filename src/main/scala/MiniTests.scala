@@ -90,7 +90,7 @@ class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTes
   runTests(maxcycles, verbose)
 }
 
-class TileDTests(c: Strober[Tile], args: Array[String]) extends StroberTester(c, false) {
+class TileDTests(c: Strober[TileD], args: Array[String]) extends StroberTester(c, false) {
   private var memrw   = false
   private var memtag  = BigInt(0)
   private var memaddr = BigInt(0)
@@ -225,7 +225,7 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   override def loadMem(mem: List[(BigInt, BigInt)]) {
     HexCommon.clearMem
     for ((addr, data) <- mem) {
-      if (isTrace) println("MEM[%x] <- %08x".format(addr, data))
+      if (isTrace)  println("MEM[%x] <- %08x".format(addr, data))
       HexCommon.writeMem(addr, data)
     }
   }
@@ -240,6 +240,7 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   override def begin {
     val (path, maxcycles, verbose) = HexCommon.parseOpts(args)
     val filename = c.name + "." + path.split('/').last.split('.').head + ".sample"
+    loadMem(path)
     doTest(filename) 
   }
 }

@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class RiscSRAM_t: API_t
+class RiscSRAM_t: simif_zedboard_t
 {
 public:
   RiscSRAM_t(std::vector<std::string> args): 
-    API_t(args, "RiscSRAM", true, true) {}
+    simif_zedboard_t(args, "RiscSRAM", true, true) {}
   int run() {
     std::vector<uint32_t> app;
     app.push_back(I(1, 1, 0, 1));

@@ -1,11 +1,11 @@
 #include <fstream>
-#include "api.h"
+#include "simif_zedboard.h"
 
-class Core_t: API_t
+class Core_t: simif_zedboard_t
 {
 public:
   Core_t(std::vector<std::string> args):
-    API_t(args, "Core", false, false) { }
+    simif_zedboard_t(args, "Core", false, false) { }
   int run() {
     load_mem();
     poke("Core.io_stall", 1);

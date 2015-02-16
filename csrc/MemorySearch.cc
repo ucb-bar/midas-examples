@@ -1,11 +1,11 @@
-#include "api.h"
 #include <sstream>
+#include "simif_zedboard.h"
 
-class MemorySearch_t: API_t
+class MemorySearch_t: simif_zedboard_t
 {
 public:
   MemorySearch_t(std::vector<std::string> args): 
-    API_t(args, "MemorySearch", true, true) {}
+    simif_zedboard_t(args, "MemorySearch", true, true) {}
   int run() {
     std::vector<uint32_t> list;
     list.push_back(0);

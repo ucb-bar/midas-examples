@@ -1,11 +1,11 @@
 #include <sstream>
-#include "api.h"
+#include "simif_zedboard.h"
 
-class Router_t: API_t
+class Router_t: simif_zedboard_t
 {
 public:
   Router_t(std::vector<std::string> args, int n_): 
-    API_t(args, "Router", true, true), n(n_) {}
+    simif_zedboard_t(args, "Router", true, true), n(n_) {}
   int run() {
     rd(0, 0);
     wr(0, 1);

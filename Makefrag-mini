@@ -1,0 +1,79 @@
+tests_isa_dir  := $(basedir)/riscv-mini/tests/isa
+timeout_cycles := 10000
+include riscv-mini/Makefrag-sim
+
+# Core Tests
+core_asm_c = $(addprefix Core., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+core_asm_c: $(core_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_asm_c)); echo;
+
+core_asm_v = $(addprefix Core., $(addsuffix .v.out, $(asm_p_tests)))
+$(core_asm_v): Core.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+core_asm_v: $(core_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_asm_v)); echo;
+
+# Tile Tests
+tile_asm_c = $(addprefix Tile., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir) $(resdir)
+	cd $(basedir) ; sbt "run TileStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+	cp $(gendir)/Tile.$*.sample $(resdir)/
+tile_asm_c: $(tile_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tile_asm_c)); echo;
+
+tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
+$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir) $(resdir)
+	cd $(basedir) ; sbt "run TileStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+	cp $(gendir)/Tile.$*.sample $(resdir)/
+tile_asm_v: $(tile_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tile_asm_v)); echo;
+
+# Tile Replay
+tile_replay_cpp = $(addprefix Tile., $(addsuffix .cpp.replay, $(asm_p_tests)))
+$(tile_replay_cpp): Tile.%.cpp.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
+	mkdir -p $(logdir) $(gendir)
+	cp $< $(gendir)/
+	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +loadmem=$(tests_isa_dir)/$*.hex +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+tile_replay_cpp: $(tile_replay_cpp)
+
+tile_replay_v = $(addprefix Tile., $(addsuffix .v.replay, $(asm_p_tests)))
+$(tile_replay_v): Tile.%.v.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
+	mkdir -p $(logdir) $(gendir)
+	cp $< $(gendir)/
+	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+tile_replay_v: $(tile_replay_v)
+
+# TileD Tests
+tiled_asm_c = $(addprefix TileD., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(tiled_asm_c): TileD.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run TileDStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+tiled_asm_c: $(tiled_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tiled_asm_c)); echo;
+
+tiled_asm_v = $(addprefix TileD., $(addsuffix .v.out, $(asm_p_tests)))
+$(tiled_asm_v): TileD.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run TileDStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+tiled_asm_v: $(tiled_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tiled_asmd_v)); echo;

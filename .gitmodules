@@ -13,6 +13,6 @@
 [submodule "strober"]
 	path = strober
 	url = https://github.com/donggyukim/strober.git
-[submodule "fesvr"]
-	path = fesvr
-	url = https://github.com/ucb-bar/riscv-fesvr.git
+[submodule "strober-driver"]
+	path = strober-driver
+	url = https://github.com/donggyukim/strober-driver.git

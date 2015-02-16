@@ -3,9 +3,10 @@ package StroberExample
 import Chisel._
 import Designs._
 import TutorialExamples._
-import strober._
 import mini.Core
 import mini.Tile
+import mini.TileD
+import strober._
 
 object StroberExample {
   def main(args: Array[String]) {
@@ -53,7 +54,7 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => Strober(new Tile, mini.Config.params))(
           c => new TileStroberTests(c, testArgs))
       case "TileDStrober" => 
-        chiselMainTest(chiselArgs, () => Strober(new Tile, mini.Config.params, false))(
+        chiselMainTest(chiselArgs, () => Strober(new TileD, mini.Config.params, false))(
           c => new TileDTests(c, testArgs))
 
       case "RiscSRAM" =>

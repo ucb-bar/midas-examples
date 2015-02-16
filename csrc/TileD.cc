@@ -1,77 +1,61 @@
-#include "debug_api.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <stdlib.h>
+#include "simif_zedboard.h"
 
-class Tile_t: debug_api_t
+class TileD_t: simif_zedboard_t
 {
 public:
-  Tile_t(int argc, char** argv): debug_api_t("Tile", false) {
-    for (int i = 0 ; i < argc ; i++) {
-      std::string arg = argv[i];
-      if (arg.substr(0, 12) == "+max-cycles=") {
-        timeout = atoll(argv[i]+12);
-      } else if (arg.substr(0, 9) == "+loadmem=") {
-        filename = argv[i]+9;
-      }
-    }
-    testname = filename.substr(filename.rfind("/")+1);
-    load_mem();
-  }
+  TileD_t(std::vector<std::string> args):  
+    simif_zedboard_t(args, "TileD", false, false) { }
   void serve_mem() {
     static bool memrw = false;
     static uint64_t memtag = 0;
     static uint64_t memaddr = 0;
-    if (peekq_valid("Tile.io_mem_req_cmd_bits_rw") &&
-        peekq_valid("Tile.io_mem_req_cmd_bits_tag") &&
-        peekq_valid("Tile.io_mem_req_cmd_bits_addr")) {    
-      memrw   = peekq("Tile.io_mem_req_cmd_bits_rw");
-      memtag  = peekq("Tile.io_mem_req_cmd_bits_tag");
-      memaddr = peekq("Tile.io_mem_req_cmd_bits_addr");
-      step(1, false);
+    if (peekq_valid("TileD.io_mem_req_cmd_bits_rw") &&
+        peekq_valid("TileD.io_mem_req_cmd_bits_tag") &&
+        peekq_valid("TileD.io_mem_req_cmd_bits_addr")) {    
+      memrw   = peekq("TileD.io_mem_req_cmd_bits_rw");
+      memtag  = peekq("TileD.io_mem_req_cmd_bits_tag");
+      memaddr = peekq("TileD.io_mem_req_cmd_bits_addr");
+      step(1);
       if (!memrw) {
         uint64_t memdata = read(memaddr);
-        pokeq("Tile.io_mem_resp_bits_data", memdata);
-        pokeq("Tile.io_mem_resp_bits_tag", memtag);
+        pokeq("TileD.io_mem_resp_bits_data", memdata);
+        pokeq("TileD.io_mem_resp_bits_tag", memtag);
       }
     }
-    if (peekq_valid("Tile.io_mem_req_data_bits_data")) {
-      write(memaddr, peekq("Tile.io_mem_req_data_bits_data"));
+    if (peekq_valid("TileD.io_mem_req_data_bits_data")) {
+      write(memaddr, peekq("TileD.io_mem_req_data_bits_data"));
     }
   }
-  void run() {
+  int run() {
+    load_mem();
+    uint64_t tohost = 0;
     do {
       serve_mem();
-      step(1, false);
-    } while (peek("Tile.io_htif_host_tohost") == 0 && t < timeout);
-    uint64_t tohost = peek("Tile.io_htif_host_tohost");
-    std::ostringstream reason;
-    std::ostringstream result;
-    if (t > timeout) {
-      reason << "timeout";
-      result << "FAILED";
-    } else if (tohost != 1) {
-      reason << "tohost = " << tohost;
-      result << "FAILED";
+      step(1);
+      tohost = peek("TileD.io_htif_host_tohost");
+    } while (tohost == 0 && !timeout());
+
+    int exitcode = tohost >> 1;
+    if (exitcode) {
+      fprintf(stderr, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
+    } else if (timeout()) {
+      fprintf(stderr, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
     } else {
-      reason << "tohost = " << tohost;
-      result <<"PASSED";
+      fprintf(stderr, "*** PASSED *** after %llu cycles\n", cycles());
     }
-    std::cout << "ISA: " << testname << std::endl;
-    std::cout << "*** " << result.str() << " *** (" << reason.str() << ") ";
-    std::cout << "after " << t << " simulation cycles" << std::endl;
+    return exitcode;
   }
 private:
   std::map<uint64_t, uint64_t> mem;
-  std::string testname;
-  std::string filename;
-  uint64_t timeout;
 
   void load_mem() {
-    std::ifstream in(filename.c_str());
+    std::ifstream in(loadmem.c_str());
     if (!in) {
-      std::cerr << "could not open " << filename << std::endl;
+      std::cerr << "could not open " << loadmem << std::endl;
       exit(-1);
     }
 
@@ -107,7 +91,7 @@ private:
 };
 
 int main(int argc, char** argv) {
-  Tile_t Tile(argc, argv);
-  Tile.run();
-  return 0;
+  std::vector<std::string> args(argv + 1, argv + argc);
+  TileD_t TileD(args);
+  return TileD.run();
 }

@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class GCD_t: API_t
+class GCD_t: simif_zedboard_t
 {
 public:
   GCD_t(std::vector<std::string> args): 
-    API_t(args, "GCD", true, true) { }
+    simif_zedboard_t(args, "GCD", true, true) { }
 
   virtual int run() {
     uint32_t a = 64, b = 48, z = 16; //test vectors

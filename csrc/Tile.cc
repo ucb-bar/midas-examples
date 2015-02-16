@@ -1,11 +1,11 @@
 #include <fstream>
-#include "api.h"
+#include "simif_zedboard.h"
 
-class Tile_t: API_t
+class Tile_t: simif_zedboard_t
 {
 public:
   Tile_t(std::vector<std::string> args):
-    API_t(args, "Tile", false, false) 
+    simif_zedboard_t(args, "Tile", false, false) 
   {
     step_size = 50; 
   }

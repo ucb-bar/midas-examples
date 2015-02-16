@@ -1,10 +1,10 @@
-#include "api.h"
+#include "simif_zedboard.h"
 
-class Risc_t: API_t
+class Risc_t: simif_zedboard_t
 {
 public:
   Risc_t(std::vector<std::string> args): 
-    API_t(args, "Risc", true, true) { }
+    simif_zedboard_t(args, "Risc", true, true) { }
 
   virtual int run() {
     std::vector<uint32_t> app;

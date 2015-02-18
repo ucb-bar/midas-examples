@@ -5,6 +5,7 @@ minidir := $(basedir)/riscv-mini/src/main/scala/designs
 gendir  := $(basedir)/generated
 logdir  := $(basedir)/logs
 resdir  := $(basedir)/results
+strober_dir := $(basedir)/strober/src/main/scala
 VPATH   := $(srcdir):$(tutdir):$(minidir):$(gendir):$(logdir)
 
 # Designs

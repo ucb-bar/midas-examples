@@ -4,7 +4,8 @@ include riscv-mini/Makefrag-sim
 
 # Core Tests
 core_asm_c = $(addprefix Core., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala
+$(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run CoreStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
@@ -13,7 +14,8 @@ core_asm_c: $(core_asm_c)
 	$(addprefix $(logdir)/, $(core_asm_c)); echo;
 
 core_asm_v = $(addprefix Core., $(addsuffix .v.out, $(asm_p_tests)))
-$(core_asm_v): Core.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala
+$(core_asm_v): Core.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Core.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run CoreStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
@@ -23,9 +25,10 @@ core_asm_v: $(core_asm_v)
 
 # Tile Tests
 tile_asm_c = $(addprefix Tile., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+	cd $(basedir) ; sbt "run TileStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
 	cp $(gendir)/Tile.$*.sample $(resdir)/
 tile_asm_c: $(tile_asm_c)
@@ -33,7 +36,8 @@ tile_asm_c: $(tile_asm_c)
 	$(addprefix $(logdir)/, $(tile_asm_c)); echo;
 
 tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
-$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir) $(resdir)
 	cd $(basedir) ; sbt "run TileStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
@@ -61,7 +65,8 @@ tile_replay_v: $(tile_replay_v)
 
 # TileD Tests
 tiled_asm_c = $(addprefix TileD., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(tiled_asm_c): TileD.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+$(tiled_asm_c): TileD.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run TileDStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
@@ -70,7 +75,8 @@ tiled_asm_c: $(tiled_asm_c)
 	$(addprefix $(logdir)/, $(tiled_asm_c)); echo;
 
 tiled_asm_v = $(addprefix TileD., $(addsuffix .v.out, $(asm_p_tests)))
-$(tiled_asm_v): TileD.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala
+$(tiled_asm_v): TileD.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
+	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir)
 	cd $(basedir) ; sbt "run TileDStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)

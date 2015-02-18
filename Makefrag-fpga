@@ -5,7 +5,7 @@ memgen    := $(basedir)/scripts/fpga_mem_gen
 zeddir    := $(basedir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(v): %Strober.v: %.scala
+$(v): %Strober.v: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(FPGA_FLAGS)"
 	if [ -a $(gendir)/$(basename $@).conf ]; then \

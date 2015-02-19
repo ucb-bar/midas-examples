@@ -4,6 +4,7 @@ import Chisel._
 import strober._
 import mini._
 import TestCommon._
+import scala.collection.mutable.{ArrayBuffer, Queue => ScalaQueue}
 
 class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTester(c, false) {
   def runTests(maxcycles: Int, verbose: Boolean) = {
@@ -11,7 +12,8 @@ class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTes
     pokeAt(c.target.dpath.regFile.regs, 0, 0)
     step(1)
     poke(c.target.io.stall, 0)
-    var prev_pc = BigInt(0)
+    var prevpc = BigInt(0)
+    var tohost = BigInt(0)
     do {
       val iaddr = peek(c.target.io.icache.addr)
       val daddr = (peek(c.target.io.dcache.addr) >> 2) << 2
@@ -33,7 +35,7 @@ class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTes
       }
 
       val pc = peek(c.target.dpath.ew_pc)
-      if (verbose && pc != prev_pc) {
+      if (verbose && pc != prevpc) {
         val inst   = UInt(peek(c.target.dpath.ew_inst), 32)
         val wb_en  = peek(c.target.ctrl.io.ctrl.wb_en)
         val wb_val = 
@@ -41,10 +43,11 @@ class CoreStroberTests(c: Strober[Core], args: Array[String]) extends StroberTes
           else peekAt(c.target.dpath.regFile.regs, rd(inst)) 
         println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
-        prev_pc = pc
+        prevpc = pc
       }
-    } while (peek(c.target.io.host.tohost) == 0 && t < maxcycles)
-    val tohost = peek(c.target.io.host.tohost)
+      tohost = peek(c.target.io.host.tohost)
+    } while (tohost == 0 && t < maxcycles)
+
     val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     ok &= tohost == 1
     println("*** %s *** (%s) after %d simulation cycles".format(
@@ -60,11 +63,12 @@ class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTes
   stepSize = 10
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
-    var prev_pc = BigInt(0)
+    var prevpc = BigInt(0)
+    var tohost = BigInt(0)
     do {
       step(stepSize)
       val pc = peek(c.target.core.dpath.ew_pc)
-      if (verbose && pc != prev_pc) {
+      if (verbose && pc != prevpc) {
         val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.target.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
@@ -72,11 +76,11 @@ class TileStroberTests(c: Strober[Tile], args: Array[String]) extends StroberTes
           else peekAt(c.target.core.dpath.regFile.regs, rd(inst)) 
         println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
-        prev_pc = pc
+        prevpc = pc
       }
-    } while (peek(c.target.io.htif.host.tohost) == 0 && t < maxcycles)
+      tohost = peek(c.target.io.htif.host.tohost)
+    } while (tohost == 0 && t < maxcycles)
 
-    val tohost = peek(c.target.io.htif.host.tohost)
     val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     ok &= tohost == 1
     println("*** %s *** (%s) after %d simulation cycles".format(
@@ -117,12 +121,13 @@ class TileDTests(c: Strober[TileD], args: Array[String]) extends StroberTester(c
 
   def runTests(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.target.core.dpath.regFile.regs, 0, 0)
-    var prev_pc = BigInt(0)
+    var prevpc = BigInt(0)
+    var tohost = BigInt(0)
     do {
       serveMem
       step(1)
       val pc = peek(c.target.core.dpath.ew_pc)
-      if (verbose && pc != prev_pc) {
+      if (verbose && pc != prevpc) {
         val inst   = UInt(peek(c.target.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.target.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
@@ -130,11 +135,11 @@ class TileDTests(c: Strober[TileD], args: Array[String]) extends StroberTester(c
           else peekAt(c.target.core.dpath.regFile.regs, rd(inst)) 
         println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
-        prev_pc = pc
+        prevpc = pc
       }
-    } while (peek(c.target.io.htif.host.tohost) == 0 && t < maxcycles)
+      tohost = peek(c.target.io.htif.host.tohost)
+    } while (tohost == 0 && t < maxcycles)
 
-    val tohost = peek(c.target.io.htif.host.tohost)
     val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     ok &= tohost == 1
     println("*** %s *** (%s) after %d simulation cycles".format(
@@ -147,9 +152,6 @@ class TileDTests(c: Strober[TileD], args: Array[String]) extends StroberTester(c
 }
 
 class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
-  private var memrw   = false
-  private var memtag  = BigInt(0)
-  private var memaddr = BigInt(0)
   private var memcycles = -1
   def tickMem {
     if (memcycles > 0) {
@@ -159,29 +161,35 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
       memcycles -= 1
     } else if (memcycles < 0) {
       if (peek(c.io.mem.req_cmd.valid) == 1) {
-        memrw   = if (peek(c.io.mem.req_cmd.bits.rw) == 1) true else false
-        memtag  = peek(c.io.mem.req_cmd.bits.tag)
-        memaddr = peek(c.io.mem.req_cmd.bits.addr)
-        // Memread
-        if (!memrw) { 
-          memcycles = 2
-          poke(c.io.mem.req_cmd.ready, 1)
-        }
+        memrw enqueue (peek(c.io.mem.req_cmd.bits.rw) == 1)
+        memtag enqueue peek(c.io.mem.req_cmd.bits.tag)
+        memaddr enqueue peek(c.io.mem.req_cmd.bits.addr)
+// println("mem addr = %x".format(memaddr.last))
+        if (!memrw.head) poke(c.io.mem.req_cmd.ready, 1)
       }
       if (peek(c.io.mem.req_data.valid) == 1) {
         val data = peek(c.io.mem.req_data.bits.data)
         poke(c.io.mem.req_cmd.ready, 1)
         poke(c.io.mem.req_data.ready, 1)
-        HexCommon.writeMem(memaddr, data)
-        memcycles = 1
+        HexCommon.writeMem(memaddr.head, data)
+      }
+      assert(memrw.size == memtag.size)
+      assert(memrw.size == memaddr.size)
+      if (!memrw.isEmpty) {
+        memcycles = if (!memrw.head) HexCommon.readCycles else HexCommon.writeCycles
       }
     } else {
-      if (!memrw) {
-        val read = HexCommon.readMem(memaddr)
+      val addr = memaddr.dequeue
+      val tag = memtag.dequeue
+      if (!memrw.dequeue) {
+        val read = HexCommon.readMem(addr)
+// println("addr = %x, data = %x".format(addr, read))
         poke(c.io.mem.resp.bits.data, read)
-        poke(c.io.mem.resp.bits.tag, memtag)
+        poke(c.io.mem.resp.bits.tag, tag)
         poke(c.io.mem.resp.valid, 1)
-      }
+      } 
+      assert(memrw.size == memtag.size)
+      assert(memrw.size == memaddr.size)
       memcycles -= 1
     }
     step(1)
@@ -193,11 +201,12 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   var sampleIdx = 0
   def runTest(maxcycles: Int, verbose: Boolean) {
     pokeAt(c.core.dpath.regFile.regs, 0, 0)
-    var prev_pc = BigInt(0)
+    var prevpc = BigInt(0)
+    var tohost = BigInt(0)
     do {
       tickMem
       val pc = peek(c.core.dpath.ew_pc)
-      if (verbose && pc != prev_pc) {
+      if (verbose && pc != prevpc) {
         val inst   = UInt(peek(c.core.dpath.ew_inst), 32)
         val wb_en  = peek(c.core.ctrl.io.ctrl.wb_en)
         val wb_val = 
@@ -205,23 +214,16 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
           else peekAt(c.core.dpath.regFile.regs, rd(inst))
         println("[%x] %s -> RegFile[%d] = %x".format(
                 pc, instStr(inst), rd(inst), wb_val))
-        prev_pc = pc
+        prevpc = pc
       }
-    } while (peek(c.io.htif.host.tohost) == 0 && t < maxcycles)
+      tohost = peek(c.io.htif.host.tohost)
+    } while (tohost == 0 && t < maxcycles)
 
-    val tohost = peek(c.io.htif.host.tohost)
     val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     ok &= tohost == 1
     println("Sample %d -> *** %s *** (%s) after %d simulation cycles".format(
             sampleIdx, if (ok) "PASSED" else "FAILED", reason, t))
     sampleIdx += 1
-  }
-
-  override def read(addr: BigInt, tag: BigInt) {
-    if (isTrace) println("READ %x, %x".format(addr, tag))
-    memtag  = tag
-    memaddr = addr
-    memcycles = 10
   }
 
   override def loadMem(mem: List[(BigInt, BigInt)]) {
@@ -234,6 +236,7 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
 
   override def run {
     t = 0
+    memcycles = -1
     val (path, maxcycles, verbose) = HexCommon.parseOpts(args)
     runTest(maxcycles, verbose)
     if (!ok) throw FAILED

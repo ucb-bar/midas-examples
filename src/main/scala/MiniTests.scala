@@ -155,41 +155,38 @@ class TileReplay(c: Tile, args: Array[String]) extends Replay(c, false) {
   private var memcycles = -1
   def tickMem {
     if (memcycles > 0) {
+      // In progress
       poke(c.io.mem.req_cmd.ready, 0)
       poke(c.io.mem.req_data.ready, 0)
       poke(c.io.mem.resp.valid, 0)
       memcycles -= 1
     } else if (memcycles < 0) {
+      // Ready to have handle mem requests
       if (peek(c.io.mem.req_cmd.valid) == 1) {
-        memrw enqueue (peek(c.io.mem.req_cmd.bits.rw) == 1)
-        memtag enqueue peek(c.io.mem.req_cmd.bits.tag)
-        memaddr enqueue peek(c.io.mem.req_cmd.bits.addr)
-// println("mem addr = %x".format(memaddr.last))
-        if (!memrw.head) poke(c.io.mem.req_cmd.ready, 1)
+        val memrw = (peek(c.io.mem.req_cmd.bits.rw) == 1)
+        val memtag = peek(c.io.mem.req_cmd.bits.tag)
+        val memaddr = peek(c.io.mem.req_cmd.bits.addr)
+        pushMemReq(memaddr, memtag, memrw)
+        if (isMemReqRead) poke(c.io.mem.req_cmd.ready, 1)
       }
       if (peek(c.io.mem.req_data.valid) == 1) {
         val data = peek(c.io.mem.req_data.bits.data)
         poke(c.io.mem.req_cmd.ready, 1)
         poke(c.io.mem.req_data.ready, 1)
-        HexCommon.writeMem(memaddr.head, data)
+        HexCommon.writeMem(getMemAddr, data)
       }
-      assert(memrw.size == memtag.size)
-      assert(memrw.size == memaddr.size)
-      if (!memrw.isEmpty) {
-        memcycles = if (!memrw.head) HexCommon.readCycles else HexCommon.writeCycles
+      if (hasMemReq) {
+        memcycles = if (isMemReqRead) HexCommon.readCycles else HexCommon.writeCycles
       }
     } else {
-      val addr = memaddr.dequeue
-      val tag = memtag.dequeue
-      if (!memrw.dequeue) {
+      // Finish mem requests
+      val (addr, tag, memrw) = popMemReq
+      if (!memrw) {
         val read = HexCommon.readMem(addr)
-// println("addr = %x, data = %x".format(addr, read))
         poke(c.io.mem.resp.bits.data, read)
         poke(c.io.mem.resp.bits.tag, tag)
         poke(c.io.mem.resp.valid, 1)
       } 
-      assert(memrw.size == memtag.size)
-      assert(memrw.size == memaddr.size)
       memcycles -= 1
     }
     step(1)

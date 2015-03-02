@@ -13,25 +13,25 @@ public:
     poke("Core.io_stall", 0);
     uint64_t tohost = 0;
     do {
-      uint64_t iaddr = peek("Core.io_icache_addr");
-      uint64_t daddr = (peek("Core.io_dcache_addr") >> 2) << 2;
-      uint64_t data  = peek("Core.io_dcache_din");
-      uint64_t dwe   = peek("Core.io_dcache_we");
-      bool ire = peek("Core.io_icache_re") == 1;
-      bool dre = peek("Core.io_dcache_re") == 1;
+      uint64_t iaddr = peek("Core.io_icache_addr").uint();
+      uint64_t daddr = ((peek("Core.io_dcache_addr") >> 2) << 2).uint();
+      biguint_t data  = peek("Core.io_dcache_din");
+      uint64_t dwe   = peek("Core.io_dcache_we").uint();
+      bool ire = peek("Core.io_icache_re").uint() == 1;
+      bool dre = peek("Core.io_dcache_re").uint() == 1;
 
       step(1);
 
       if (dwe > 1) {
         write_mem(daddr, data, dwe);
       } else if (ire) {
-        uint64_t inst = read_mem(iaddr);
+        biguint_t inst = read_mem(iaddr);
         poke("Core.io_icache_dout", inst);
       } else if (dre) {
-        uint64_t data = read_mem(daddr);
+        biguint_t data = read_mem(daddr);
         poke("Core.io_dcache_dout", data);
       }
-      tohost = peek("Core.io_host_tohost"); 
+      tohost = peek("Core.io_host_tohost").uint(); 
     } while (tohost == 0 && !timeout());
 
     int exitcode = tohost >> 1;
@@ -70,18 +70,18 @@ private:
     }
   }
 
-  uint64_t read_mem(uint64_t addr) {
-    uint64_t data = 0;
+  biguint_t read_mem(uint64_t addr) {
+    biguint_t data = 0;
     for (int i = 0 ; i < 4 ; i++) {
       data |= mem[addr+i] << (8*i);
     }
     return data;
   }
 
-  void write_mem(uint64_t addr, uint64_t data, uint64_t mask) {
+  void write_mem(uint64_t addr, biguint_t data, size_t mask) {
     for (int i = 3 ; i >= 0 ; i--) {
       if (((mask >> i) & 1) > 0) {
-        mem[addr+i] = (data >> (8*i)) & 0xff;
+        mem[addr+i] = (data >> (8*i)).uint() & 0xff;
       }
     }
   }

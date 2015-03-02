@@ -16,12 +16,12 @@ public:
     if (peekq_valid("TileD.io_mem_req_cmd_bits_rw") &&
         peekq_valid("TileD.io_mem_req_cmd_bits_tag") &&
         peekq_valid("TileD.io_mem_req_cmd_bits_addr")) {    
-      memrw   = peekq("TileD.io_mem_req_cmd_bits_rw");
-      memtag  = peekq("TileD.io_mem_req_cmd_bits_tag");
-      memaddr = peekq("TileD.io_mem_req_cmd_bits_addr");
+      memrw   = peekq("TileD.io_mem_req_cmd_bits_rw").uint() == 1;
+      memtag  = peekq("TileD.io_mem_req_cmd_bits_tag").uint();
+      memaddr = peekq("TileD.io_mem_req_cmd_bits_addr").uint();
       step(1);
       if (!memrw) {
-        uint64_t memdata = read(memaddr);
+        biguint_t memdata = read(memaddr);
         pokeq("TileD.io_mem_resp_bits_data", memdata);
         pokeq("TileD.io_mem_resp_bits_tag", memtag);
       }
@@ -36,7 +36,7 @@ public:
     do {
       serve_mem();
       step(1);
-      tohost = peek("TileD.io_htif_host_tohost");
+      tohost = peek("TileD.io_htif_host_tohost").uint();
     } while (tohost == 0 && !timeout());
 
     int exitcode = tohost >> 1;
@@ -50,7 +50,7 @@ public:
     return exitcode;
   }
 private:
-  std::map<uint64_t, uint64_t> mem;
+  std::map<uint64_t, biguint_t> mem;
 
   void load_mem() {
     std::ifstream in(loadmem.c_str());
@@ -75,17 +75,17 @@ private:
     }
   }
 
-  uint64_t read(uint64_t addr) {
-    uint64_t data = 0;
+  biguint_t read(uint64_t addr) {
+    biguint_t data = 0;
     for (int i = 0 ; i < 4 ; i++) {
       data |= mem[addr+i] << (8*i);
     }
     return data;
   }
 
-  void write(uint64_t addr, uint64_t data) {
+  void write(uint64_t addr, biguint_t data) {
     for (int i = 3 ; i >= 0 ; i--) {
-      mem[addr+i] = (data >> (8*i)) & 0xff;
+      mem[addr+i] = (data >> (8*i)).uint() & 0xff;
     }
   }
 };

@@ -26,10 +26,10 @@ public:
       do {
         step(1);
       } while(peek("MemorySearch.io_done") == 0 && cycles() < maxT);
-      uint32_t addr = peek("MemorySearch.io_address");
+      uint32_t addr = peek("MemorySearch.io_address").uint();
       std::ostringstream oss;
       oss << "LOOKING FOR " << target  << " FOUND " << addr;
-      expect(addr == list.size() | list[addr] == target, oss.str());
+      expect(addr == list.size() | list[addr] == target, oss.str().c_str());
     }
     return 0; 
   }

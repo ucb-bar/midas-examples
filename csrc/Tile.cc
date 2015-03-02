@@ -14,7 +14,7 @@ public:
     uint64_t tohost = 0;
     do {
       step(step_size);
-      tohost = peek("Tile.io_htif_host_tohost");
+      tohost = peek("Tile.io_htif_host_tohost").uint();
     } while (tohost == 0 && !timeout());
     int exitcode = tohost >> 1;
     if (exitcode) {

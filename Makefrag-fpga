@@ -19,7 +19,7 @@ $(fpga): %-fpga: %Strober.v
 # Compile the driver
 zedboard   := $(addsuffix -zedboard, $(tut) $(mini)) 
 csrc_dir   := $(basedir)/csrc
-driver_dir := $(basedir)/strober-driver/csrc
+driver_dir := $(basedir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gendir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
 CXX := arm-xilinx-linux-gnueabi-g++

@@ -10,12 +10,14 @@ replay-cpp: $(replay_cpp)
 replay-v:   $(replay_v)
 
 # Tests
-$(cpp): %Strober.cpp: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(cpp): %Strober.cpp: %.scala 
+#$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 	cp $(gendir)/$*.sample $(resdir)/
 
-$(harness): %Strober-harness.v: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(harness): %Strober-harness.v: %.scala 
+#$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*Strober $(V_FLAGS)" | tee $(logdir)/$*Strober.v.out
 	cp $(gendir)/$*.sample $(resdir)/

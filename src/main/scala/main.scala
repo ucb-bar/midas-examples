@@ -5,24 +5,21 @@ import Designs._
 import TutorialExamples._
 import mini.Core
 import mini.Tile
-import mini.TileD
 import strober._
 
 object StroberExample {
   def main(args: Array[String]) {
     val (chiselArgs, testArgs) = args.tail partition (_.head != '+')
     val res = args(0) match {
-      /*
-      case "RiscSRAM" =>
+      /* case "RiscSRAM" =>
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(
-          c => new RiscSRAMTests(c))
-      */
+          c => new RiscSRAMTests(c)) */
       case "RiscSRAMStrober" =>
         chiselMainTest(chiselArgs, () => Strober(new RiscSRAM))(
           c => new RiscSRAMStroberTests(c))
       case "RiscStrober" =>
         chiselMainTest(chiselArgs, () => Strober(new Risc))(
-          c => new RiscStroberTests(c))
+          c => new RiscStroberTests(c)) 
       case "GCDStrober" =>
         chiselMainTest(chiselArgs, () => Strober(new GCD))(
           c => new GCDStroberTests(c))
@@ -47,15 +44,9 @@ object StroberExample {
       case "MemorySearchStrober" =>
         chiselMainTest(chiselArgs, () => Strober(new MemorySearch))(
           c => new MemorySearchStroberTests(c))
-      case "CoreStrober" => 
-        chiselMainTest(chiselArgs, () => Strober(new Core, mini.Config.params))(
-          c => new CoreStroberTests(c, testArgs))
       case "TileStrober" => 
         chiselMainTest(chiselArgs, () => Strober(new Tile, mini.Config.params))(
           c => new TileStroberTests(c, testArgs))
-      case "TileDStrober" => 
-        chiselMainTest(chiselArgs, () => Strober(new TileD, mini.Config.params, false))(
-          c => new TileDTests(c, testArgs))
 
       case "RiscSRAM" =>
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new Replay(c))

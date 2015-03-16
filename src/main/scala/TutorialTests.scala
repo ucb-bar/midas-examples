@@ -27,7 +27,6 @@ class ParityStroberTests(c: Strober[Parity]) extends StroberTester(c) {
     isOdd = (isOdd + bit) % 2;
     expect(c.target.io.out, isOdd)
   }
-  println(readMem(4).toString(16))
 }
 
 class StackStroberTests(c: Strober[Stack]) extends StroberTester(c) {  

@@ -5,13 +5,14 @@ minidir := $(basedir)/riscv-mini/src/main/scala/designs
 gendir  := $(basedir)/generated
 logdir  := $(basedir)/logs
 resdir  := $(basedir)/results
-strober_dir := $(basedir)/strober/src/main/scala
+strober := $(wildcard $(basedir)/strober/src/main/scala/*.scala)
+srcs    := $(wildcard $(srcdir)/*.scala)
 VPATH   := $(srcdir):$(tutdir):$(minidir):$(gendir):$(logdir)
 
 # Designs
 tut  := GCD Parity Stack Router Risc RiscSRAM \
         ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
-mini := Core Tile TileD
+mini := Core Tile
 
 # Chisel Flags
 C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --debug --configDump

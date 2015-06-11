@@ -1,13 +1,50 @@
+mini_srcs := $(wildcard $(minidir)/*.scala)
 tests_isa_dir  := $(basedir)/riscv-mini/tests/isa
 timeout_cycles := 10000
 include riscv-mini/Makefrag-sim
 
+# Core Tests
+core_asm_c = $(addprefix Core., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreWrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+core_asm_c: $(core_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_asm_c)); echo;
+
+core_axi_asm_c = $(addprefix CoreAXI4., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(core_axi_asm_c): CoreAXI4.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+core_axi_asm_c: $(core_axi_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_axi_asm_c)); echo;
+
+core_asm_v = $(addprefix Core., $(addsuffix .v.out, $(asm_p_tests)))
+$(core_asm_v): Core.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreWrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+core_asm_v: $(core_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_asm_v)); echo;
+
+core_axi_asm_v = $(addprefix CoreAXI4., $(addsuffix .v.out, $(asm_p_tests)))
+$(core_axi_asm_v): CoreAXI4.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir)
+	cd $(basedir) ; sbt "run CoreAXI4Wrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+core_axi_asm_v: $(core_axi_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(core_axi_asm_v)); echo;
+
 # Tile Tests
 tile_asm_c = $(addprefix Tile., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
-	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileStrober $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+	cd $(basedir) ; sbt "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
 	cp $(gendir)/Tile.$*.sample $(resdir)/
 tile_asm_c: $(tile_asm_c)
@@ -15,10 +52,9 @@ tile_asm_c: $(tile_asm_c)
 	$(addprefix $(logdir)/, $(tile_asm_c)); echo;
 
 tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
-$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(minidir)/Tile.scala \
-	$(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileStrober $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+	cd $(basedir) ; sbt "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
 	cp $(gendir)/Tile.$*.sample $(resdir)/
 tile_asm_v: $(tile_asm_v)

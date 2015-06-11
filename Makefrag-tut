@@ -1,5 +1,8 @@
-cpp        := $(addsuffix Strober.cpp, $(tut))
-harness    := $(addsuffix Strober-harness.v, $(tut))
+sim_emul  := $(addsuffix Wrapper.cpp,           $(tut))
+sim_vtest := $(addsuffix Wrapper-harness.v,     $(tut))
+axi_emul  := $(addsuffix AXI4Wrapper.cpp,       $(tut))
+axi_vtest := $(addsuffix AXI4Wrapper-harness.v, $(tut))
+
 replay_cpp := $(addsuffix .cpp, $(tut))
 replay_v   := $(addsuffix .v,   $(tut))
 samples    := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut)))
@@ -9,18 +12,29 @@ harness:    $(harness)
 replay-cpp: $(replay_cpp)
 replay-v:   $(replay_v)
 
-# Tests
-$(cpp): %Strober.cpp: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+# SimWrapper tests
+$(sim_emul): %Wrapper.cpp: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
-	cp $(gendir)/$*.sample $(resdir)/
+	#cp $(gendir)/$*.sample $(resdir)/
 
-$(harness): %Strober-harness.v: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(sim_vtest): %Wrapper-harness.v: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
-	sbt "run $*Strober $(V_FLAGS)" | tee $(logdir)/$*Strober.v.out
-	cp $(gendir)/$*.sample $(resdir)/
+	sbt "run $*Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
+	#cp $(gendir)/$*.sample $(resdir)/
 
-# Replay
+# SimWrapper tests
+$(axi_emul): %AXI4Wrapper.cpp: %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(resdir)
+	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+	#cp $(gendir)/$*.sample $(resdir)/
+
+$(axi_vtest): %AXI4Wrapper-harness.v: %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(resdir)
+	sbt "run $*AXI4Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
+	#cp $(gendir)/$*.sample $(resdir)/
+
+# Replay @depreated?
 $(replay_cpp): %.cpp: $(resdir)/%.sample %.scala
 	mkdir -p $(logdir) $(gendir)
 	cp $< $(gendir)/

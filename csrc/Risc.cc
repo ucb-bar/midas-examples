@@ -1,10 +1,10 @@
-#include "simif_zedboard.h"
+#include "simif_zynq.h"
 
-class Risc_t: simif_zedboard_t
+class Risc_t: simif_zynq_t
 {
 public:
   Risc_t(std::vector<std::string> args): 
-    simif_zedboard_t(args, "Risc", true, true) { }
+    simif_zynq_t(args, "Risc", true) { }
 
   virtual int run() {
     std::vector<uint32_t> app;
@@ -20,26 +20,26 @@ public:
     int k = 0;
     do {
       tick(); k += 1;
-    } while (peek("Risc.io_valid") == 0 && k < 10);
+    } while (peek_port("Risc.io_valid") == 0 && k < 10);
     expect(k < 10, "TIME LIMIT");
-    expect("Risc.io_out", 4);
+    expect_port("Risc.io_out", 4);
     return 0;
   }
 private:
   void wr(uint32_t addr, uint32_t data) {
-    poke("Risc.io_isWr", 1);
-    poke("Risc.io_wrAddr", addr);
-    poke("Risc.io_wrData", data);
+    poke_port("Risc.io_isWr", 1);
+    poke_port("Risc.io_wrAddr", addr);
+    poke_port("Risc.io_wrData", data);
     step(1);
   }
   void boot() {
-    poke("Risc.io_isWr", 0);
-    poke("Risc.io_boot", 1);
+    poke_port("Risc.io_isWr", 0);
+    poke_port("Risc.io_boot", 1);
     step(1);
   }
   void tick() {
-    poke("Risc.io_isWr", 0);
-    poke("Risc.io_boot", 0);
+    poke_port("Risc.io_isWr", 0);
+    poke_port("Risc.io_boot", 0);
     step(1);
   }
   uint32_t I(uint32_t op, uint32_t rc, uint32_t ra, uint32_t rb) {

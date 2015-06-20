@@ -1,7 +1,7 @@
-sim_emul  := $(addsuffix Wrapper.cpp,           $(tut))
-sim_vtest := $(addsuffix Wrapper-harness.v,     $(tut))
-axi_emul  := $(addsuffix AXI4Wrapper.cpp,       $(tut))
-axi_vtest := $(addsuffix AXI4Wrapper-harness.v, $(tut))
+sim_emul  := $(addsuffix Wrapper.cpp,     $(tut))
+sim_vtest := $(addsuffix Wrapper.v,       $(tut))
+axi_emul  := $(addsuffix AXI4Wrapper.cpp, $(tut))
+axi_vtest := $(addsuffix AXI4Wrapper.v,   $(tut))
 
 replay_cpp := $(addsuffix .cpp, $(tut))
 replay_v   := $(addsuffix .v,   $(tut))
@@ -18,7 +18,7 @@ $(sim_emul): %Wrapper.cpp: %.scala $(strober) $(srcs)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 	#cp $(gendir)/$*.sample $(resdir)/
 
-$(sim_vtest): %Wrapper-harness.v: %.scala $(strober) $(srcs)
+$(sim_vtest): %Wrapper.v: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
 	#cp $(gendir)/$*.sample $(resdir)/
@@ -29,7 +29,7 @@ $(axi_emul): %AXI4Wrapper.cpp: %.scala $(strober) $(srcs)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
 	#cp $(gendir)/$*.sample $(resdir)/
 
-$(axi_vtest): %AXI4Wrapper-harness.v: %.scala $(strober) $(srcs)
+$(axi_vtest): %AXI4Wrapper.v: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*AXI4Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
 	#cp $(gendir)/$*.sample $(resdir)/

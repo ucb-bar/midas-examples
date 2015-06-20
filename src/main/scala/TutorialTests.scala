@@ -18,8 +18,7 @@ class GCDSimWrapperTests(c: SimWrapper[GCD]) extends SimWrapperTester(c) {
 }
 
 class GCDSimAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[GCD]]) extends SimAXI4WrapperTester(c) {
-  // val (a, b, z) = (64, 48, 16)
-  val (a, b, z) = (BigInt(64) << 32, BigInt(48) << 32, BigInt(16) << 32)
+  val (a, b, z) = (64, 48, 16)
   do {
     val first = if (t == 0) 1 else 0
     pokePort(c.sim.target.io.a, a)

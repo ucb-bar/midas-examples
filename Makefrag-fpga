@@ -1,16 +1,19 @@
 # Generate bitstream
-fpga      := $(addsuffix -fpga,         $(tut) $(mini))
+params    := $(addsuffix AXI4Wrapper.prm, $(tut) $(mini))
+fpga      := $(addsuffix -fpga,           $(tut) $(mini))
 memgen    := $(basedir)/scripts/fpga_mem_gen
 zeddir    := $(basedir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(fpga): %-fpga: %.scala $(strober)
+$(params): %AXI4Wrapper.prm: %.scala $(strober)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*AXI4Wrapper $(FPGA_FLAGS)"
 	if [ -a $(gendir)/$*AXI4Wrapper.conf ]; then \
           $(memgen) $(gendir)/$*AXI4Wrapper.conf >> $(gendir)/$*AXI4Wrapper.v; \
         fi
 	cd $(gendir) ; cp $*.in.map $*.out.map $(resdir)
+	
+$(fpga): %-fpga: %.scala $(strober)
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
 
 # Compile the driver
@@ -22,10 +25,11 @@ driver_obj := $(addprefix $(gendir)/, $(notdir $(patsubst %.cc, %.o, $(driver_sr
 CXX := arm-xilinx-linux-gnueabi-g++
 CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -I$(driver_dir)
 
-$(gendir)/%-param.h: %AXI4Wrapper.v
+$(gendir)/%-param.h: %AXI4Wrapper.prm
 	echo "#ifndef __$*_H" > $@
 	echo "#define __$*_H" >> $@
-	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$*AXI4Wrapper.prm >> $@
+	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' \
+	$(gendir)/$(notdir $(basename $<)) >> $@
 	echo "#endif // __$*_H" >> $@
 
 $(zynq): %-zynq: $(gendir)/%-param.h $(csrc_dir)/%.cc $(driver_src)

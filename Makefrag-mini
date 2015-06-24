@@ -46,20 +46,36 @@ $(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(
 	mkdir -p $(logdir) $(resdir)
 	cd $(basedir) ; sbt "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
         | tee $(logdir)/$(notdir $@)
-	cp $(gendir)/Tile.$*.sample $(resdir)/
 tile_asm_c: $(tile_asm_c)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
 	$(addprefix $(logdir)/, $(tile_asm_c)); echo;
+
+tile_axi_asm_c = $(addprefix TileAXI4., $(addsuffix .cpp.out, $(asm_p_tests)))
+$(tile_axi_asm_c): TileAXI4.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir) $(resdir)
+	cd $(basedir) ; sbt "run TileAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
+        | tee $(logdir)/$(notdir $@)
+tile_axi_asm_c: $(tile_axi_asm_c)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tile_axi_asm_c)); echo;
 
 tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
 $(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	cd $(basedir) ; sbt "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
         | tee $(logdir)/$(notdir $@)
-	cp $(gendir)/Tile.$*.sample $(resdir)/
 tile_asm_v: $(tile_asm_v)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
 	$(addprefix $(logdir)/, $(tile_asm_v)); echo;
+
+tile_axi_asm_v = $(addprefix TileAXI4., $(addsuffix .v.out, $(asm_p_tests)))
+$(tile_axi_asm_v): TileAXI4.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
+	mkdir -p $(logdir) $(resdir)
+	cd $(basedir) ; sbt "run TileAXI4Wrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
+        | tee $(logdir)/$(notdir $@)
+tile_axi_asm_v: $(tile_axi_asm_v)
+	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
+	$(addprefix $(logdir)/, $(tile_axi_asm_v)); echo;
 
 # Tile Replay
 tile_replay_cpp = $(addprefix Tile., $(addsuffix .cpp.replay, $(asm_p_tests)))

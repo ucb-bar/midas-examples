@@ -4,7 +4,6 @@ import Chisel._
 import Designs._
 import TutorialExamples._
 import mini.Core
-import mini.Tile
 import strober._
 
 object StroberExample {
@@ -44,11 +43,9 @@ object StroberExample {
       case "CoreWrapper" => 
         chiselMainTest(chiselArgs, () => SimWrapper(new Core, mini.Config.params))(
           c => new CoreWrapperTests(c, testArgs))
-      /*
       case "TileWrapper" => 
         chiselMainTest(chiselArgs, () => SimWrapper(new Tile, mini.Config.params))(
           c => new TileWrapperTests(c, testArgs))
-      */
 
       case "GCDAXI4Wrapper" =>
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new GCD))(
@@ -83,6 +80,9 @@ object StroberExample {
       case "CoreAXI4Wrapper" => 
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Core, mini.Config.params))(
           c => new CoreAXI4WrapperTests(c, testArgs))
+      case "TileAXI4Wrapper" => 
+        chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Tile, mini.Config.params))(
+          c => new TileAXI4WrapperTests(c, testArgs)) 
       /*
       case "RiscSRAM" =>
         chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new Replay(c))

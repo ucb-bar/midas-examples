@@ -1,6 +1,5 @@
-#include <fstream>
-#include <map>
 #include "simif_zynq.h"
+#include <fstream>
 
 class Core_t: simif_zynq_t
 {
@@ -20,7 +19,6 @@ public:
   }
 
   int run() {
-    load_mem();
     uint64_t tohost = 0;
     poke_port("Core.io_stall", 0);
     do {
@@ -34,11 +32,11 @@ public:
       step(1);
 
       if (dwe > 0) {
-        write_mem(daddr, data, dwe);
+        write(daddr, data, dwe);
       } else if (ire) {
         poke_port("Core.io_icache_dout", read_mem(iaddr));
       } else if (dre) {
-        poke_port("Core.io_dcache_dout", read_mem(daddr));
+        poke_port("Core.io_dcache_dout", read(daddr));
       }
 
       tohost = peek_port("Core.io_host_tohost").uint();
@@ -58,8 +56,8 @@ private:
   uint8_t *mem;
   uint64_t max_cycles;
 
-  void load_mem() {
-    std::ifstream file(loadmem.c_str());
+  virtual void load_mem(std::string filename) {
+    std::ifstream file(filename.c_str());
     std::string line;
     if (file) {
       uint8_t *m = (uint8_t *) mem;
@@ -72,7 +70,7 @@ private:
     }  
   }
 
-  uint32_t read_mem(size_t addr) {
+  uint32_t read(size_t addr) {
     uint32_t data = 0;
     for (size_t i = 0 ; i < 4 ; i++) {
       data |= mem[addr+i] << (8 * i);
@@ -80,7 +78,7 @@ private:
     return data;
   }
 
-  void write_mem(size_t addr, uint32_t data, size_t mask = 0xf) {
+  void write(size_t addr, uint32_t data, size_t mask = 0xf) {
     for (ssize_t i = 3 ; i >= 0 ; i--) {
       if ((mask >> i) & 0x1) {
         mem[addr+i] = (uint8_t) (data >> (8 * i)) & 0xff;

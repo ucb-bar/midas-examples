@@ -116,9 +116,9 @@ class Tile extends mini.Tile {
   MemReqCmd.tag(io.mem.req_cmd.bits.tag)
   MemReqCmd.rw(io.mem.req_cmd.bits.rw)
 
-  MemReqData.ready(io.mem.req_data.ready)
-  MemReqData.valid(io.mem.req_data.valid)
-  MemReqData.bits(io.mem.req_data.bits.data)
+  MemData.ready(io.mem.req_data.ready)
+  MemData.valid(io.mem.req_data.valid)
+  MemData.bits(io.mem.req_data.bits.data)
  
   MemResp.ready(io.mem.resp.ready)
   MemResp.valid(io.mem.resp.valid)
@@ -216,6 +216,7 @@ class TileAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[Tile]], args: Array[Stri
   }
 
   val (filename, maxcycles, verbose) = HexCommon.parseOpts(args)
-  loadMem(filename)
+  // loadMem(filename)
+  slowLoadMem(filename)
   runTests(maxcycles, verbose)
 }

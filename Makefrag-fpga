@@ -11,7 +11,7 @@ $(params): %AXI4Wrapper.prm: %.scala $(strober)
 	if [ -a $(gendir)/$*AXI4Wrapper.conf ]; then \
           $(memgen) $(gendir)/$*AXI4Wrapper.conf >> $(gendir)/$*AXI4Wrapper.v; \
         fi
-	cd $(gendir) ; cp $*.in.map $*.out.map $(resdir)
+	cd $(gendir) ; cp $*.map $(resdir)
 	
 $(fpga): %-fpga: %.scala $(strober)
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
@@ -28,8 +28,7 @@ CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -I$(driver_dir)
 $(gendir)/%-param.h: %AXI4Wrapper.prm
 	echo "#ifndef __$*_H" > $@
 	echo "#define __$*_H" >> $@
-	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' \
-	$(gendir)/$(notdir $(basename $<)) >> $@
+	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$(notdir $<) >> $@
 	echo "#endif // __$*_H" >> $@
 
 $(zynq): %-zynq: $(gendir)/%-param.h $(csrc_dir)/%.cc $(driver_src)

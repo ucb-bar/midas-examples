@@ -77,19 +77,5 @@ tile_axi_asm_v: $(tile_axi_asm_v)
 	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
 	$(addprefix $(logdir)/, $(tile_axi_asm_v)); echo;
 
-# Tile Replay
-tile_replay_cpp = $(addprefix Tile., $(addsuffix .cpp.replay, $(asm_p_tests)))
-$(tile_replay_cpp): Tile.%.cpp.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
-	mkdir -p $(logdir) $(gendir)
-	cp $< $(gendir)/
-	cd $(basedir) ; sbt "run Tile $(C_FLAGS) +loadmem=$(tests_isa_dir)/$*.hex +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)
-tile_replay_cpp: $(tile_replay_cpp)
-
-tile_replay_v = $(addprefix Tile., $(addsuffix .v.replay, $(asm_p_tests)))
-$(tile_replay_v): Tile.%.v.replay: $(resdir)/Tile.%.sample $(minidir)/Tile.scala
-	mkdir -p $(logdir) $(gendir)
-	cp $< $(gendir)/
-	cd $(basedir) ; sbt "run Tile $(V_FLAGS) +loadmem=$(tests_isa_dir)/$*.hex +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)
-tile_replay_v: $(tile_replay_v)
+.PHONY: core_asm_c core_axi_asm_c core_asm_v core_axi_asm_v 
+.PHONY: tile_asm_c tile_axi_asm_c tile_asm_v tile_axi_asm_v 

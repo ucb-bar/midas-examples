@@ -82,20 +82,12 @@ object StroberExample {
           c => new CoreAXI4WrapperTests(c, testArgs))
       case "TileAXI4Wrapper" => 
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Tile, mini.Config.params))(
-          c => new TileAXI4WrapperTests(c, testArgs)) 
-      /*
-      case "RiscSRAM" =>
-        chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new Replay(c))
-      case "Risc" =>
-        chiselMainTest(chiselArgs, () => Module(new Risc))(c => new Replay(c))
+          c => new TileAXI4WrapperTests(c, testArgs))
+ 
       case "GCD" =>
         chiselMainTest(chiselArgs, () => Module(new GCD))(c => new Replay(c))
       case "Parity" =>
         chiselMainTest(chiselArgs, () => Module(new Parity))(c => new Replay(c))
-      case "Stack" =>
-        chiselMainTest(chiselArgs, () => Module(new Stack(8)))(c => new Replay(c))
-      case "Router" =>
-        chiselMainTest(chiselArgs, () => Module(new Router))(c => new Replay(c))
       case "ShiftRegister" =>
         chiselMainTest(chiselArgs, () => Module(new ShiftRegister))(c => new Replay(c))
       case "ResetShiftRegister" =>
@@ -104,10 +96,18 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => Module(new EnableShiftRegister))(c => new Replay(c))
       case "MemorySearch" =>
         chiselMainTest(chiselArgs, () => Module(new MemorySearch))(c => new Replay(c))
-      case "Tile" => 
-        chiselMainTest(chiselArgs, () => Module(new Tile)(mini.Config.params))(
-          c => new TileReplay(c, testArgs))
-      */
+      case "Stack" =>
+        chiselMainTest(chiselArgs, () => Module(new Stack(8)))(c => new Replay(c))
+      case "Risc" =>
+        chiselMainTest(chiselArgs, () => Module(new Risc))(c => new Replay(c))
+      case "RiscSRAM" =>
+        chiselMainTest(chiselArgs, () => Module(new RiscSRAM))(c => new Replay(c))
+      case "Router" =>
+        chiselMainTest(chiselArgs, () => Module(new Router))(c => new Replay(c))
+      case "Core" =>
+        chiselMainTest(chiselArgs, () => Module(new Core)(mini.Config.params))(c => new Replay(c))
+      case "Tile" =>
+        chiselMainTest(chiselArgs, () => Module(new Tile)(mini.Config.params))(c => new Replay(c))
       case _ =>
     }
   }

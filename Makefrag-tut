@@ -1,48 +1,29 @@
-sim_emul  := $(addsuffix Wrapper.cpp,     $(tut))
-sim_vtest := $(addsuffix Wrapper.v,       $(tut))
-axi_emul  := $(addsuffix AXI4Wrapper.cpp, $(tut))
-axi_vtest := $(addsuffix AXI4Wrapper.v,   $(tut))
+sim_cpp := $(addsuffix Wrapper.cpp,     $(tut))
+sim_v   := $(addsuffix Wrapper.v,       $(tut))
+axi_cpp := $(addsuffix AXI4Wrapper.cpp, $(tut))
+axi_v   := $(addsuffix AXI4Wrapper.v,   $(tut))
 
-replay_cpp := $(addsuffix .cpp, $(tut))
-replay_v   := $(addsuffix .v,   $(tut))
-samples    := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut)))
-
-cpp:        $(cpp)
-harness:    $(harness)
-replay-cpp: $(replay_cpp)
-replay-v:   $(replay_v)
+sim_cpp: $(sim_cpp)
+sim_v:   $(sim_v)
+axi_cpp: $(axi_cpp)
+axi_v:   $(axi_v)
 
 # SimWrapper tests
-$(sim_emul): %Wrapper.cpp: %.scala $(strober) $(srcs)
+$(sim_cpp): %Wrapper.cpp: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
-	#cp $(gendir)/$*.sample $(resdir)/
 
-$(sim_vtest): %Wrapper.v: %.scala $(strober) $(srcs)
+$(sim_v): %Wrapper.v: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
-	#cp $(gendir)/$*.sample $(resdir)/
 
 # SimWrapper tests
-$(axi_emul): %AXI4Wrapper.cpp: %.scala $(strober) $(srcs)
+$(axi_cpp): %AXI4Wrapper.cpp: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
-	#cp $(gendir)/$*.sample $(resdir)/
 
-$(axi_vtest): %AXI4Wrapper.v: %.scala $(strober) $(srcs)
+$(axi_v): %AXI4Wrapper.v: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
 	sbt "run $*AXI4Wrapper $(V_FLAGS)" | tee $(logdir)/$*Wrapper.v.out
-	#cp $(gendir)/$*.sample $(resdir)/
 
-# Replay @depreated?
-$(replay_cpp): %.cpp: $(resdir)/%.sample %.scala
-	mkdir -p $(logdir) $(gendir)
-	cp $< $(gendir)/
-	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
-
-$(replay_v): %.v: $(resdir)/%.sample %.scala
-	mkdir -p $(logdir) $(gendir)
-	cp $< $(gendir)/
-	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
-
-.PHONY: cpp harness replay-cpp replay-v
+.PHONY: sim_cpp sim_v axi_cpp axi_v 

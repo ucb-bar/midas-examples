@@ -22,6 +22,7 @@ FPGA_FLAGS := --targetDir $(gendir) --backend fpga --configDump
 include Makefrag-fpga
 include Makefrag-tut
 include Makefrag-mini
+include Makefrag-replay
 
 $(tut) $(mini): %: %-fpga %-zedboard
 

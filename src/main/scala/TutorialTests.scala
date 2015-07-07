@@ -19,6 +19,11 @@ class GCDSimWrapperTests(c: SimWrapper[GCD]) extends SimWrapperTester(c) {
 
 class GCDSimAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[GCD]]) extends SimAXI4WrapperTester(c) {
   val (a, b, z) = (64, 48, 16)
+  writeMem(0x2000, BigInt(
+    "deadbeef10041004" + "20042004beafdead" + 
+    "aabbbeef10041004" + "20042004beafaabb" + 
+    "deadbaab10041004" + "20042004baabdead" + 
+    "bababeef10041004" + "20042004beafbaba", 16)) 
   do {
     val first = if (t == 0) 1 else 0
     pokePort(c.sim.target.io.a, a)
@@ -27,6 +32,7 @@ class GCDSimAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[GCD]]) extends SimAXI4
     step(1)
   } while (t <= 1 || peekPort(c.sim.target.io.v) == 0)
   expectPort(c.sim.target.io.z, z)
+  println("hello -> %x".format(readMem(0x2000)))
 }
 
 class ParityWrapperTests(c: SimWrapper[Parity]) extends SimWrapperTester(c) {
@@ -52,7 +58,7 @@ class ParityAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[Parity]]) extends SimA
 }
 
 class ShiftRegisterWrapperTests(c: SimWrapper[ShiftRegister]) extends SimWrapperTester(c) {  
-  val reg     = Array.fill(4){ 0 }
+  val reg = Array.fill(4){ 0 }
   for (t <- 0 until 64) {
     val in = rnd.nextInt(2)
     pokePort(c.target.io.in, in)
@@ -66,7 +72,7 @@ class ShiftRegisterWrapperTests(c: SimWrapper[ShiftRegister]) extends SimWrapper
 
 class ShiftRegisterAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[ShiftRegister]]) 
   extends SimAXI4WrapperTester(c) {  
-  val reg     = Array.fill(4){ 0 }
+  val reg = Array.fill(4){ 0 }
   for (t <- 0 until 64) {
     val in = rnd.nextInt(2)
     pokePort(c.sim.target.io.in, in)
@@ -81,7 +87,7 @@ class ShiftRegisterAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[ShiftRegister]]
 class EnableShiftRegisterWrapperTests(c: SimWrapper[EnableShiftRegister]) extends SimWrapperTester(c) {  
   val reg = Array.fill(4){ 0 }
   for (t <- 0 until 16) {
-    val in    = rnd.nextInt(2)
+    val in    = rnd.nextInt(16)
     val shift = rnd.nextInt(2)
     pokePort(c.target.io.in,    in)
     pokePort(c.target.io.shift, shift)
@@ -99,7 +105,7 @@ class EnableShiftRegisterAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[EnableShi
   extends SimAXI4WrapperTester(c) {  
   val reg = Array.fill(4){ 0 }
   for (t <- 0 until 16) {
-    val in    = rnd.nextInt(2)
+    val in    = rnd.nextInt(16)
     val shift = rnd.nextInt(2)
     pokePort(c.sim.target.io.in,    in)
     pokePort(c.sim.target.io.shift, shift)
@@ -117,7 +123,7 @@ class ResetShiftRegisterWrapperTests(c: SimWrapper[ResetShiftRegister]) extends 
   val ins = Array.fill(5){ 0 }
   var k   = 0
   for (n <- 0 until 16) {
-    val in    = rnd.nextInt(2)
+    val in    = rnd.nextInt(16)
     val shift = rnd.nextInt(2)
     if (shift == 1) 
       ins(k % 5) = in
@@ -126,7 +132,7 @@ class ResetShiftRegisterWrapperTests(c: SimWrapper[ResetShiftRegister]) extends 
     step(1)
     if (shift == 1)
       k = k + 1
-    expectPort(c.target.io.out, (if (n < 4) 0 else ins((k + 1) % 5)))
+    expectPort(c.target.io.out, (if (n < 3) 0 else ins((k + 1) % 5)))
   }
 }
 
@@ -135,7 +141,7 @@ class ResetShiftRegisterAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[ResetShift
   val ins = Array.fill(5){ 0 }
   var k   = 0
   for (n <- 0 until 16) {
-    val in    = rnd.nextInt(2)
+    val in    = rnd.nextInt(16)
     val shift = rnd.nextInt(2)
     if (shift == 1) 
       ins(k % 5) = in
@@ -144,7 +150,7 @@ class ResetShiftRegisterAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[ResetShift
     step(1)
     if (shift == 1)
       k = k + 1
-    expectPort(c.sim.target.io.out, (if (n < 4) 0 else ins((k + 1) % 5)))
+    expectPort(c.sim.target.io.out, (if (n < 3) 0 else ins((k + 1) % 5)))
   }
 }
 

@@ -1,87 +1,87 @@
+#include "simif_zynq.h"
 #include <fstream>
-#include "simif_zedboard.h"
 
-class Core_t: simif_zedboard_t
+class Core_t: simif_zynq_t
 {
 public:
   Core_t(std::vector<std::string> args):
-    simif_zedboard_t(args, "Core", false, false) { }
+    simif_zynq_t(args, "Core", false) {
+    mem = new uint8_t[(1 << 23) - 1]; // 8MB
+    for (auto &arg: args) {
+      if (arg.find("+max-cycles=") == 0) {
+        max_cycles = atoi(arg.c_str()+12);
+      }
+    } 
+  }
+
+  ~Core_t() {
+    delete[] mem;
+  }
+
   int run() {
-    load_mem();
-    poke("Core.io_stall", 1);
-    step(1);
-    poke("Core.io_stall", 0);
     uint64_t tohost = 0;
+    poke_port("Core.io_stall", 0);
     do {
-      uint64_t iaddr = peek("Core.io_icache_addr").uint();
-      uint64_t daddr = ((peek("Core.io_dcache_addr") >> 2) << 2).uint();
-      biguint_t data  = peek("Core.io_dcache_din");
-      uint64_t dwe   = peek("Core.io_dcache_we").uint();
-      bool ire = peek("Core.io_icache_re").uint() == 1;
-      bool dre = peek("Core.io_dcache_re").uint() == 1;
+      uint64_t iaddr = peek_port("Core.io_icache_addr").uint();
+      uint64_t daddr = (peek_port("Core.io_dcache_addr").uint() >> 2) << 2;
+      uint64_t data  = peek_port("Core.io_dcache_din").uint();
+      uint64_t dwe   = peek_port("Core.io_dcache_we").uint();
+      bool ire = peek_port("Core.io_icache_re") == 1;
+      bool dre = peek_port("Core.io_dcache_re") == 1;
 
       step(1);
 
-      if (dwe > 1) {
-        write_mem(daddr, data, dwe);
+      if (dwe > 0) {
+        write(daddr, data, dwe);
       } else if (ire) {
-        biguint_t inst = read_mem(iaddr);
-        poke("Core.io_icache_dout", inst);
+        poke_port("Core.io_icache_dout", read_mem(iaddr));
       } else if (dre) {
-        biguint_t data = read_mem(daddr);
-        poke("Core.io_dcache_dout", data);
+        poke_port("Core.io_dcache_dout", read(daddr));
       }
-      tohost = peek("Core.io_host_tohost").uint(); 
-    } while (tohost == 0 && !timeout());
 
+      tohost = peek_port("Core.io_host_tohost").uint();
+    } while (tohost == 0 && cycles() <= max_cycles);
     int exitcode = tohost >> 1;
     if (exitcode) {
-      fprintf(stderr, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
-    } else if (timeout()) {
-      fprintf(stderr, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
+      fprintf(stdout, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
+    } else if (cycles() > max_cycles) {
+      fprintf(stdout, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
     } else {
-      fprintf(stderr, "*** PASSED *** after %llu cycles\n", cycles());
+      fprintf(stdout, "*** PASSED *** after %llu cycles\n", cycles());
     }
     return exitcode;
   }
+
 private:
-  std::map<uint64_t, uint64_t> mem;
+  uint8_t *mem;
+  uint64_t max_cycles;
 
-  void load_mem() {
-    std::ifstream in(loadmem.c_str());
-    if (!in) {
-      fprintf(stderr, "could not open %s\n", loadmem.c_str());
-      exit(-1);
-    }
-
+  virtual void load_mem(std::string filename) {
+    std::ifstream file(filename.c_str());
     std::string line;
-    int i = 0;
-    while (std::getline(in, line)) {
-      #define parse_nibble(c) ((c) >= 'a' ? (c)-'a'+10 : (c)-'0')
-      uint64_t base = (i * line.length()) / 2;
-      uint64_t offset = 0;
-      for (int k = line.length() - 2 ; k >= 0 ; k -= 2) {
-        uint64_t addr = base + offset;
-        uint64_t data = (parse_nibble(line[k]) << 4) | parse_nibble(line[k+1]);
-        mem[addr] = data;
-        offset += 1;
+    if (file) {
+      uint8_t *m = (uint8_t *) mem;
+      while (getline(file, line)) {
+        for (ssize_t i = line.length()-2, j = 0 ; i >= 0 ; i -= 2, j++) {
+          m[j] = (parse_nibble(line[i]) << 4) | parse_nibble(line[i+1]);
+        }
+        m += line.length()/2;
       }
-      i += 1;
-    }
+    }  
   }
 
-  biguint_t read_mem(uint64_t addr) {
-    biguint_t data = 0;
-    for (int i = 0 ; i < 4 ; i++) {
-      data |= mem[addr+i] << (8*i);
-    }
+  uint32_t read(size_t addr) {
+    uint32_t data = 0;
+    for (size_t i = 0 ; i < 4 ; i++) {
+      data |= mem[addr+i] << (8 * i);
+    } 
     return data;
   }
 
-  void write_mem(uint64_t addr, biguint_t data, size_t mask) {
-    for (int i = 3 ; i >= 0 ; i--) {
-      if (((mask >> i) & 1) > 0) {
-        mem[addr+i] = (data >> (8*i)).uint() & 0xff;
+  void write(size_t addr, uint32_t data, size_t mask = 0xf) {
+    for (ssize_t i = 3 ; i >= 0 ; i--) {
+      if ((mask >> i) & 0x1) {
+        mem[addr+i] = (uint8_t) (data >> (8 * i)) & 0xff;
       }
     }
   }

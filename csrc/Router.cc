@@ -1,11 +1,11 @@
 #include <sstream>
-#include "simif_zedboard.h"
+#include "simif_zynq.h"
 
-class Router_t: simif_zedboard_t
+class Router_t: simif_zynq_t
 {
 public:
   Router_t(std::vector<std::string> args, int n_): 
-    simif_zedboard_t(args, "Router", true, true), n(n_) {}
+    simif_zynq_t(args, "Router", true), n(n_) {}
   int run() {
     rd(0, 0);
     wr(0, 1);
@@ -17,27 +17,26 @@ private:
   const int n;
 
   void rd(uint64_t addr, uint64_t data) {
-    // poke("Router.io_in_valid",      0);
-    // poke("Router.io_writes_valid",  0);
-    // poke("Router.io_reads_valid",   1);
-    // poke("Router.io_replies_ready", 1);
-    pokeq("Router.io_reads_bits_addr", addr);
+    poke_port("Router.io_in_valid",      0);
+    poke_port("Router.io_writes_valid",  0);
+    poke_port("Router.io_reads_valid",   1);
+    poke_port("Router.io_replies_ready", 1);
     step(1);
-    // expect("Router.io_replies_bits", data);
+    expect_port("Router.io_replies_bits", data);
   }
   void wr(uint64_t addr, uint64_t data) {
-    // poke("Router.io_in_valid",     0);
-    // poke("Router.io_reads_valid",  0);
-    // poke("Router.io_writes_valid", 1);
-    pokeq("Router.io_writes_bits_addr", addr);
-    pokeq("Router.io_writes_bits_data", data);
+    poke_port("Router.io_in_valid",         0);
+    poke_port("Router.io_reads_valid",      0);
+    poke_port("Router.io_writes_valid",     1);
+    poke_port("Router.io_writes_bits_addr", addr);
+    poke_port("Router.io_writes_bits_data", data);
     step(1);
   }
   bool isAnyValidOuts() {
     for (int i = 0 ; i < n ; i++) {
       std::ostringstream path;
       path <<  "Router.io_outs_" << i << "_valid";
-      if (peek(path.str()) == 1) return true;  
+      if (peek_port(path.str()) == 1) return true;  
     }
     return false;
   }
@@ -45,13 +44,13 @@ private:
     for (int i = 0 ; i < n ; i++) {
       std::ostringstream path;
       path <<  "Router.io_outs_" << i << "_ready";
-      poke(path.str(), 1);
+      poke_port(path.str(), 1);
     }
-    // poke("Router.io_reads_valid",  0);
-    // poke("Router.io_writes_valid", 0);
-    // poke("Router.io_in_valid",     1);
-    pokeq("Router.io_in_bits_header", header);
-    pokeq("Router.io_in_bits_body",   body);
+    poke_port("Router.io_reads_valid",    0);
+    poke_port("Router.io_writes_valid",   0);
+    poke_port("Router.io_in_valid",       1);
+    poke_port("Router.io_in_bits_header", header);
+    poke_port("Router.io_in_bits_body",   body);
     int i = 0;
     do {
       step(1);

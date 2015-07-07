@@ -1,0 +1,19 @@
+replay_cpp := $(addsuffix .cpp, $(tut) $(mini))
+replay_v   := $(addsuffix .v,   $(tut) $(mini))
+samples    := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut) $(mini)))
+
+replay_cpp: $(replay_cpp)
+replay_v: $(replay_v)
+
+$(gendir)/%.sample: $(resdir)/%.sample
+	cp $< $@
+
+$(replay_cpp): %.cpp: $(gendir)/%.sample %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(gendir)
+	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+
+$(replay_v): %.v: $(gendir)/%.sample %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(gendir)
+	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
+
+.PHONY: replay_cpp replay_v

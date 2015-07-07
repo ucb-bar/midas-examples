@@ -1,37 +1,37 @@
 # Generate bitstream
-v         := $(addsuffix Strober.v, $(tut) $(mini))
-fpga      := $(addsuffix -fpga,     $(tut) $(mini))
+params    := $(addsuffix AXI4Wrapper.prm, $(tut) $(mini))
+fpga      := $(addsuffix -fpga,           $(tut) $(mini))
 memgen    := $(basedir)/scripts/fpga_mem_gen
 zeddir    := $(basedir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(v): %Strober.v: %.scala $(strober_dir)/strober.scala $(strober_dir)/transforms.scala
+$(params): %AXI4Wrapper.prm: %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(resdir)
-	sbt "run $(basename $@) $(FPGA_FLAGS)"
-	if [ -a $(gendir)/$(basename $@).conf ]; then \
-          $(memgen) $(gendir)/$(basename $@).conf >> $(gendir)/$(basename $@).v; \
+	sbt "run $*AXI4Wrapper $(FPGA_FLAGS)"
+	if [ -a $(gendir)/$*AXI4Wrapper.conf ]; then \
+          $(memgen) $(gendir)/$*AXI4Wrapper.conf >> $(gendir)/$*AXI4Wrapper.v; \
         fi
-	cd $(gendir) ; cp $*.io.map $*.chain.map $(resdir)
-
-$(fpga): %-fpga: %Strober.v
+	cd $(gendir) ; cp $*.map $*.chain $(resdir)
+	
+$(fpga): %-fpga: %AXI4Wrapper.prm $(strober) $(srcs)
 	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
 
 # Compile the driver
-zedboard   := $(addsuffix -zedboard, $(tut) $(mini)) 
+zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
 csrc_dir   := $(basedir)/csrc
-driver_dir := $(basedir)/strober-driver/csrc
+driver_dir := $(basedir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gendir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
 CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -I$(driver_dir)
+CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir)
 
-$(gendir)/%-param.h: %Strober.v
+$(gendir)/%-param.h: %AXI4Wrapper.prm
 	echo "#ifndef __$*_H" > $@
 	echo "#define __$*_H" >> $@
-	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$*Strober.prm >> $@
+	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$(notdir $<) >> $@
 	echo "#endif // __$*_H" >> $@
 
-$(zedboard): %-zedboard: $(gendir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
+$(zynq): %-zynq: $(gendir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(resdir)
 	$(CXX) $(CXXFLAGS) -include$< -o $(resdir)/$(notdir $@) $(word 2, $^) $(driver_src)
 

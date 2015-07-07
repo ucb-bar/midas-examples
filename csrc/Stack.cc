@@ -1,11 +1,11 @@
 #include <stack>
-#include "simif_zedboard.h"
+#include "simif_zynq.h"
 
-class Stack_t: simif_zedboard_t
+class Stack_t: simif_zynq_t
 {
 public:
   Stack_t(std::vector<std::string> args, int size_): 
-    simif_zedboard_t(args, "Stack", true, true), size(size_) {}
+    simif_zynq_t(args, "Stack", true), size(size_) {}
   int run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 
@@ -27,12 +27,12 @@ public:
           nextDataOut = stack.top();
         }
       }
-      poke("Stack.io_pop",  pop);
-      poke("Stack.io_push", push);
-      poke("Stack.io_en",   enable);
-      poke("Stack.io_dataIn", dataIn);
+      poke_port("Stack.io_pop",  pop);
+      poke_port("Stack.io_push", push);
+      poke_port("Stack.io_en",   enable);
+      poke_port("Stack.io_dataIn", dataIn);
       step(1);
-      expect("Stack.io_dataOut", dataOut);
+      expect_port("Stack.io_dataOut", dataOut);
     } 
   }
 private:

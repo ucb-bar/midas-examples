@@ -193,7 +193,7 @@ class TileAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[Tile]], args: Array[Stri
   def runTests(maxcycles: Int, verbose: Boolean) {
     var prevpc = BigInt(0)
     var tohost = BigInt(0)
-    pokeAt(c.sim.target.core.dpath.regFile.regs, 0, 0)
+    // pokeAt(c.sim.target.core.dpath.regFile.regs, 0, 0)
     do {
       step(1)
       val pc = peek(c.sim.target.core.dpath.ew_pc)

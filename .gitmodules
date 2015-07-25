@@ -13,3 +13,6 @@
 [submodule "strober"]
 	path = strober
 	url = https://github.com/ucb-bar/strober.git
+[submodule "vlsi"]
+	path = vlsi
+	url = https://github.com/ucb-bar/vlsi.git

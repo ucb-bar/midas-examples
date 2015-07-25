@@ -23,7 +23,7 @@ class GCDSimAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[GCD]]) extends SimAXI4
     "deadbeef10041004" + "20042004beafdead" + 
     "aabbbeef10041004" + "20042004beafaabb" + 
     "deadbaab10041004" + "20042004baabdead" + 
-    "bababeef10041004" + "20042004beafbaba", 16)) 
+    "bababeef10041004" + "20042004beafbaba", 16))
   do {
     val first = if (t == 0) 1 else 0
     pokePort(c.sim.target.io.a, a)

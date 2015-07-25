@@ -1,11 +1,26 @@
-replay_cpp := $(addsuffix .cpp, $(tut) $(mini))
-replay_v   := $(addsuffix .v,   $(tut) $(mini))
-samples    := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut) $(mini)))
+CONFIG = VLSI
+vcs_sim_rtl_dir    := vcs-sim-rtl
+vcs_sim_gl_syn_dir := vcs-sim-gl-syn
+vcs_sim_gl_par_dir := vcs-sim-gl-par
+vcs_sim_rtl        := $(addprefix $(vcs_sim_rtl_dir)/,    $(addsuffix .$(CONFIG), $(tut) $(mini)))
+vcs_sim_gl_syn     := $(addprefix $(vcs_sim_gl_syn_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
+vcs_sim_gl_par     := $(addprefix $(vcs_sim_gl_par_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
 
-replay_cpp: $(replay_cpp)
-replay_v: $(replay_v)
+samples       := $(addprefix $(resdir)/, $(addsuffix .sample, $(tut) $(mini)))
+replay_cpp    := $(addsuffix .cpp,    $(tut) $(mini))
+replay_v      := $(addsuffix .v,      $(tut) $(mini))
+replay_rtl    := $(addsuffix -rtl,    $(tut) $(mini))
+replay_gl_syn := $(addsuffix -gl-syn, $(tut) $(mini))
+replay_gl_par := $(addsuffix -gl-par, $(tut) $(mini))
+
+replay-cpp:    $(replay_cpp)
+replay-v:      $(replay_v)
+replay-rtl:    $(replay_rtl)
+replay-gl-syn: $(replay_gl_syn)
+replay-gl-par: $(replay_gl_par)
 
 $(gendir)/%.sample: $(resdir)/%.sample
+	mkdir -p $(gendir)
 	cp $< $@
 
 $(replay_cpp): %.cpp: $(gendir)/%.sample %.scala $(strober) $(srcs)
@@ -16,4 +31,33 @@ $(replay_v): %.v: $(gendir)/%.sample %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(gendir)
 	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
 
-.PHONY: replay_cpp replay_v
+$(vcs_sim_rtl): $(vcs_sim_rtl_dir)/%.$(CONFIG):
+	mkdir -p $(logdir) $(gendir)
+	cd $(vcs_sim_rtl_dir) && $(MAKE) MODEL=$*
+
+$(replay_rtl): %-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG) $(gendir)/%.sample %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(gendir)
+	cp -r $< $<.csrc $<.daidir $(gendir)
+	sbt "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(logdir)/$@
+
+$(vcs_sim_gl_syn): $(vcs_sim_gl_syn_dir)/%.$(CONFIG):
+	cd $(vcs_sim_gl_syn_dir) && $(MAKE) MODEL=$*
+
+$(vcs_sim_gl_syn_dir)/%.match:
+	cd $(vcs_sim_gl_syn_dir) && $(MAKE) $(notdir $@) MODEL=$*
+
+$(replay_gl_syn): %-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG) $(vcs_sim_gl_syn_dir)/%.match $(gendir)/%.sample %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(gendir)
+	cp -r $< $<.csrc $<.daidir $(gendir)
+	sbt "run $* +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(logdir)/$@
+
+$(vcs_sim_gl_par): $(vcs_sim_gl_par_dir)/%.$(CONFIG):
+	cd $(vcs_sim_gl-syn_dir) && $(MAKE) MODEL=$*
+
+$(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(gendir)/%.sample %.scala $(strober) $(srcs)
+	mkdir -p $(logdir) $(gendir)
+	cp -r $< $<.csrc $<.daidir $(gendir)
+	sbt "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(logdir)/$@
+
+.PHONY: replay-cpp replay-v 
+.PHONY: replay-rtl replay-gl-syn replay-gl-par

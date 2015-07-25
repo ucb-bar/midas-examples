@@ -1,0 +1,10 @@
+# Makefrag for VLSI tools
+generated_dir = $(vlsi_dir)/generated-src
+CONFIG := VLSI
+CHISEL_CONFIG = --v --gateLevel --genHarness --vcd --targetDir $(generated_dir) --configInstance strober.$(CONFIG)
+$(generated_dir)/$(MODEL).$(CONFIG).v:
+	cd $(base_dir) && mkdir -p $(generated_dir) && sbt "run $(MODEL) $(CHISEL_CONFIG)"
+
+clock_period ?= 1.00
+stdcells_dir ?= $(UCB_VLSI_HOME)/stdcells/$(UCB_STDCELLS)
+cells_v ?= $(stdcells_dir)/verilog/cells.v

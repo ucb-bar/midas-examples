@@ -1,6 +1,7 @@
 sim_vsrcs = \
-        $(generated_dir)/$(MODEL).$(CONFIG).v \
-        $(generated_dir)/$(MODEL).$(CONFIG)-harness.v
+	$(srams_v) \
+	$(generated_dir)/$(MODEL).$(CONFIG).v \
+	$(generated_dir)/$(MODEL).$(CONFIG)-harness.v
 
 vpi_objs = $(generated_dir)/vpi.o
 
@@ -12,5 +13,5 @@ VCS = vcs -full64
 VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc \
 	+v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random \
 
-$(MODEL).$(CONFIG): $(sim_vsrc) $(vpi_objs)
+$(MODEL).$(CONFIG): $(sim_vsrcs) $(vpi_objs)
 	$(VCS) $(VCS_OPTS) -use_vpiobj $(vpi_objs) -o $@ $(sim_vsrcs)	

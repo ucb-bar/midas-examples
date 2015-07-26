@@ -1,10 +1,11 @@
 # Makefrag for VLSI tools
-generated_dir = $(vlsi_dir)/generated-src
+mem_gen = $(vlsi_dir)/src/vlsi_mem_gen
 CONFIG := VLSI
-CHISEL_CONFIG = --v --gateLevel --genHarness --vcd --targetDir $(generated_dir) --configInstance strober.$(CONFIG)
+CHISEL_CONFIG = --v --noInlineMem --genHarness --vcd --vcdMem --targetDir $(generated_dir) --configInstance strober.$(CONFIG)
 $(generated_dir)/$(MODEL).$(CONFIG).v:
 	cd $(base_dir) && mkdir -p $(generated_dir) && sbt "run $(MODEL) $(CHISEL_CONFIG)"
+	if [ -a $(generated_dir)/$(MODEL).$(CONFIG).conf ]; then \
+	  $(mem_gen) $(generated_dir)/$(MODEL).$(CONFIG).conf >> $(generated_dir)/$(MODEL).$(CONFIG).v; \
+	fi
 
-clock_period ?= 1.00
-stdcells_dir ?= $(UCB_VLSI_HOME)/stdcells/$(UCB_STDCELLS)
-cells_v ?= $(stdcells_dir)/verilog/cells.v
+$(generated_dir)/$(MODEL).$(CONFIG)-harness.v: $(generated_dir)/$(MODEL).$(CONFIG).v

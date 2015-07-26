@@ -1,15 +1,13 @@
 sim_vsrcs = \
 	$(cells_v) \
-        $(res_dir)/$(MODEL).mapped.v \
-        $(generated_dir)/$(MODEL).$(CONFIG)-harness.v
+	$(srams_v) \
+	$(res_dir)/$(MODEL).mapped.v \
+	$(generated_dir)/$(MODEL).$(CONFIG)-harness.v
 
 vpi_objs = $(generated_dir)/vpi.o
 
 CXX ?= g++
 CXXFLAGS = $(CCFLAGS) -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11 
-
-$(res_dir)/$(MODEL).mapped.v:
-	cd $(dc_dir) && make MODEL=$(MODEL)
 
 VCS = vcs -full64
 
@@ -17,11 +15,14 @@ VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc \
 	+rad +v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random \
 	+no_notifier +notimingcheck 
 
+$(res_dir)/$(MODEL).mapped.v:
+	cd $(dc_dir) && make MODEL=$(MODEL)
+
+$(rpt_dir)/$(MODEL).fmv_matched_points.rpt:
+	cd $(dc_dir) && make fm MODEL=$(MODEL)
+
 $(MODEL).$(CONFIG): $(sim_vsrcs) $(vpi_objs) 
 	$(VCS) $(VCS_OPTS) -use_vpiobj $(vpi_objs) -o $@ $(sim_vsrcs)
 
-$(rpt_dir)/$(MODEL).fmv_passing_points.rpt:
-	cd $(dc_dir) && make fm MODEL=$(MODEL)
-
-$(sim_dir)/$(MODEL).match: $(rpt_dir)/$(MODEL).fmv_passing_points.rpt
+$(sim_dir)/$(MODEL).match: $(rpt_dir)/$(MODEL).fmv_matched_points.rpt
 	$(base_dir)/scripts/translator.py --output $@ --match $<

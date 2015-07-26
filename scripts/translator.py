@@ -42,7 +42,7 @@ def read_gate_names(f):
   ff_regex = re.compile(r"([\w.]*)_reg")
   reg_regex = re.compile(r"([\w.]*)_reg_(\d+)_")
   mem_regex = re.compile(r"([\w.]*)_reg_(\d+)__(\d+)_")
-  sram_regex = re.compile(r"([\w.]*)/sram")
+  sram_regex = re.compile(r"([\w.]*).sram")
 
   gate_names = {"":""}
   gate_types = {"":""}

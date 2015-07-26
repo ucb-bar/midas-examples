@@ -4,9 +4,10 @@ icc_dir  = $(vlsi_dir)/icc-par
 res_dir  = $(icc_dir)/current-icc/results
 sim_dir  = .
 
-CONFIG = VLSI
+CONIFG := VLSI
 default: $(MODEL).$(CONFIG)
 
+include $(vlsi_dir)/Makefrag
 include $(base_dir)/Makefrag
 include $(sim_dir)/Makefrag
 

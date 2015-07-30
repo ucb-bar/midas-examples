@@ -49,15 +49,20 @@ $(vcs_sim_gl_syn_dir)/%.match:
 $(replay_gl_syn): %-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG) $(vcs_sim_gl_syn_dir)/%.match $(gendir)/%.sample %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(gendir)
 	cp -r $< $<.csrc $<.daidir $(gendir)
-	sbt "run $* +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(logdir)/$@
+	sbt "run $* +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | \
+	tee $(logdir)/$@
 
 $(vcs_sim_gl_par): $(vcs_sim_gl_par_dir)/%.$(CONFIG):
-	cd $(vcs_sim_gl-syn_dir) && $(MAKE) MODEL=$*
+	cd $(vcs_sim_gl_par_dir) && $(MAKE) $(notdir $@) MODEL=$*
 
-$(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(gendir)/%.sample %.scala $(strober) $(srcs)
+$(vcs_sim_gl_par_dir)/%.match:
+	cd $(vcs_sim_gl_par_dir) && $(MAKE) $(notdir $@) MODEL=$*
+
+$(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(vcs_sim_gl_par_dir)/%.match $(gendir)/%.sample %.scala $(strober) $(srcs)
 	mkdir -p $(logdir) $(gendir)
 	cp -r $< $<.csrc $<.daidir $(gendir)
-	sbt "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(logdir)/$@
+	sbt "run $* +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | \
+	tee $(logdir)/$@.log
 
 .PHONY: replay-cpp replay-v 
 .PHONY: replay-rtl replay-gl-syn replay-gl-par

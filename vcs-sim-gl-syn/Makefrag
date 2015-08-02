@@ -12,8 +12,10 @@ CXXFLAGS = $(CCFLAGS) -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11
 VCS = vcs -full64
 
 VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc \
-	+rad +v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random \
-	+no_notifier +notimingcheck 
+	+v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +no_notifier +notimingcheck 
+
+$(vpi_objs): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(res_dir)/$(MODEL).mapped.v:
 	cd $(dc_dir) && make MODEL=$(MODEL)

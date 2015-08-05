@@ -3,7 +3,7 @@ pt_testharness = test
 pt_toplevelinst = $(MODEL)
 
 pt_exec = pt_shell 
-pt_build_suffix = $(MODEL)-$(shell date +%Y-%m-%d_%H-%M)
+pt_build_suffix = $(MODEL)-$(shell date +%Y-%m-%d_%H-%M-%S)
 pt_build_dir = $(pt_dir)/build-pt-$(pt_build_suffix)
 pt_cur_build_dir = $(pt_dir)/current-pt
 pt_reports_dir = reports

@@ -8,3 +8,6 @@ default: $(MODEL).$(CONFIG)
 include $(vlsi_dir)/Makefrag
 include $(vlsi_dir)/icc-par/Makefrag
 include Makefrag
+
+clean:
+	rm -rf build* current*

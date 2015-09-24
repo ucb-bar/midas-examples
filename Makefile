@@ -38,8 +38,8 @@ bmarks_args = +bmarks=$(bmarks_dir) +max-cycles=500000
 include $(mini_dir)/Makefrag-tests
 
 # Rules
-include Makefrag-tut
-include Makefrag-mini
+include Makefrag-sim
+include Makefrag-axi
 include Makefrag-fpga
 include Makefrag-repl
 include Makefrag-ref

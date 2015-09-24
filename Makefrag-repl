@@ -1,3 +1,7 @@
+#########################
+# STEP4: Sample Replays #
+#########################
+
 replay_cpp    := $(addsuffix -cpp,    $(tut) $(mini))
 replay_v      := $(addsuffix -v,      $(tut) $(mini))
 replay_rtl    := $(addsuffix -rtl,    $(tut) $(mini))
@@ -27,26 +31,29 @@ $(vcs_sim_gl_syn_dir)/%.match:
 $(vcs_sim_gl_par_dir)/%.match:
 	cd $(vcs_sim_gl_par_dir) && $(MAKE) $(notdir $@) MODEL=$*
 
-
-# Replay
+# Replay on Chisel Emulator
 $(replay_cpp): %-cpp: $(gen_dir)/%.sample 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $*Replay $(C_FLAGS)" | tee $(log_dir)/$@.log
 
+# Replay on Verilog Simulation
 $(replay_v): %-v: $(gen_dir)/%.sample 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $*Replay $(V_FLAGS)" | tee $(log_dir)/$@.log
 
+# Replay on VCS RTL Simulation 
 $(replay_rtl): %-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG) $(gen_dir)/%.sample 
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $*Replay $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.log
 
+# Replay on Post-Synthesis Simulation
 $(replay_gl_syn): %-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG) $(vcs_sim_gl_syn_dir)/%.match $(gen_dir)/%.sample 
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $*Replay +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.log
 
+# Replay on Post-Place-and-Route Simulation
 $(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(vcs_sim_gl_par_dir)/%.match $(gen_dir)/%.sample 
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)

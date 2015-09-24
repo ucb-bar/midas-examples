@@ -1,3 +1,7 @@
+####################################
+# BONUS STEP: Reference Simulation #
+####################################
+
 # Chisel Tutoral
 $(addsuffix -ref-cpp, $(tut)) : %-ref-cpp: 
 	mkdir -p $(log_dir) $(gen_dir)
@@ -98,7 +102,7 @@ Tile-bmarks-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
-# reference power
+# Reference Power
 $(addsuffix -ref-pwr, $(tut) $(isa_tests) $(bmarks)) : %-ref-pwr: %-ref-gl-par
         cd pt-pwr && rm -f current-pt && $(MAKE) MODEL=$*
 

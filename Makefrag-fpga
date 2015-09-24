@@ -1,4 +1,8 @@
-# Generate bitstream
+##########################
+# STEP3: FPGA Simulators #
+##########################
+
+# STEP3-1: Generate bitstream
 fpga      := $(addsuffix -fpga, $(tut) $(mini))
 memgen    := $(base_dir)/scripts/fpga_mem_gen
 zed_dir   := $(base_dir)/fpga-zynq/zedboard
@@ -15,7 +19,7 @@ $(addprefix $(gen_dir)/, $(addsuffix AXI4Wrapper.prm, $(tut) $(mini))): $(gen_di
 $(fpga): %-fpga: $(gen_dir)/%AXI4Wrapper.prm
 	cd $(zed_dir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
 
-# Compile the driver
+# STEP3-2: Compile driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
 csrc_dir   := $(base_dir)/csrc
 driver_dir := $(base_dir)/strober/csrc

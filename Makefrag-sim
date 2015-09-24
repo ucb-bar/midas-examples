@@ -1,0 +1,67 @@
+###################################
+# STEP1: Simulation Mapping Tests #
+###################################
+
+# Chisel Tutorial
+sim_cpp := $(addsuffix -sim-cpp, $(tut))
+sim_v   := $(addsuffix -sim-v,   $(tut))
+
+sim_cpp: $(sim_cpp)
+sim_v:   $(sim_v)
+
+$(sim_cpp): %-sim-cpp: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*Wrapper $(C_FLAGS)" | tee $(log_dir)/$@.log
+
+$(sim_v): %-sim-v: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*Wrapper $(V_FLAGS)" | tee $(log_dir)/$@.log
+
+# riscv-mini: Simple Tests
+Tile-sim-simple-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
+
+Tile-sim-simple-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
+
+# riscv-mini: ISA Tests
+$(addsuffix -sim-cpp, $(isa_tests)): %-sim-cpp: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -sim-v, $(isa_tests)): %-sim-v: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+Tile-sim-isa-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
+
+Tile-sim-isa-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
+
+# riscv-mini: Benchmarks
+$(addsuffix -sim-cpp, $(bmarks)): %-sim-cpp: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -sim-v, $(bmarks)): %-sim-v: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+Tile-sim-bmarks-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+Tile-sim-bmarks-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+.PHONY: sim_cpp sim_v 

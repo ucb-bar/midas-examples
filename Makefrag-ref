@@ -1,0 +1,104 @@
+# Chisel Tutoral
+$(addsuffix -ref-cpp, $(tut)) : %-ref-cpp: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run $* $(C_FLAGS)" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-v, $(tut)) : %-ref-v: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run $* $(V_FLAGS)" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-rtl, $(tut)) : %-ref-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-gl-syn, $(tut)) : %-ref-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-gl-par, $(tut)) : %-ref-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+# riscv-mini
+Tile-simple-ref-cpp: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
+
+Tile-isa-ref-cpp: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.out
+
+Tile-bmarks-ref-cpp: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
+
+Tile-simple-ref-v: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
+
+Tile-isa-ref-v: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.out
+
+Tile-bmarks-ref-v: 
+	mkdir -p $(log_dir) $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
+
+Tile-simple-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(simple_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-isa-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG) 
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(isa_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-bmarks-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-rtl, $(isa_tests)): %-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+
+Tile-simple-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(simple_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-isa-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG) 
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(isa_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-bmarks-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-simple-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(simple_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-isa-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG) 
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(isa_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+Tile-bmarks-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+# reference power
+$(addsuffix -ref-pwr, $(tut) $(isa_tests) $(bmarks)) : %-ref-pwr: %-ref-gl-par
+        cd pt-pwr && rm -f current-pt && $(MAKE) MODEL=$*
+

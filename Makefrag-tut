@@ -1,7 +1,7 @@
-sim_cpp := $(addsuffix Wrapper.cpp,     $(tut))
-sim_v   := $(addsuffix Wrapper.v,       $(tut))
-axi_cpp := $(addsuffix AXI4Wrapper.cpp, $(tut))
-axi_v   := $(addsuffix AXI4Wrapper.v,   $(tut))
+sim_cpp := $(addsuffix -sim-cpp, $(tut))
+sim_v   := $(addsuffix -sim-v,   $(tut))
+axi_cpp := $(addsuffix -axi-cpp, $(tut))
+axi_v   := $(addsuffix -axi-v,   $(tut))
 
 sim_cpp: $(sim_cpp)
 sim_v:   $(sim_v)
@@ -9,21 +9,21 @@ axi_cpp: $(axi_cpp)
 axi_v:   $(axi_v)
 
 # SimWrapper tests
-$(sim_cpp): %Wrapper.cpp: %.scala $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+$(sim_cpp): %-sim-cpp: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*Wrapper $(C_FLAGS)" | tee $(log_dir)/$@.log
 
-$(sim_v): %Wrapper.v: %.scala $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
+$(sim_v): %-sim-v: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*Wrapper $(V_FLAGS)" | tee $(log_dir)/$@.log
 
-# SimWrapper tests
-$(axi_cpp): %AXI4Wrapper.cpp: %.scala $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	sbt "run $(basename $@) $(C_FLAGS)" | tee $(logdir)/$@.out
+# SimAXI4Wrapper tests
+$(axi_cpp): %-axi-cpp: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*AXI4Wrapper $(C_FLAGS)" | tee $(log_dir)/$@.log
 
-$(axi_v): %AXI4Wrapper.v: %.scala $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	sbt "run $(basename $@) $(V_FLAGS)" | tee $(logdir)/$@.out
+$(axi_v): %-axi-v: 
+	mkdir -p $(log_dir) $(res_dir)
+	$(SBT) $(SBT_FLGAS) "run $*AXI4Wrapper $(V_FLAGS)" | tee $(log_dir)/$@.log
 
 .PHONY: sim_cpp sim_v axi_cpp axi_v 

@@ -1,81 +1,91 @@
-mini_srcs := $(wildcard $(minidir)/*.scala)
-tests_isa_dir  := $(basedir)/riscv-mini/tests/isa
-timeout_cycles := 10000
-include riscv-mini/Makefrag-sim
+# SimWrapper
+Tile-sim-simple-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
 
-# Core Tests
-core_asm_c = $(addprefix Core., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(core_asm_c): Core.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run CoreWrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
-        | tee $(logdir)/$(notdir $@)
-core_asm_c: $(core_asm_c)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(core_asm_c)); echo;
+Tile-sim-simple-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
 
-core_axi_asm_c = $(addprefix CoreAXI4., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(core_axi_asm_c): CoreAXI4.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run CoreAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
-        | tee $(logdir)/$(notdir $@)
-core_axi_asm_c: $(core_axi_asm_c)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(core_axi_asm_c)); echo;
+Tile-sim-isa-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
 
-core_asm_v = $(addprefix Core., $(addsuffix .v.out, $(asm_p_tests)))
-$(core_asm_v): Core.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run CoreWrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)
-core_asm_v: $(core_asm_v)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(core_asm_v)); echo;
+Tile-sim-isa-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
 
-core_axi_asm_v = $(addprefix CoreAXI4., $(addsuffix .v.out, $(asm_p_tests)))
-$(core_axi_asm_v): CoreAXI4.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir)
-	cd $(basedir) ; sbt "run CoreAXI4Wrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
-        | tee $(logdir)/$(notdir $@)
-core_axi_asm_v: $(core_axi_asm_v)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(core_axi_asm_v)); echo;
+Tile-sim-bmarks-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
 
-# Tile Tests
-tile_asm_c = $(addprefix Tile., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(tile_asm_c): Tile.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
-        | tee $(logdir)/$(notdir $@)
-tile_asm_c: $(tile_asm_c)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(tile_asm_c)); echo;
+Tile-sim-bmarks-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
 
-tile_axi_asm_c = $(addprefix TileAXI4., $(addsuffix .cpp.out, $(asm_p_tests)))
-$(tile_axi_asm_c): TileAXI4.%.cpp.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles) +verbose" \
-        | tee $(logdir)/$(notdir $@)
-tile_axi_asm_c: $(tile_axi_asm_c)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(tile_axi_asm_c)); echo;
+# AXI4Wrapper
+Tile-axi-simple-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLGAS) "run TileAXI4Wrapper $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
 
-tile_asm_v = $(addprefix Tile., $(addsuffix .v.out, $(asm_p_tests)))
-$(tile_asm_v): Tile.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)
-tile_asm_v: $(tile_asm_v)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(tile_asm_v)); echo;
+Tile-axi-simple-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
 
-tile_axi_asm_v = $(addprefix TileAXI4., $(addsuffix .v.out, $(asm_p_tests)))
-$(tile_axi_asm_v): TileAXI4.%.v.out: $(tests_isa_dir)/%.hex $(mini_srcs) $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
-	cd $(basedir) ; sbt "run TileAXI4Wrapper $(V_FLAGS) +loadmem=$< +max-cycles=$(timeout_cycles)" \
-        | tee $(logdir)/$(notdir $@)
-tile_axi_asm_v: $(tile_axi_asm_v)
-	@echo; perl -ne 'print " [$$1] $$ARGV \t$$2\n" if /\*{3}(.{8})\*{3}(.*)/' \
-	$(addprefix $(logdir)/, $(tile_axi_asm_v)); echo;
+Tile-axi-isa-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
 
-.PHONY: core_asm_c core_axi_asm_c core_asm_v core_axi_asm_v 
-.PHONY: tile_asm_c tile_axi_asm_c tile_asm_v tile_axi_asm_v 
+Tile-axi-isa-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
+
+Tile-axi-bmarks-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+Tile-axi-bmarks-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+# ISA tests
+$(addsuffix -sim-cpp, $(isa_tests)): %-sim-cpp: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -sim-v, $(isa_tests)): %-sim-v: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -axi-cpp, $(isa_tests)): %-axi-cpp: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(C_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -axi-v, $(isa_tests)): %-axi-v: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(V_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+# Benchmarks
+$(addsuffix -sim-cpp, $(bmarks)): %-sim-cpp: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -sim-v, $(bmarks)): %-sim-v: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -axi-cpp, $(bmarks)): %-axi-cpp: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -axi-v, $(bmarks)): %-axi-v: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(V_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log

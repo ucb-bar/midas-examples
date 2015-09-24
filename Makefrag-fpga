@@ -1,38 +1,37 @@
 # Generate bitstream
-params    := $(addsuffix AXI4Wrapper.prm, $(tut) $(mini))
-fpga      := $(addsuffix -fpga,           $(tut) $(mini))
-memgen    := $(basedir)/scripts/fpga_mem_gen
-zeddir    := $(basedir)/fpga-zynq/zedboard
+fpga      := $(addsuffix -fpga, $(tut) $(mini))
+memgen    := $(base_dir)/scripts/fpga_mem_gen
+zed_dir   := $(base_dir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(params): %AXI4Wrapper.prm: %.scala $(strober) $(srcs)
-	mkdir -p $(logdir) $(resdir)
+$(addprefix $(gen_dir)/, $(addsuffix AXI4Wrapper.prm, $(tut) $(mini))): $(gen_dir)/%AXI4Wrapper.prm: $(strober)
+	mkdir -p $(gen_dir) $(log_dir) $(res_dir)
 	sbt "run $*AXI4Wrapper $(FPGA_FLAGS)"
-	if [ -a $(gendir)/$*AXI4Wrapper.conf ]; then \
-          $(memgen) $(gendir)/$*AXI4Wrapper.conf >> $(gendir)/$*AXI4Wrapper.v; \
+	if [ -a $(gen_dir)/$*AXI4Wrapper.conf ]; then \
+          $(memgen) $(gen_dir)/$*AXI4Wrapper.conf >> $(gen_dir)/$*AXI4Wrapper.v; \
         fi
-	cd $(gendir) ; cp $*.map $*.chain $(resdir)
+	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 	
-$(fpga): %-fpga: %AXI4Wrapper.prm $(strober) $(srcs)
-	cd $(zeddir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(resdir)
+$(fpga): %-fpga: $(gen_dir)/%AXI4Wrapper.prm
+	cd $(zed_dir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
 
 # Compile the driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
-csrc_dir   := $(basedir)/csrc
-driver_dir := $(basedir)/strober/csrc
+csrc_dir   := $(base_dir)/csrc
+driver_dir := $(base_dir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)
-driver_obj := $(addprefix $(gendir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
+driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
 CXX := arm-xilinx-linux-gnueabi-g++
 CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir)
 
-$(gendir)/%-param.h: %AXI4Wrapper.prm
+$(gen_dir)/%-param.h: $(gen_dir)/%AXI4Wrapper.prm
 	echo "#ifndef __$*_H" > $@
 	echo "#define __$*_H" >> $@
-	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gendir)/$(notdir $<) >> $@
+	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gen_dir)/$(notdir $<) >> $@
 	echo "#endif // __$*_H" >> $@
 
-$(zynq): %-zynq: $(gendir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
+$(zynq): %-zynq: $(gen_dir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(resdir)
-	$(CXX) $(CXXFLAGS) -include$< -o $(resdir)/$(notdir $@) $(word 2, $^) $(driver_src)
+	$(CXX) $(CXXFLAGS) -include$< -o $(res_dir)/$(notdir $@) $(word 2, $^) $(driver_src)
 
-.PHONY: $(fpga) 
+.PHONY: $(fpga) $(zynq) 

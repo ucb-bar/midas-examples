@@ -95,285 +95,109 @@ class RiscSRAM extends Module {
   }
 }
 
-class RiscSRAMTests(c: RiscSRAM) extends Tester(c) {  
-  def wr(addr: UInt, data: UInt)  = {
-    poke(c.io.isWr,   1)
-    poke(c.io.wrAddr, addr.litValue())
-    poke(c.io.wrData, data.litValue())
-    step(1)
+trait RiscSRAMTests extends Tests {
+  def tests(c: RiscSRAM) {
+    def wr(addr: UInt, data: UInt)  = {
+      poke(c.io.isWr,   1)
+      poke(c.io.wrAddr, addr.litValue())
+      poke(c.io.wrData, data.litValue())
+      step(1)
+    }
+    def boot()  = {
+      poke(c.io.isWr, 0)
+      poke(c.io.boot, 1)
+      step(1)
+    }
+    def tick()  = {
+      poke(c.io.isWr, 0)
+      poke(c.io.boot, 0)
+      step(1)
+    }
+    def I (op: UInt, rc: Int, ra: Int, rb: Int) = 
+      Cat(op, UInt(rc, 8), UInt(ra, 8), UInt(rb, 8))
+    val app  = Array(
+      I(c.imm_op,   1, 0, 1), // r1 <- 1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 2), // r1 <- 2
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 3), // r1 <- 3
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 4), // r1 <- 4
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 5), // r1 <- 5
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 6), // r1 <- 6
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 7), // r1 <- 7
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 8), // r1 <- 8
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 9), // r1 <- 9
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   1, 0, 10), // r1 <- 10
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 1), // r1 <- 1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 2), // r1 <- 2
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 3), // r1 <- 3
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 4), // r1 <- 4
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 5), // r1 <- 5
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 6), // r1 <- 6
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 7), // r1 <- 7
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 8), // r1 <- 8
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 9), // r1 <- 9
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 10), // r1 <- 10
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.add_op, 255, 1, 0)) // rh <- r1
+    wr(UInt(0), Bits(0)) // skip reset
+    for (addr <- 0 until app.length) 
+      wr(UInt(addr), app(addr))
+    boot()
+    var k = 0
+    do {
+      tick(); k += 1
+    } while (peek(c.io.valid) == 0 && k < 400)
+    expect(k < 400, "TIME LIMIT")
+    expect(c.io.out, 40)
   }
-  def boot()  = {
-    poke(c.io.isWr, 0)
-    poke(c.io.boot, 1)
-    step(1)
-  }
-  def tick()  = {
-    poke(c.io.isWr, 0)
-    poke(c.io.boot, 0)
-    step(1)
-  }
-  def I (op: UInt, rc: Int, ra: Int, rb: Int) = 
-    Cat(op, UInt(rc, 8), UInt(ra, 8), UInt(rb, 8))
-  val app  = Array(
-    I(c.imm_op,   1, 0, 1), // r1 <- 1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 2), // r1 <- 2
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 3), // r1 <- 3
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 4), // r1 <- 4
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 5), // r1 <- 5
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 6), // r1 <- 6
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 7), // r1 <- 7
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 8), // r1 <- 8
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 9), // r1 <- 9
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   1, 0, 10), // r1 <- 10
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 1), // r1 <- 1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 2), // r1 <- 2
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 3), // r1 <- 3
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 4), // r1 <- 4
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 5), // r1 <- 5
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 6), // r1 <- 6
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 7), // r1 <- 7
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 8), // r1 <- 8
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 9), // r1 <- 9
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.imm_op,   2, 0, 10), // r1 <- 10
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.add_op, 255, 1, 0)) // rh <- r1
-  wr(UInt(0), Bits(0)) // skip reset
-  for (addr <- 0 until app.length) 
-    wr(UInt(addr), app(addr))
-  boot()
-  var k = 0
-  do {
-    tick(); k += 1
-  } while (peek(c.io.valid) == 0 && k < 400)
-  expect(k < 400, "TIME LIMIT")
-  expect(c.io.out, 40)
 }
 
-class RiscSRAMWrapperTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) {  
-  def wr(addr: UInt, data: UInt)  = {
-    pokePort(c.target.io.isWr,   1)
-    pokePort(c.target.io.wrAddr, addr.litValue())
-    pokePort(c.target.io.wrData, data.litValue())
-    step(1)
-  }
-  def boot()  = {
-    pokePort(c.target.io.isWr, 0)
-    pokePort(c.target.io.boot, 1)
-    step(1)
-  }
-  def tick()  = {
-    pokePort(c.target.io.isWr, 0)
-    pokePort(c.target.io.boot, 0)
-    step(1)
-  }
-  def I (op: UInt, rc: Int, ra: Int, rb: Int) = 
-    Cat(op, UInt(rc, 8), UInt(ra, 8), UInt(rb, 8))
-  val app  = Array(
-    I(c.target.imm_op,   1, 0, 1), // r1 <- 1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    /*
-    I(c.target.imm_op,   1, 0, 2), // r1 <- 2
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 3), // r1 <- 3
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 4), // r1 <- 4
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 5), // r1 <- 5
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 6), // r1 <- 6
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 7), // r1 <- 7
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 8), // r1 <- 8
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 9), // r1 <- 9
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   1, 0, 10), // r1 <- 10
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 1), // r1 <- 1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 2), // r1 <- 2
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 3), // r1 <- 3
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 4), // r1 <- 4
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 5), // r1 <- 5
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 6), // r1 <- 6
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 7), // r1 <- 7
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 8), // r1 <- 8
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 9), // r1 <- 9
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.imm_op,   2, 0, 10), // r1 <- 10
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    */
-    I(c.target.add_op, 255, 1, 0)) // rh <- r1
-  wr(UInt(0), Bits(0)) // skip reset
-  for (addr <- 0 until app.length) 
-    wr(UInt(addr), app(addr))
-  boot()
-  var k = 0
-  do {
-    tick(); k += 1
-  } while (peekPort(c.target.io.valid) == 0 && k < 40)
-  expect(k < 40, "TIME LIMIT")
-  expectPort(c.target.io.out, /*40*/ 4)
+class RiscSRAMTester(c: RiscSRAM) extends Tester(c) with RiscSRAMTests {
+  tests(c)  
 }
 
-class RiscSRAMAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[RiscSRAM]]) extends SimAXI4WrapperTester(c) {  
-  def wr(addr: UInt, data: UInt)  = {
-    pokePort(c.sim.target.io.isWr,   1)
-    pokePort(c.sim.target.io.wrAddr, addr.litValue())
-    pokePort(c.sim.target.io.wrData, data.litValue())
-    step(1)
-  }
-  def boot()  = {
-    pokePort(c.sim.target.io.isWr, 0)
-    pokePort(c.sim.target.io.boot, 1)
-    step(1)
-  }
-  def tick()  = {
-    pokePort(c.sim.target.io.isWr, 0)
-    pokePort(c.sim.target.io.boot, 0)
-    step(1)
-  }
-  def I (op: UInt, rc: Int, ra: Int, rb: Int) = 
-    Cat(op, UInt(rc, 8), UInt(ra, 8), UInt(rb, 8))
-  val app  = Array(
-    I(c.sim.target.imm_op,   1, 0, 1), // r1 <- 1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    /*
-    I(c.sim.target.imm_op,   1, 0, 2), // r1 <- 2
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 3), // r1 <- 3
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 4), // r1 <- 4
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 5), // r1 <- 5
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 6), // r1 <- 6
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 7), // r1 <- 7
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 8), // r1 <- 8
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 9), // r1 <- 9
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   1, 0, 10), // r1 <- 10
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   1, 1, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 1), // r1 <- 1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 2), // r1 <- 2
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 3), // r1 <- 3
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 4), // r1 <- 4
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 5), // r1 <- 5
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 6), // r1 <- 6
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 7), // r1 <- 7
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 8), // r1 <- 8
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 9), // r1 <- 9
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.imm_op,   2, 0, 10), // r1 <- 10
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    I(c.sim.target.add_op,   2, 2, 1), // r1 <- r1 + r1
-    */
-    I(c.sim.target.add_op, 255, 1, 0)) // rh <- r1
-  wr(UInt(0), Bits(0)) // skip reset
-  for (addr <- 0 until app.length) 
-    wr(UInt(addr), app(addr))
-  boot()
-  var k = 0
-  do {
-    tick(); k += 1
-  } while (peekPort(c.sim.target.io.valid) == 0 && k < 40)
-  expect(k < 40, "TIME LIMIT")
-  expectPort(c.sim.target.io.out, /*40*/ 4)
+class RiscSRAMWrapperTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) with RiscSRAMTests {
+  tests(c.target)  
+}
+
+class RiscSRAMAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[RiscSRAM]]) extends SimAXI4WrapperTester(c) with RiscSRAMTests { 
+  tests(c.sim.target)
 }

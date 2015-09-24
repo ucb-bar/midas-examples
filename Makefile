@@ -1,37 +1,56 @@
-basedir := $(abspath .)
-srcdir  := $(basedir)/src/main/scala/
-tutdir  := $(basedir)/tutorial/examples
-minidir := $(basedir)/riscv-mini/src/main/scala/designs
-gendir  := $(basedir)/generated
-logdir  := $(basedir)/logs
-resdir  := $(basedir)/results
-strober := $(wildcard $(basedir)/strober/src/main/scala/*.scala)
-srcs    := $(wildcard $(srcdir)/*.scala)
-VPATH   := $(srcdir):$(tutdir):$(minidir):$(gendir):$(logdir)
+base_dir := $(abspath .)
+tut_dir  := $(base_dir)/tutorial/examples
+mini_dir := $(base_dir)/riscv-mini
+gen_dir  := $(base_dir)/generated
+log_dir  := $(base_dir)/logs
+res_dir  := $(base_dir)/results
+strober  := $(wildcard $(base_dir)/strober/src/main/scala/*.scala)
+
+SBT       = sbt
+SBT_FLAGS = 
 
 # Designs
 tut  := GCD Parity Stack Router Risc RiscSRAM \
         ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
-mini := Core Tile
+mini := Tile
 
 # Chisel Flags
-C_FLAGS := --targetDir $(gendir) --genHarness --compile --test --vcd --vcdMem --debug 
+C_FLAGS := --targetDir $(gen_dir) --genHarness --compile --test --vcd --vcdMem --debug 
 V_FLAGS := $(C_FLAGS) --v
-FPGA_FLAGS := --targetDir $(gendir) --backend fpga --configDump
-VCS_FLAGS := --targetDir $(gendir) --backend null --test
+FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga --configDump
+VCS_FLAGS := --targetDir $(gen_dir) --backend null --noInlineMem --test
 
-include Makefrag-fpga
+# VCS
+CONFIG = VLSI
+vcs_sim_rtl_dir    := vcs-sim-rtl
+vcs_sim_gl_syn_dir := vcs-sim-gl-syn
+vcs_sim_gl_par_dir := vcs-sim-gl-par
+vcs_sim_rtl        := $(addprefix $(vcs_sim_rtl_dir)/,    $(addsuffix .$(CONFIG), $(tut) $(mini)))
+vcs_sim_gl_syn     := $(addprefix $(vcs_sim_gl_syn_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
+vcs_sim_gl_par     := $(addprefix $(vcs_sim_gl_par_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
+
+# riscv-mini
+isa_dir     = $(mini_dir)/riscv-tests/isa
+bmarks_dir  = $(mini_dir)/riscv-bmarks
+simple_args = +simple +verbose +max-cycles=500
+isa_args    = +isa=$(isa_dir) +verbose +max-cycles=3000
+bmarks_args = +bmarks=$(bmarks_dir) +max-cycles=500000
+include $(mini_dir)/Makefrag-tests
+
+# Rules
 include Makefrag-tut
 include Makefrag-mini
-include Makefrag-replay
+include Makefrag-fpga
+include Makefrag-repl
+include Makefrag-ref
 
 $(tut) $(mini): %: %-fpga %-zedboard
 
 tut:
-	$(basedir)/scripts/run-tutorial.py
+	$(base_dir)/scripts/run-tutorial.py
 
 clean:
-	rm -rf $(gendir) $(logdir) $(resdir) 
+	rm -rf $(gen_dir) $(log_dir) $(res_dir) 
 	$(MAKE) -C $(vcs_sim_rtl_dir) clean
 	$(MAKE) -C $(vcs_sim_gl_syn_dir) clean
 	$(MAKE) -C $(vcs_sim_gl_par_dir) clean

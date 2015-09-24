@@ -3,7 +3,6 @@ package StroberExample
 import Chisel._
 import Designs._
 import TutorialExamples._
-import mini.Core
 import strober._
 
 object StroberExample {
@@ -31,8 +30,6 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => SimWrapper(new Risc))(c => new RiscWrapperTests(c))
       case "RiscSRAMWrapper" =>
         chiselMainTest(chiselArgs, () => SimWrapper(new RiscSRAM))(c => new RiscSRAMWrapperTests(c))
-      case "CoreWrapper" => 
-        chiselMainTest(chiselArgs, () => SimWrapper(new Core, mini.Config.params))(c => new CoreWrapperTests(c, testArgs))
       case "TileWrapper" => 
         chiselMainTest(chiselArgs, () => SimWrapper(new Tile, mini.Config.params))(c => new TileWrapperTests(c, testArgs))
 
@@ -56,8 +53,6 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Risc))(c => new RiscAXI4WrapperTests(c))
       case "RiscSRAMAXI4Wrapper" =>
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new RiscSRAM))(c => new RiscSRAMAXI4WrapperTests(c))
-      case "CoreAXI4Wrapper" => 
-        chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Core, mini.Config.params))(c => new CoreAXI4WrapperTests(c, testArgs))
       case "TileAXI4Wrapper" => 
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Tile, mini.Config.params))(c => new TileAXI4WrapperTests(c, testArgs))
  
@@ -81,35 +76,31 @@ object StroberExample {
         chiselMainTest(args.tail, () => Module(new RiscSRAM))(c => new Replay(c, matchFile))
       case "RouterReplay" =>
         chiselMainTest(args.tail, () => Module(new Router))(c => new Replay(c, matchFile))
-      case "CoreReplay" =>
-        chiselMainTest(args.tail, () => Module(new Core)(mini.Config.params))(c => new Replay(c, matchFile))
       case "TileReplay" =>
         chiselMainTest(args.tail, () => Module(new Tile)(mini.Config.params))(c => new Replay(c, matchFile))
 
       case "GCD" =>
-        chiselMainTest(args.tail, () => Module(new GCD))(c => new GCDTests(c))
+        chiselMainTest(args.tail, () => Module(new GCD))(c => new GCDTester(c))
       case "Parity" =>
-        chiselMainTest(args.tail, () => Module(new Parity))(c => new ParityTests(c))
+        chiselMainTest(args.tail, () => Module(new Parity))(c => new ParityTester(c))
       case "ShiftRegister" =>
-        chiselMainTest(args.tail, () => Module(new ShiftRegister))(c => new ShiftRegisterTests(c))
+        chiselMainTest(args.tail, () => Module(new ShiftRegister))(c => new ShiftRegisterTester(c))
       case "ResetShiftRegister" =>
-        chiselMainTest(args.tail, () => Module(new ResetShiftRegister))(c => new ResetShiftRegisterTests(c))
+        chiselMainTest(args.tail, () => Module(new ResetShiftRegister))(c => new ResetShiftRegisterTester(c))
       case "EnableShiftRegister" =>
-        chiselMainTest(args.tail, () => Module(new EnableShiftRegister))(c => new EnableShiftRegisterTests(c))
+        chiselMainTest(args.tail, () => Module(new EnableShiftRegister))(c => new EnableShiftRegisterTester(c))
       case "MemorySearch" =>
-        chiselMainTest(args.tail, () => Module(new MemorySearch))(c => new MemorySearchTests(c))
+        chiselMainTest(args.tail, () => Module(new MemorySearch))(c => new MemorySearchTester(c))
       case "Stack" =>
-        chiselMainTest(args.tail, () => Module(new Stack(8)))(c => new StackTests(c))
+        chiselMainTest(args.tail, () => Module(new Stack(8)))(c => new StackTester(c))
       case "Risc" =>
-        chiselMainTest(args.tail, () => Module(new Risc))(c => new RiscTests(c))
+        chiselMainTest(args.tail, () => Module(new Risc))(c => new RiscTester(c))
       case "RiscSRAM" =>
-        chiselMainTest(args.tail, () => Module(new RiscSRAM))(c => new RiscSRAMTests(c))
+        chiselMainTest(args.tail, () => Module(new RiscSRAM))(c => new RiscSRAMTester(c))
       case "Router" =>
-        chiselMainTest(args.tail, () => Module(new Router))(c => new RouterTests(c))
-      /* case "Core" =>
-        chiselMainTest(args.tail, () => Module(new Core)(mini.Config.params))(c => new Tests(c))
+        chiselMainTest(args.tail, () => Module(new Router))(c => new RouterTester(c))
       case "Tile" =>
-        chiselMainTest(args.tail, () => Module(new Tile)(mini.Config.params))(c => new Tests(c)) */
+        chiselMainTest(args.tail, () => Module(new mini.Tile)(mini.Config.params))(c => new mini.TileTester(c, testArgs))
       case _ =>
     }
   }

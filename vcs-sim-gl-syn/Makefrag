@@ -13,7 +13,8 @@ CXXFLAGS = $(CCFLAGS) -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11
 VCS = vcs -full64
 
 VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc -P $(tab_file) \
-	+v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +no_notifier +notimingcheck 
+	+v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random \
+	+notimingcheck +no_notifier \
 
 $(vpi_objs): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<

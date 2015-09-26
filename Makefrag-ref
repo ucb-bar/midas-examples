@@ -2,31 +2,45 @@
 # BONUS STEP: Reference Simulation #
 ####################################
 
-# Chisel Tutoral
+##################
+# Chisel Tutoral #
+##################
+# Chisel Emulator
 $(addsuffix -ref-cpp, $(tut)) : %-ref-cpp: 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $* $(C_FLAGS)" | tee $(log_dir)/$@.out
 
+# Verilog Simulation
 $(addsuffix -ref-v, $(tut)) : %-ref-v: 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $* $(V_FLAGS)" | tee $(log_dir)/$@.out
 
+# VCS RTL Simulation
 $(addsuffix -ref-rtl, $(tut)) : %-ref-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+# VCS Post-Synthesis Simulation
 $(addsuffix -ref-gl-syn, $(tut)) : %-ref-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+# VCS Post-Place-and-Route Simulation
 $(addsuffix -ref-gl-par, $(tut)) : %-ref-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run $* $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
-# riscv-mini
+# Reference Power
+$(addsuffix -ref-pwr, $(tut)) : %-ref-pwr: %-ref-gl-par
+	cd pt-pwr && rm -f current-pt && $(MAKE) MODEL=$*
+
+##############
+# riscv-mini #
+##############
+# Chisel Emulator
 Tile-simple-ref-cpp: 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
@@ -39,6 +53,17 @@ Tile-bmarks-ref-cpp:
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
 
+$(addsuffix -ref-cpp, $(isa_tests)): %-ref-cpp: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-cpp, $(bmarks)): %-ref-cpp: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+# Verilog Simulation
 Tile-simple-ref-v: 
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
@@ -51,6 +76,7 @@ Tile-bmarks-ref-v:
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
 
+# VCS RTL Simulation
 Tile-simple-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
@@ -71,7 +97,12 @@ $(addsuffix -ref-rtl, $(isa_tests)): %-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+$(addsuffix -ref-rtl, $(bmarks)): %-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+# VCS Post-Synthesis Simulation
 Tile-simple-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
@@ -87,6 +118,17 @@ Tile-bmarks-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+$(addsuffix -ref-gl-syn, $(isa_tests)): %-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+$(addsuffix -ref-gl-syn, $(bmarks)): %-ref-gl-syn: $(vcs_sim_gl_syn_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+# VCS Post-Place-and-Route Simulation
 Tile-simple-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
 	mkdir -p $(log_dir) $(gen_dir)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
@@ -102,7 +144,16 @@ Tile-bmarks-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
 	cp -r $< $<.csrc $<.daidir $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
-# Reference Power
-$(addsuffix -ref-pwr, $(tut) $(isa_tests) $(bmarks)) : %-ref-pwr: %-ref-gl-par
-        cd pt-pwr && rm -f current-pt && $(MAKE) MODEL=$*
+$(addsuffix -ref-gl-par, $(isa_tests)): %-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
 
+$(addsuffix -ref-gl-par, $(bmarks)): %-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+	mkdir -p $(log_dir) $(gen_dir)
+	cp -r $< $<.csrc $<.daidir $(gen_dir)
+	$(SBT) $(SBT_FLAGS) "run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.out
+
+# Reference Power
+$(addsuffix -ref-pwr, Tile-simple Tile-isa Tile-bmarks $(isa_tests) $(bmarks)): %-ref-pwr: %-ref-gl-par
+	cd pt-pwr && rm -f current-pt && $(MAKE) MODEL=Tile

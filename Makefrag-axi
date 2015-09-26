@@ -47,7 +47,7 @@ Tile-axi-isa-v:
 
 # riscv-mini: Benchmarks
 $(addsuffix -axi-cpp, $(bmarks)): %-axi-cpp: $(bmarks_dir)/%.hex
-	 ir -p $(log_dir)
+	 mkdir -p $(log_dir)
 	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileAXI4Wrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
 	 | tee $(log_dir)/$@.log
 

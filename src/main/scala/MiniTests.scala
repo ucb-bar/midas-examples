@@ -53,7 +53,7 @@ class TileAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[Tile]], args: Array[Stri
   def writeMem(addr: Int, data: BigInt, mask: BigInt = 0) = 
     super[SimAXI4WrapperTester].writeMem(addr, data)
   override def loadMem(testname: String) = 
-    super[SimAXI4WrapperTester].loadMem(testname) // slowLoadMem(testname)
+    super[SimAXI4WrapperTester].slowLoadMem(testname) 
   def loadMem(start: Int, test: Seq[UInt]) = {
     val nwords = (c.memBlockSize >> 2)
     for (i <- 0 until ((test.size / nwords) + 1)) {

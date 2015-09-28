@@ -1,7 +1,7 @@
 base_dir := $(abspath .)
 tut_dir  := $(base_dir)/tutorial/examples
 mini_dir := $(base_dir)/riscv-mini
-gen_dir  := $(base_dir)/generated
+gen_dir  := $(base_dir)/generated-src
 log_dir  := $(base_dir)/logs
 res_dir  := $(base_dir)/results
 strober  := $(wildcard $(base_dir)/strober/src/main/scala/*.scala)
@@ -17,7 +17,7 @@ mini := Tile
 # Chisel Flags
 C_FLAGS := --targetDir $(gen_dir) --genHarness --compile --test --vcd --vcdMem --debug 
 V_FLAGS := $(C_FLAGS) --v
-FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga --configDump
+FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga 
 VCS_FLAGS := --targetDir $(gen_dir) --backend null --noInlineMem --test
 
 # VCS

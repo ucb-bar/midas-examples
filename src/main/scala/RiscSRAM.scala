@@ -12,8 +12,8 @@ class RiscSRAM extends Module {
     val valid  = Bool(OUTPUT)
     val out    = UInt(OUTPUT, 32)
   }
-  val fileMem = SeqMem(UInt(width = 32), 256)
-  val codeMem = SeqMem(UInt(width = 32), 256)
+  val fileMem = SeqMem(UInt(width = 32), 128)
+  val codeMem = SeqMem(UInt(width = 32), 128)
 
   val idle :: decode :: ra_read :: rb_read :: rc_write :: Nil = Enum(UInt(), 5)
   val code_read :: code_write :: Nil = Enum(UInt(), 2)
@@ -144,36 +144,36 @@ trait RiscSRAMTests extends Tests {
       I(c.imm_op,   1, 0, 10), // r1 <- 10
       I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
       I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 1), // r1 <- 1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 2), // r1 <- 2
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 3), // r1 <- 3
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 4), // r1 <- 4
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 5), // r1 <- 5
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 6), // r1 <- 6
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 7), // r1 <- 7
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 8), // r1 <- 8
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 9), // r1 <- 9
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 10), // r1 <- 10
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
-      I(c.add_op,   2, 2, 1), // r1 <- r1 + r1
+      I(c.imm_op,   2, 0, 1), // r2 <- 1
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 2), // r2 <- 2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 3), // r2 <- 3
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 4), // r2 <- 4
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 5), // r2 <- 5
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 6), // r2 <- 6
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 7), // r2 <- 7
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 8), // r2 <- 8
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 9), // r2 <- 9
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.imm_op,   2, 0, 10), // r2 <- 10
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
+      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
       I(c.add_op, 255, 1, 0)) // rh <- r1
     wr(UInt(0), Bits(0)) // skip reset
     for (addr <- 0 until app.length) 

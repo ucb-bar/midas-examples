@@ -8,7 +8,6 @@ import strober._
 object StroberExample {
   def main(args: Array[String]) {
     val (chiselArgs, testArgs) = args.tail partition (_.head != '+')
-    val matchFile = if (args(1) contains "+match=") Some(args(1).substring(7)) else None
     val res = args(0) match {
       case "GCDWrapper" =>
         chiselMainTest(chiselArgs, () => SimWrapper(new GCD))(c => new GCDSimWrapperTests(c))
@@ -57,27 +56,27 @@ object StroberExample {
         chiselMainTest(chiselArgs, () => SimAXI4Wrapper(new Tile, mini.Config.params))(c => new TileAXI4WrapperTests(c, testArgs))
  
       case "GCDReplay" =>
-        chiselMainTest(args.tail, () => Module(new GCD))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new GCD))(c => new Replay(c, testArgs))
       case "ParityReplay" =>
-        chiselMainTest(args.tail, () => Module(new Parity))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new Parity))(c => new Replay(c, testArgs))
       case "ShiftRegisterReplay" =>
-        chiselMainTest(args.tail, () => Module(new ShiftRegister))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new ShiftRegister))(c => new Replay(c, testArgs))
       case "ResetShiftRegisterReplay" =>
-        chiselMainTest(args.tail, () => Module(new ResetShiftRegister))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new ResetShiftRegister))(c => new Replay(c, testArgs))
       case "EnableShiftRegisterReplay" =>
-        chiselMainTest(args.tail, () => Module(new EnableShiftRegister))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new EnableShiftRegister))(c => new Replay(c, testArgs))
       case "MemorySearchReplay" =>
-        chiselMainTest(args.tail, () => Module(new MemorySearch))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new MemorySearch))(c => new Replay(c, testArgs))
       case "StackReplay" =>
-        chiselMainTest(args.tail, () => Module(new Stack(8)))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new Stack(8)))(c => new Replay(c, testArgs))
       case "RiscReplay" =>
-        chiselMainTest(args.tail, () => Module(new Risc))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new Risc))(c => new Replay(c, testArgs))
       case "RiscSRAMReplay" =>
-        chiselMainTest(args.tail, () => Module(new RiscSRAM))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new RiscSRAM))(c => new Replay(c, testArgs))
       case "RouterReplay" =>
-        chiselMainTest(args.tail, () => Module(new Router))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new Router))(c => new Replay(c, testArgs))
       case "TileReplay" =>
-        chiselMainTest(args.tail, () => Module(new Tile)(mini.Config.params))(c => new Replay(c, matchFile))
+        chiselMainTest(args.tail, () => Module(new Tile)(mini.Config.params))(c => new Replay(c, testArgs))
 
       case "GCD" =>
         chiselMainTest(args.tail, () => Module(new GCD))(c => new GCDTester(c))

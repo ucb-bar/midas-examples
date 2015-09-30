@@ -9,7 +9,7 @@ memgen    := $(base_dir)/scripts/fpga_mem_gen
 zed_dir   := $(base_dir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(addprefix $(gen_dir)/, $(addsuffix .prm, $(tut) $(mini))): $(gen_dir)/%.prm: $(strober)
+$(addprefix $(gen_dir)/, $(addsuffix -param.h, $(tut) $(mini))): $(gen_dir)/%-param.h: $(strober)
 	mkdir -p $(gen_dir) $(log_dir) $(res_dir)
 	sbt "run $*AXI4Wrapper $(FPGA_FLAGS)"
 	if [ -a $(gen_dir)/$*AXI4Wrapper.conf ]; then \
@@ -17,10 +17,10 @@ $(addprefix $(gen_dir)/, $(addsuffix .prm, $(tut) $(mini))): $(gen_dir)/%.prm: $
         fi
 	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
-$(param): %-param: %(gen_dir)/%.param
+$(param): %-param: %(gen_dir)/%-param.h
 	
-$(fpga): %-fpga: $(gen_dir)/%.prm
-	cd $(zed_dir); make clean; make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
+$(fpga): %-fpga: $(gen_dir)/%-param.h
+	cd $(zed_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
 
 # STEP3-2: Compile driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
@@ -30,12 +30,6 @@ driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
 CXX := arm-xilinx-linux-gnueabi-g++
 CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir)
-
-$(gen_dir)/%-param.h: $(gen_dir)/%.prm
-	echo "#ifndef __$*_H" > $@
-	echo "#define __$*_H" >> $@
-	sed -r 's/\(([A-Za-z0-9_]+),([A-Za-z0-9_]+)\)/#define \1 \2/' $(gen_dir)/$(notdir $<) >> $@
-	echo "#endif // __$*_H" >> $@
 
 $(zynq): %-zynq: $(gen_dir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(res_dir)

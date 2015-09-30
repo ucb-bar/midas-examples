@@ -1,7 +1,7 @@
 # Makefrag for VLSI tools
 mem_gen = $(vlsi_dir)/src/vlsi_mem_gen
 CONFIG := VLSI
-CHISEL_CONFIG = --v --noInlineMem --genHarness --vcd --vcdMem --targetDir $(generated_dir) --configInstance strober.$(CONFIG)
+CHISEL_CONFIG = --v --noInlineMem --genHarness --targetDir $(generated_dir) --configInstance strober.$(CONFIG)
 $(generated_dir)/$(MODEL).$(CONFIG).v:
 	cd $(base_dir) && mkdir -p $(generated_dir) && sbt "run $(MODEL) $(CHISEL_CONFIG)"
 	if [ -a $(generated_dir)/$(MODEL).$(CONFIG).conf ]; then \

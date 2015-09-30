@@ -13,4 +13,4 @@ include $(base_dir)/Makefrag
 include $(sim_dir)/Makefrag
 
 clean:
-	rm -rf *.$(CONFIG) *.$(CONFIG).csrc *.$(CONFIG).daidir *.match *.key sdfAnnotateInfo
+	rm -rf *.vpd *.vcd *.saif *.$(CONFIG) *.$(CONFIG).csrc *.$(CONFIG).daidir *.match *.key sdfAnnotateInfo

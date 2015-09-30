@@ -17,14 +17,14 @@ mini := Tile
 # Chisel Flags
 C_FLAGS := --targetDir $(gen_dir) --genHarness --compile --test --vcd --vcdMem --debug 
 V_FLAGS := $(C_FLAGS) --v
-FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga 
+FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga --configDump 
 VCS_FLAGS := --targetDir $(gen_dir) --backend null --noInlineMem --test
 
 # VCS
 CONFIG = VLSI
-vcs_sim_rtl_dir    := vcs-sim-rtl
-vcs_sim_gl_syn_dir := vcs-sim-gl-syn
-vcs_sim_gl_par_dir := vcs-sim-gl-par
+vcs_sim_rtl_dir    := $(base_dir)/vcs-sim-rtl
+vcs_sim_gl_syn_dir := $(base_dir)/vcs-sim-gl-syn
+vcs_sim_gl_par_dir := $(base_dir)/vcs-sim-gl-par
 vcs_sim_rtl        := $(addprefix $(vcs_sim_rtl_dir)/,    $(addsuffix .$(CONFIG), $(tut) $(mini)))
 vcs_sim_gl_syn     := $(addprefix $(vcs_sim_gl_syn_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
 vcs_sim_gl_par     := $(addprefix $(vcs_sim_gl_par_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
@@ -49,6 +49,10 @@ $(tut) $(mini): %: %-fpga %-zedboard
 tut:
 	$(base_dir)/scripts/run-tutorial.py
 
+NUM ?= 30
+mini:
+	$(base_dir)/scripts/run-multi-samples.py Tile $(NUM)
+
 clean:
 	rm -rf $(gen_dir) $(log_dir) $(res_dir) 
 	$(MAKE) -C $(vcs_sim_rtl_dir) clean
@@ -63,4 +67,4 @@ cleanall: clean
 	$(MAKE) -C vlsi/icc-par clean
 	$(MAKE) -C chisel clean	
 
-.PHONY: $(tut) $(mini) clean cleanall
+.PHONY: tut mini $(tut) $(mini) clean cleanall

@@ -1,6 +1,7 @@
 #########################
 # STEP4: Sample Replays #
 #########################
+SAMPLE ?=
 
 replay_cpp    := $(addsuffix -cpp,    $(tut) $(mini))
 replay_v      := $(addsuffix -v,      $(tut) $(mini))
@@ -10,9 +11,11 @@ replay_gl_par := $(addsuffix -gl-par, $(tut) $(mini))
 replay_pwr    := $(addsuffix -pwr,    $(tut) $(mini))
 
 # Samples
+#ifndef SAMPLE
 $(gen_dir)/%.sample: $(res_dir)/%.sample
 	mkdir -p $(gen_dir)
 	cp $< $@
+#endif
 
 # VCS Simulators
 $(vcs_sim_rtl): $(vcs_sim_rtl_dir)/%.$(CONFIG):
@@ -32,32 +35,31 @@ $(vcs_sim_gl_par_dir)/%.match:
 	cd $(vcs_sim_gl_par_dir) && $(MAKE) $(notdir $@) MODEL=$*
 
 # Replay on Chisel Emulator
-$(replay_cpp): %-cpp: $(gen_dir)/%.sample 
-	mkdir -p $(log_dir) $(gen_dir)
-	$(SBT) $(SBT_FLAGS) "run $*Replay $(C_FLAGS)" | tee $(log_dir)/$@.log
+$(replay_cpp): %-cpp: $(if $(SAMPLE), $(SAMPLE), $(gen_dir)/%.sample)
+	mkdir -p $(log_dir)
+	$(SBT) $(SBT_FLAGS) "run $*Replay $(C_FLAGS) $(if $(SAMPLE),+sample=$<)" | tee $(log_dir)/$@.log
 
 # Replay on Verilog Simulation
-$(replay_v): %-v: $(gen_dir)/%.sample 
-	mkdir -p $(log_dir) $(gen_dir)
-	$(SBT) $(SBT_FLAGS) "run $*Replay $(V_FLAGS)" | tee $(log_dir)/$@.log
+$(replay_v): %-v: $(if $(SAMPLE), $(SAMPLE), $(gen_dir)/%.sample)
+	mkdir -p $(log_dir)
+	$(SBT) $(SBT_FLAGS) "run $*Replay $(V_FLAGS) $(if $(SAMPLE),+sample=$<)" | tee $(log_dir)/$@.log
 
 # Replay on VCS RTL Simulation 
-$(replay_rtl): %-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG) $(gen_dir)/%.sample 
-	mkdir -p $(log_dir) $(gen_dir)
-	cp -r $< $<.csrc $<.daidir $(gen_dir)
-	$(SBT) $(SBT_FLAGS) "run $*Replay $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.log
+$(replay_rtl): %-rtl: $(vcs_sim_rtl_dir)/%.$(CONFIG) $(if $(SAMPLE), $(SAMPLE), $(gen_dir)/%.sample)
+	mkdir -p $(log_dir) 
+	$(SBT) $(SBT_FLAGS) "run $*Replay $(VCS_FLAGS) $(if $(SAMPLE),+sample=$(word 2, $^)) --testCommand $< -q +vcs+initreg+0 +vpdfile=$(vcs_sim_rtl_dir)/$*.vpd +vpdmem" | tee $(log_dir)/$@.log
 
 # Replay on Post-Synthesis Simulation
-$(replay_gl_syn): %-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG) $(vcs_sim_gl_syn_dir)/%.match $(gen_dir)/%.sample 
-	mkdir -p $(log_dir) $(gen_dir)
-	cp -r $< $<.csrc $<.daidir $(gen_dir)
-	$(SBT) $(SBT_FLAGS) "run $*Replay +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.log
+$(replay_gl_syn): %-gl-syn: $(vcs_sim_gl_syn_dir)/%.$(CONFIG) $(vcs_sim_gl_syn_dir)/%.match $(if $(SAMPLE), $(SAMPLE), $(gen_dir)/%.sample)
+	mkdir -p $(log_dir)
+	$(SBT) $(SBT_FLAGS) "run $*Replay $(VCS_FLAGS) +match=$(word 2, $^) $(if $(SAMPLE),+sample=$(word 3, $^)) --testCommand $< -q +vcs+initreg+0 +vpdfile=$(vcs_sim_gl_syn_dir)/$*.vpd +vpdmem" | tee $(log_dir)/$@.log
 
 # Replay on Post-Place-and-Route Simulation
-$(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(vcs_sim_gl_par_dir)/%.match $(gen_dir)/%.sample 
-	mkdir -p $(log_dir) $(gen_dir)
-	cp -r $< $<.csrc $<.daidir $(gen_dir)
-	$(SBT) $(SBT_FLAGS) "run $*Replay +match=$(word 2, $^) $(VCS_FLAGS) --testCommand $(notdir $<) -q +vcs+initreg+0" | tee $(log_dir)/$@.log
+$(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(vcs_sim_gl_par_dir)/%.match $(if $(SAMPLE), $(SAMPLE), $(gen_dir)/%.sample) 
+	mkdir -p $(log_dir) 
+	rm -f $(vcs_sim_gl_par_dir)/$*.saif $(vcs_sim_gl_par_dir)/$*-pipe.vcd
+	vcd2saif -input $(vcs_sim_gl_par_dir)/$*-pipe.vcd -output $(vcs_sim_gl_par_dir)/$*.saif \
+	-pipe "$(SBT) $(SBT_FLAGS) \"run $*Replay $(VCS_FLAGS) +match=$(word 2, $^) $(if $(SAMPLE),+sample=$(word 3, $^)) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/$*-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/$*.vpd +vpdmem\"" \
 
 # Average Power from Replays
 $(replay_pwr): %-pwr: %-gl-par

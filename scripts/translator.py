@@ -27,7 +27,7 @@ def read_gate_names(f):
     (DFF|BBox)\s+          # DFF or Black box pin?
     (?:[\w\(\)]*)\s        # Matched by ...
     r:/WORK/               # name prefix
-    ([\w/]*)             # RTL(chisel) name 
+    ([\w/]*)               # RTL(chisel) name 
    """, re.VERBOSE)
 
   """ define implemntation(gate-level designs) name regular expression """
@@ -36,7 +36,7 @@ def read_gate_names(f):
     (?:DFF|BBox)\s+        # DFF or Black box pin?
     (?:[\w\(\)]*)\s        # Matched by ...
     i:/WORK/               # name prefix
-    ([\w/]*)             # gate-level name
+    ([\w/]*)               # gate-level name
    """, re.VERBOSE)
 
   ff_regex = re.compile(r"([\w.]*)_reg")

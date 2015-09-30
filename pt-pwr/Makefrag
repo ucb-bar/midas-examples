@@ -45,12 +45,6 @@ pt_vars_max = \
 
 pt_avg_max_rpt = $(pt_cur_build_dir)/$(pt_reports_dir)/$(MODEL).power.avg.max.report
 
-$(generated_dir)/%.vcd: $(generated_dir)/%.vpd
-	vpd2vcd $< $@
-
-$(generated_dir)/%.saif: $(generated_dir)/%.vcd
-	vcd2saif -input $< -output $@
-
 $(pt_timestamp): $(icc_timestamp) $(pt_vars_tcl) $(pt_avg_tcl) $(pt_time_tcl)
 	mkdir $(pt_build_dir)
 	rm -f $(pt_cur_build_dir)
@@ -58,7 +52,7 @@ $(pt_timestamp): $(icc_timestamp) $(pt_vars_tcl) $(pt_avg_tcl) $(pt_time_tcl)
 	cp $(icc_timestamp) $(pt_cur_build_dir)/timestamp-icc
 	date > $(pt_timestamp)
 
-$(pt_avg_max_rpt): $(pt_cur_build_dir)/$(pt_reports_dir)/%.power.avg.max.report: $(generated_dir)/%.saif $(pt_timestamp)
+$(pt_avg_max_rpt): $(pt_cur_build_dir)/$(pt_reports_dir)/%.power.avg.max.report: $(vcs_sim_gl_par_dir)/%.saif $(pt_timestamp)
 	cp $(pt_avg_tcl) $(pt_vars_tcl) $(pt_cur_build_dir)
 	echo -e '$(pt_vars)' > $(pt_cur_build_dir)/$(pt_makegen_tcl)
 	echo -e '$(pt_vars_avg)' >> $(pt_cur_build_dir)/$(pt_makegen_tcl)

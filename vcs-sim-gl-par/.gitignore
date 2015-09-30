@@ -2,3 +2,6 @@
 *.key
 *.match
 sdfAnnotateInfo
+*.vpd
+*.vcd
+*.saif

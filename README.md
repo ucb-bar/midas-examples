@@ -85,7 +85,35 @@ For riscv-mini:
 This step also generates samples. You can test these samples by jumping directly to [STEP 4](#step4).
 
 ## <a name="step3"></a> STEP 3: Generating and Running FPGA Simulators
+Now it's time to run FPGA simulatators. First, Chisel generates verilog for FPGA and a parameter header for the simulation driver by running:
+
+    $ make <design_name>-param
+
+It also generates mapping file used by the simulation driver. Then, you're ready to run the FPGA tool flow:
+    
+    $ make <design_name>-fpga
+    
+It takes some time, so be patient. Also, you have to compile the simulation driver:
+
+    $ make <design_name>-zynq
+    
+For each design, you should provide a testbench like those in <code>testbenches/</code>.
+
+Now in <code>results/</code>, you have the following files
+
+    boot.bin
+    <design_name>-zynq
+    <design_name>.map
+    <design_name>.chain
+    
+Copy <code>boot.bin</code> to the SD card to initiate your FPGA simlator. Next copy <code>\<design_name\>-zynq</code>, 
+<code>\<design_name\>.map</code>, and <code>\<design_name\>.chain</code> to your zynq board. 
+On zynq board, just run <code>\<design_name\>-zynq</code>, or for [riscv-mini](https://github.com/donggyukim/riscv-mini.git),
+copy hex files in <code>riscv-tests/</code> or <code>riscv-bmarks/</code>, and then run:
+
+    ./Tile-zynq +loadmem=<hex_file>
 
 ## <a name="step4"></a> STEP 4: Replay Samples
+
 
 ## Reference Simulations

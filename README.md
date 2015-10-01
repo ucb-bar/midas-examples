@@ -144,4 +144,22 @@ You may split samples if you are intereted in power of individual samples. In th
 Then, it will automatically generates a <code>Tile-pwr.csv</code> file in <code>results/</code> containing all individual samples' power.
       
       
-## Reference Simulations
+## Reference Simulation
+
+This repo provides reference simulation which runs the whole testvectors or the entire application. You may want to compare 
+the average power from samples with the average power from reference simulation. These are reference simulation commands:
+
+      $ make <design_name>-ref-cpp    # Chisel emulator
+      $ make <design_name>-ref-v      # VCS
+      $ make <design_name>-ref-rtl    # pre-compiled VCS
+      $ make <design_name>-ref-gl-syn # post synthesis gate-level simulation
+      $ make <design_name>-ref-gl-par # post place-and-route gate-level simulation
+      $ make <design_name>-pwr        # average power
+      # ISA tests or benchmarks for riscv-mini
+      $ make <isa_test/benchmark>-ref-cpp
+      $ make <isa_test/benchmark>-ref-v
+      $ make <isa_test/benchmark>-ref-rtl
+      $ make <isa_test/benchmark>-ref-gl-syn
+      $ make <isa_test/benchmark>-ref-gl-par
+      $ make <isa_test/benchmark>-pwr
+      

@@ -111,9 +111,37 @@ Copy <code>boot.bin</code> to the SD card to initiate your FPGA simlator. Next c
 On zynq board, just run <code>\<design_name\>-zynq</code>, or for [riscv-mini](https://github.com/donggyukim/riscv-mini.git),
 copy hex files in <code>riscv-tests/</code> or <code>riscv-bmarks/</code>, and then run:
 
-    ./Tile-zynq +loadmem=<hex_file>
+     $ ./Tile-zynq +loadmem=<hex_file>
+
+By adding <code>+split</code>, you can split samples in different files.
 
 ## <a name="step4"></a> STEP 4: Replay Samples
+You may come from [STEP 1](#step1) or [STEP 2](#step2) to test strober, or if you come from [STEP 3](#step3) to replays samples from FPGA simulation, you should put sample files (e.g. <code>\<design_name\>.sample</code>) in <code>results/</code>. Then, you can replay samples on Chisel emulator by running:
 
+      $ make <design_name>-cpp
+      
+and on VCS RTL simulation with:
 
+      $ make <design_name>-v
+      
+Also, you can run your samples on pre-compiled VCS RTL simulator with the SRAM models from memory compiler by:
+
+      $ make <design_name>-rtl
+      
+Of course, you can run samples on gate-level simulation with post synthesis and post place-and-route designs with:
+
+      $ make <design_name>-gl-syn
+      $ make <design_name>-gl-par
+      
+Finally, you can compute the average power from 
+
+      $ make <design_name>-pwr
+      
+You may split samples if you are intereted in power of individual samples. In this case, run:
+
+      $ make mini
+      
+Then, it will automatically generates a <code>Tile-pwr.csv</code> file in <code>results/</code> containing all individual samples' power.
+      
+      
 ## Reference Simulations

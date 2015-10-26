@@ -39,7 +39,7 @@ include $(mini_dir)/Makefrag-tests
 
 # Rules
 include Makefrag-sim
-include Makefrag-axi
+include Makefrag-nasti
 include Makefrag-fpga
 include Makefrag-repl
 include Makefrag-ref

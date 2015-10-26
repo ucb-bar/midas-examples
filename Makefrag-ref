@@ -52,13 +52,13 @@ Tile-bmarks-ref-cpp:
 	mkdir -p $(log_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
 
-$(addsuffix -ref-cpp, $(isa_tests)): %-ref-cpp: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+$(addsuffix -ref-cpp, $(isa_tests)): %-ref-cpp: $(isa_dir)/%.hex
 	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000" | tee $(log_dir)/$@.out
+	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) +loadmem=$< +verbose +max-cycles=3000" | tee $(log_dir)/$@.out
 
-$(addsuffix -ref-cpp, $(bmarks)): %-ref-cpp: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+$(addsuffix -ref-cpp, $(bmarks)): %-ref-cpp: $(bmarks_dir)/%.hex
 	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000" | tee $(log_dir)/$@.out
+	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) +loadmem=$< +max-cycles=500000" | tee $(log_dir)/$@.out
 
 # Verilog Simulation
 Tile-simple-ref-v: 
@@ -73,13 +73,13 @@ Tile-bmarks-ref-v:
 	mkdir -p $(log_dir) $(gen_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.out
 
-$(addsuffix -ref-v, $(isa_tests)): %-ref-v: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
+$(addsuffix -ref-v, $(isa_tests)): %-ref-v: $(isa_dir)/%.hex
 	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) +loadmem=$(word 2, $^) +verbose +max-cycles=3000" | tee $(log_dir)/$@.out
+	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) +loadmem=$< +verbose +max-cycles=3000" | tee $(log_dir)/$@.out
 
-$(addsuffix -ref-v, $(bmarks)): %-ref-v: $(vcs_sim_cpp_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
+$(addsuffix -ref-v, $(bmarks)): %-ref-v: $(bmarks_dir)/%.hex
 	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000" | tee $(log_dir)/$@.out
+	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) +loadmem=$< +max-cycles=500000" | tee $(log_dir)/$@.out
 
 # VCS RTL Simulation
 Tile-simple-ref-rtl: $(vcs_sim_rtl_dir)/Tile.$(CONFIG)

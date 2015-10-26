@@ -60,6 +60,7 @@ $(replay_gl_par): %-gl-par: $(vcs_sim_gl_par_dir)/%.$(CONFIG) $(vcs_sim_gl_par_d
 	rm -f $(vcs_sim_gl_par_dir)/$*.saif $(vcs_sim_gl_par_dir)/$*-pipe.vcd
 	vcd2saif -input $(vcs_sim_gl_par_dir)/$*-pipe.vcd -output $(vcs_sim_gl_par_dir)/$*.saif \
 	-pipe "$(SBT) $(SBT_FLAGS) \"run $*Replay $(VCS_FLAGS) +match=$(word 2, $^) $(if $(SAMPLE),+sample=$(word 3, $^)) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/$*-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/$*.vpd +vpdmem\"" \
+	| tee $(log_dir)/$@.log
 
 # Average Power from Replays
 $(replay_pwr): %-pwr: %-gl-par

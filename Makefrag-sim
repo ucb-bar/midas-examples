@@ -48,20 +48,20 @@ Tile-sim-isa-v:
 # riscv-mini: Benchmarks
 $(addsuffix -sim-cpp, $(bmarks)): %-sim-cpp: $(bmarks_dir)/%.hex
 	 mkdir -p $(log_dir)
-	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) +loadmem=$< +max-cycles=500000 +nosnapcheck" \
 	 | tee $(log_dir)/$@.log
 
 $(addsuffix -sim-v, $(bmarks)): %-sim-v: $(bmarks_dir)/%.hex
 	 mkdir -p $(log_dir)
-	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) +loadmem=$< +max-cycles=500000 +nosnapcheck" \
 	 | tee $(log_dir)/$@.log
 
 Tile-sim-bmarks-cpp:
 	mkdir -p $(log_dir)
-	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(C_FLAGS) $(bmarks_args) +nosnapcheck" | tee $(log_dir)/$@.log
 
 Tile-sim-bmarks-v:
 	mkdir -p $(log_dir)
-	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileWrapper $(V_FLAGS) $(bmarks_args) +nosnapcheck" | tee $(log_dir)/$@.log
 
 .PHONY: sim_cpp sim_v 

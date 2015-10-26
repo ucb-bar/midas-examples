@@ -1,0 +1,67 @@
+#################################
+# STEP2: Platform Mapping Tests #
+#################################
+
+# Chisel Tutorial
+nasti_cpp := $(addsuffix -nasti-cpp, $(tut))
+nasti_v   := $(addsuffix -nasti-v,   $(tut))
+
+nasti_cpp: $(nasti_cpp)
+nasti_v:   $(nasti_v)
+
+$(nasti_cpp): %-nasti-cpp: 
+	mkdir -p $(log_dir)
+	$(SBT) $(SBT_FLGAS) "run $*NASTIShim $(C_FLAGS)" | tee $(log_dir)/$@.log
+
+$(nasti_v): %-nasti-v: 
+	mkdir -p $(log_dir)
+	$(SBT) $(SBT_FLGAS) "run $*NASTIShim $(V_FLAGS)" | tee $(log_dir)/$@.log
+
+# riscv-mini: Simple Tests
+Tile-nasti-simple-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLGAS) "run TileNASTIShim $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
+
+Tile-nasti-simple-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.log
+
+# riscv-mini: ISA Tests
+$(addsuffix -nasti-cpp, $(isa_tests)): %-nasti-cpp: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(C_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -nasti-v, $(isa_tests)): %-nasti-v: $(isa_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(V_FLAGS) +loadmem=$< +verbose +max-cycles=3000" \
+	 | tee $(log_dir)/$@.log
+
+Tile-nasti-isa-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
+
+Tile-nasti-isa-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.log
+
+# riscv-mini: Benchmarks
+$(addsuffix -nasti-cpp, $(bmarks)): %-nasti-cpp: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(C_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+$(addsuffix -nasti-v, $(bmarks)): %-nasti-v: $(bmarks_dir)/%.hex
+	 mkdir -p $(log_dir)
+	 cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(V_FLAGS) +loadmem=$< +max-cycles=500000" \
+	 | tee $(log_dir)/$@.log
+
+Tile-nasti-bmarks-cpp:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(C_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+Tile-nasti-bmarks-v:
+	mkdir -p $(log_dir)
+	cd $(base_dir) ; $(SBT) $(SBT_FLAGS) "run TileNASTIShim $(V_FLAGS) $(bmarks_args)" | tee $(log_dir)/$@.log
+
+.PHONY: nasti_cpp nasti_v 

@@ -15,19 +15,23 @@ public:
   }
 private:
   const int n;
-
-  void rd(uint64_t addr, uint64_t data) {
-    poke_port("Router.io_in_valid",      0);
-    poke_port("Router.io_writes_valid",  0);
-    poke_port("Router.io_reads_valid",   1);
-    poke_port("Router.io_replies_ready", 1);
+  void rd(biguint_t addr, biguint_t data) {
+    biguint_t zero = 0;
+    biguint_t one = 1;
+    poke_port("Router.io_in_valid",        zero);
+    poke_port("Router.io_writes_valid",    zero);
+    poke_port("Router.io_reads_valid",     one);
+    poke_port("Router.io_replies_ready",   one);
+    poke_port("Router.io_reads_bits_addr", addr);
     step(1);
-    expect_port("Router.io_replies_bits", data);
+    expect_port("Router.io_replies_bits",  data);
   }
-  void wr(uint64_t addr, uint64_t data) {
-    poke_port("Router.io_in_valid",         0);
-    poke_port("Router.io_reads_valid",      0);
-    poke_port("Router.io_writes_valid",     1);
+  void wr(biguint_t addr, biguint_t data) {
+    biguint_t zero = 0;
+    biguint_t one = 1;
+    poke_port("Router.io_in_valid",         zero);
+    poke_port("Router.io_reads_valid",      zero);
+    poke_port("Router.io_writes_valid",     one);
     poke_port("Router.io_writes_bits_addr", addr);
     poke_port("Router.io_writes_bits_data", data);
     step(1);
@@ -40,15 +44,17 @@ private:
     }
     return false;
   }
-  void rt(uint64_t header, uint64_t body) {
+  void rt(biguint_t header, biguint_t body) {
     for (int i = 0 ; i < n ; i++) {
       std::ostringstream path;
       path <<  "Router.io_outs_" << i << "_ready";
       poke_port(path.str(), 1);
     }
-    poke_port("Router.io_reads_valid",    0);
-    poke_port("Router.io_writes_valid",   0);
-    poke_port("Router.io_in_valid",       1);
+    biguint_t zero = 0;
+    biguint_t one = 1;
+    poke_port("Router.io_reads_valid",    zero);
+    poke_port("Router.io_writes_valid",   zero);
+    poke_port("Router.io_in_valid",       one);
     poke_port("Router.io_in_bits_header", header);
     poke_port("Router.io_in_bits_body",   body);
     int i = 0;

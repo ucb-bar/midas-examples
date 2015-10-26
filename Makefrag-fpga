@@ -3,23 +3,23 @@
 ##########################
 
 # STEP3-1: Generate bitstream
-param     := $(addsuffix -param, $(tut) $(mini))
+const     := $(addsuffix -const, $(tut) $(mini))
 fpga      := $(addsuffix -fpga,  $(tut) $(mini))
 memgen    := $(base_dir)/scripts/fpga_mem_gen
 zed_dir   := $(base_dir)/fpga-zynq/zedboard
 bitstream := fpga-images-zedboard/boot.bin
 
-$(addprefix $(gen_dir)/, $(addsuffix -param.h, $(tut) $(mini))): $(gen_dir)/%-param.h: $(strober)
+$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(strober)
 	mkdir -p $(gen_dir) $(log_dir) $(res_dir)
-	sbt "run $*AXI4Wrapper $(FPGA_FLAGS)"
-	if [ -a $(gen_dir)/$*AXI4Wrapper.conf ]; then \
-          $(memgen) $(gen_dir)/$*AXI4Wrapper.conf >> $(gen_dir)/$*AXI4Wrapper.v; \
+	sbt "run $*NASTIShim $(FPGA_FLAGS)"
+	if [ -a $(gen_dir)/$*NASTIShim.conf ]; then \
+          $(memgen) $(gen_dir)/$*NASTIShim.conf >> $(gen_dir)/$*NASTIShim.v; \
         fi
 	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
-$(param): %-param: %(gen_dir)/%-param.h
+$(const): %-const: %(gen_dir)/%-const.h
 	
-$(fpga): %-fpga: $(gen_dir)/%-param.h
+$(fpga): %-fpga: $(gen_dir)/%-const.h
 	cd $(zed_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
 
 # STEP3-2: Compile driver
@@ -31,7 +31,7 @@ driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_s
 CXX := arm-xilinx-linux-gnueabi-g++
 CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir)
 
-$(zynq): %-zynq: $(gen_dir)/%-param.h $(csrc_dir)/%.cc $(driver_src)
+$(zynq): %-zynq: $(gen_dir)/%-const.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(res_dir)
 	$(CXX) $(CXXFLAGS) -include$< -o $(res_dir)/$(notdir $@) $(word 2, $^) $(driver_src)
 

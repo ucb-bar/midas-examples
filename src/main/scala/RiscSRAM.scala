@@ -192,10 +192,10 @@ class RiscSRAMTester(c: RiscSRAM) extends Tester(c) with RiscSRAMTests {
   tests(c)  
 }
 
-class RiscSRAMWrapperTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) with RiscSRAMTests {
+class RiscSRAMSimTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) with RiscSRAMTests {
   tests(c.target)  
 }
 
-class RiscSRAMAXI4WrapperTests(c: SimAXI4Wrapper[SimWrapper[RiscSRAM]]) extends SimAXI4WrapperTester(c) with RiscSRAMTests { 
+class RiscSRAMNASTIShimTests(c: NASTIShim[SimWrapper[RiscSRAM]]) extends NASTIShimTester(c) with RiscSRAMTests { 
   tests(c.sim.target)
 }

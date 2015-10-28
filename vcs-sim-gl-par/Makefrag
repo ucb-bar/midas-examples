@@ -13,7 +13,7 @@ CXXFLAGS = $(CCFLAGS) -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11
 VCS = vcs -full64
 
 VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc -P $(tab_file) \
-	+v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random +evalorder \
+	+rad +v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random +evalorder \
 	+neg_tchk +sdfverbose -sdf max:$(MODEL):$(res_dir)/$(MODEL).output.sdf +no_notifier
 
 $(vpi_objs): %.o: %.cpp

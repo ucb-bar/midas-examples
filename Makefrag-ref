@@ -40,10 +40,6 @@ $(addsuffix -ref-pwr, $(tut)) : %-ref-pwr: %-ref-gl-par
 # riscv-mini #
 ##############
 # Chisel Emulator
-Tile-simple-ref-cpp: 
-	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
-
 Tile-isa-ref-cpp: 
 	mkdir -p $(log_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) $(isa_args)" | tee $(log_dir)/$@.out
@@ -61,10 +57,6 @@ $(addsuffix -ref-cpp, $(bmarks)): %-ref-cpp: $(bmarks_dir)/%.hex
 	$(SBT) $(SBT_FLAGS) "run Tile $(C_FLAGS) +loadmem=$< +max-cycles=500000" | tee $(log_dir)/$@.out
 
 # Verilog Simulation
-Tile-simple-ref-v: 
-	mkdir -p $(log_dir)
-	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(simple_args)" | tee $(log_dir)/$@.out
-
 Tile-isa-ref-v: 
 	mkdir -p $(log_dir)
 	$(SBT) $(SBT_FLAGS) "run Tile $(V_FLAGS) $(isa_args)" | tee $(log_dir)/$@.out
@@ -124,25 +116,25 @@ Tile-isa-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
 	mkdir -p $(log_dir)
 	rm -f $(vcs_sim_gl_par_dir)/Tile-pipe.vcd
 	vcd2saif -input $(vcs_sim_gl_par_dir)/Tile-pipe.vcd -output $(vcs_sim_gl_par_dir)/Tile.saif \
-	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) $(isa_args) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd\" +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem" | tee $(log_dir)/$@.out
+	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) $(isa_args) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem\"" | tee $(log_dir)/$@.out
 
 Tile-bmarks-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG)
 	mkdir -p $(log_dir)
 	rm -f $(vcs_sim_gl_par_dir)/Tile-pipe.vcd
 	vcd2saif -input $(vcs_sim_gl_par_dir)/Tile-pipe.vcd -output $(vcs_sim_gl_par_dir)/Tile.saif \
-	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd\" +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem" | tee $(log_dir)/$@.out
+	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) $(bmarks_args) --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem\"" | tee $(log_dir)/$@.out
 
 $(addsuffix -ref-gl-par, $(isa_tests)): %-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG) $(isa_dir)/%.hex
 	mkdir -p $(log_dir) 
 	rm -f $(vcs_sim_gl_par_dir)/Tile-pipe.vcd
 	vcd2saif -input $(vcs_sim_gl_par_dir)/Tile-pipe.vcd -output $(vcs_sim_gl_par_dir)/Tile.saif \
-	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=30000 --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd\" +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem" | tee $(log_dir)/$@.out
+	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=30000 --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem\"" | tee $(log_dir)/$@.out
 
 $(addsuffix -ref-gl-par, $(bmarks)): %-ref-gl-par: $(vcs_sim_gl_par_dir)/Tile.$(CONFIG) $(bmarks_dir)/%.hex
 	mkdir -p $(log_dir)
 	rm -f $(vcs_sim_gl_par_dir)/Tile-pipe.vcd
 	vcd2saif -input $(vcs_sim_gl_par_dir)/Tile-pipe.vcd -output $(vcs_sim_gl_par_dir)/Tile.saif \
-	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd\" +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem" | tee $(log_dir)/$@.out
+	-pipe "$(SBT) $(SBT_FLAGS) \"run Tile $(VCS_FLAGS) +loadmem=$(word 2, $^) +max-cycles=500000 --testCommand $< -q +vcs+initreg+0 +vcdfile=$(vcs_sim_gl_par_dir)/Tile-pipe.vcd +vpdfile=$(vcs_sim_gl_par_dir)/Tile.vpd +vpdmem\"" | tee $(log_dir)/$@.out
 
 # Reference Power
 $(addsuffix -ref-pwr, Tile-simple Tile-isa Tile-bmarks $(isa_tests) $(bmarks)): %-ref-pwr: %-ref-gl-par

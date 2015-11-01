@@ -44,16 +44,16 @@ class TileNASTIShimTests(c: NASTIShim[SimWrapper[Tile]], args: Array[String], sn
     var tohost = BigInt(0)
     val startTime = System.nanoTime
     do {
-      step(1)
+      step(traceLen)
       tohost = peek(host.tohost)
-    } while (tohost == 0 && cycles < maxcycles)
+    } while (tohost == 0 && t < maxcycles)
     val endTime = System.nanoTime
     val simTime = (endTime - startTime) / 1000000000.0
-    val simSpeed = cycles / simTime
-    val reason = if (cycles < maxcycles) "tohost = " + tohost else "timeout"
+    val simSpeed = t / simTime
+    val reason = if (t < maxcycles) "tohost = " + tohost else "timeout"
     val ok = tohost == 1
     println("*** %s *** (%s) after %d simulation cycles".format(
-            if (ok) "PASSED" else "FAILED", reason, cycles))
+            if (ok) "PASSED" else "FAILED", reason, t))
     println("Time elapsed = %.1f s, Simulation Speed = %.2f Hz".format(simTime, simSpeed))
     ok
   }

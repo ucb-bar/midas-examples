@@ -34,10 +34,11 @@ def read_power_rpt(prefix, first):
         total_pwr  = pwr_matched.group(5)
         percent    = pwr_matched.group(6)
         # print module, int_pwr, switch_pwr, leak_pwr, total_pwr, percent
-        if first:
-          modules.append(module)
-          sample_pwr[module] = list()
-        sample_pwr[module].append(total_pwr)         
+        if module.find("clk_gate") < 0:
+          if first:
+            modules.append(module)
+            sample_pwr[module] = list()
+          sample_pwr[module].append(total_pwr)         
 
 if __name__ == '__main__':
   design     = str(sys.argv[1]) 

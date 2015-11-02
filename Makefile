@@ -31,9 +31,8 @@ vcs_sim_gl_par     := $(addprefix $(vcs_sim_gl_par_dir)/, $(addsuffix .$(CONFIG)
 
 # riscv-mini
 isa_dir     = $(mini_dir)/riscv-tests/isa
+isa_args    = +isa=$(isa_dir) +verbose +max-cycles=15000
 bmarks_dir  = $(mini_dir)/riscv-bmarks
-simple_args = +simple +verbose +max-cycles=500
-isa_args    = +isa=$(isa_dir) +verbose +max-cycles=3000
 bmarks_args = +bmarks=$(bmarks_dir) +max-cycles=500000
 include $(mini_dir)/Makefrag-tests
 

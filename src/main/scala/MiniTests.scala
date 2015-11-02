@@ -28,6 +28,7 @@ class TileSimTests(c: SimWrapper[Tile], args: Array[String], snapCheck: Boolean)
     cycles = 0
     ok &= run(c.target.io.htif.host, maxcycles, verbose)
   }
+  setTraceLen(16)
   val (file, tests, maxcycles, verbose) = parseOpts(args)
   start(file, tests, maxcycles, verbose)
 }
@@ -62,5 +63,7 @@ class TileNASTIShimTests(c: NASTIShim[SimWrapper[Tile]], args: Array[String], sn
     ok &= run(c.sim.target.io.htif.host, maxcycles, verbose)
   }
   val (file, tests, maxcycles, verbose) = parseOpts(args)
+  setTraceLen(16)
+  setMemCycles(5)
   start(file, tests, maxcycles, verbose)
 }

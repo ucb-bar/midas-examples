@@ -9,52 +9,54 @@ object StroberExample {
   def main(args: Array[String]) {
     val (chiselArgs, testArgs) = args.tail partition (_.head != '+')
     val snapCheck = !(testArgs exists (_ contains "+nosnapcheck"))
+    val simParams = SimParams()
+    val nastiParams = NastiParams(simParams)
     val res = args(0) match {
       case "GCDWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new GCD))(c => new GCDSimSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new GCD)(simParams))(c => new GCDSimSimTests(c))
       case "ParityWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Parity))(c => new ParitySimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Parity)(simParams))(c => new ParitySimTests(c))
       case "ShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new ShiftRegister))(c => new ShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new ShiftRegister)(simParams))(c => new ShiftRegisterSimTests(c))
       case "EnableShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new EnableShiftRegister))(c => new EnableShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new EnableShiftRegister)(simParams))(c => new EnableShiftRegisterSimTests(c))
       case "ResetShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new ResetShiftRegister))(c => new ResetShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new ResetShiftRegister)(simParams))(c => new ResetShiftRegisterSimTests(c))
       case "StackWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Stack(8)))(c => new StackSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Stack(8))(simParams))(c => new StackSimTests(c))
       case "MemorySearchWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new MemorySearch))(c => new MemorySearchSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new MemorySearch)(simParams))(c => new MemorySearchSimTests(c))
       case "RouterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Router))(c => new RouterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Router)(simParams))(c => new RouterSimTests(c))
       case "RiscWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Risc))(c => new RiscSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Risc)(simParams))(c => new RiscSimTests(c))
       case "RiscSRAMWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new RiscSRAM))(c => new RiscSRAMSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new RiscSRAM)(simParams))(c => new RiscSRAMSimTests(c))
       case "TileWrapper" => 
-        chiselMainTest(chiselArgs, () => SimWrapper(new Tile, mini.Config.params))(c => new TileSimTests(c, testArgs, snapCheck))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Tile)(SimParams(mini.Config.params)))(c => new TileSimTests(c, testArgs, snapCheck))
 
       case "GCDNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new GCD))(c => new GCDNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new GCD)(nastiParams))(c => new GCDNASTIShimTests(c))
       case "ParityNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Parity))(c => new ParityNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new Parity)(nastiParams))(c => new ParityNASTIShimTests(c))
       case "ShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new ShiftRegister))(c => new ShiftRegisterNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new ShiftRegister)(nastiParams))(c => new ShiftRegisterNASTIShimTests(c))
       case "EnableShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new EnableShiftRegister))(c => new EnableShiftRegisterNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new EnableShiftRegister)(nastiParams))(c => new EnableShiftRegisterNASTIShimTests(c))
       case "ResetShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new ResetShiftRegister))(c => new ResetShiftRegisterNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new ResetShiftRegister)(nastiParams))(c => new ResetShiftRegisterNASTIShimTests(c))
       case "StackNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Stack(8)))(c => new StackNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new Stack(8))(nastiParams))(c => new StackNASTIShimTests(c))
       case "MemorySearchNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new MemorySearch))(c => new MemorySearchNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new MemorySearch)(nastiParams))(c => new MemorySearchNASTIShimTests(c))
       case "RouterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Router))(c => new RouterNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new Router)(nastiParams))(c => new RouterNASTIShimTests(c))
       case "RiscNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Risc))(c => new RiscNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new Risc)(nastiParams))(c => new RiscNASTIShimTests(c))
       case "RiscSRAMNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new RiscSRAM))(c => new RiscSRAMNASTIShimTests(c))
+        chiselMainTest(chiselArgs, () => NASTIShim(new RiscSRAM)(nastiParams))(c => new RiscSRAMNASTIShimTests(c))
       case "TileNASTIShim" => 
-        chiselMainTest(chiselArgs, () => NASTIShim(new Tile, mini.Config.params))(c => new TileNASTIShimTests(c, testArgs, snapCheck))
+        chiselMainTest(chiselArgs, () => NASTIShim(new Tile)(NastiParams(SimParams(mini.Config.params))))(c => new TileNASTIShimTests(c, testArgs, snapCheck))
  
       case "GCDReplay" =>
         chiselMainTest(args.tail, () => Module(new GCD))(c => new Replay(c, testArgs))

@@ -12,12 +12,14 @@ public:
     }
   }
 
-  int run() {
+  int run(size_t trace_len = TRACE_MAX_LEN) {
+    set_trace_len(trace_len);
+    set_mem_cycles(100);
     size_t tohost_id = get_out_id("Tile.io_htif_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
     do {
-      step(TRACE_LEN);
+      step(trace_len);
       tohost = peek_port(tohost_id);
     } while (tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
@@ -42,5 +44,5 @@ private:
 int main(int argc, char** argv) {
   std::vector<std::string> args(argv + 1, argv + argc);
   Tile_t Tile(args);
-  return Tile.run();
+  return Tile.run(128);
 }

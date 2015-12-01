@@ -24,19 +24,19 @@ def read_gate_names(f):
   """ define reference(RTL) name regular expression """
   ref_regex = re.compile(r"""
     Ref\s+                 # is reference(RTL)?
-    (DFF|BBox)\s+          # DFF or Black box pin?
+    (DFF|BBox)\w*\s+       # DFF or Black box pin?
     (?:[\w\(\)]*)\s        # Matched by ...
     r:/WORK/               # name prefix
-    ([\w/]*)               # RTL(chisel) name 
+    ([\w/\[\]]*)           # RTL(chisel) name 
    """, re.VERBOSE)
 
   """ define implemntation(gate-level designs) name regular expression """
   impl_regex = re.compile(r"""
     Impl\s+                # is implementation(gate-level design)?
-    (?:DFF|BBox)\s+        # DFF or Black box pin?
+    (?:DFF|BBox)\w*\s+     # DFF or Black box pin?
     (?:[\w\(\)]*)\s        # Matched by ...
     i:/WORK/               # name prefix
-    ([\w/]*)               # gate-level name
+    ([\w/\[\]]*)           # gate-level name
    """, re.VERBOSE)
 
   ff_regex = re.compile(r"([\w.]*)_reg")
@@ -65,6 +65,8 @@ def read_gate_names(f):
 
           gate_name = ref_matched.group(2)
           gate_name = gate_name.replace("/", ".")
+          gate_name = gate_name.replace("[", "_")
+          gate_name = gate_name.replace("]", "_")
 
           if gate_type == "DFF":
             """ D Flip Flops """

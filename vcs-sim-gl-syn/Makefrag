@@ -8,7 +8,7 @@ vpi_objs = $(generated_dir)/vpi.o
 tab_file = $(generated_dir)/vpi.tab
 
 CXX ?= g++
-CXXFLAGS = $(CCFLAGS) -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11 
+CXXFLAGS = $(CXXFLAGS) -O2 -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11 
 
 VCS = vcs -full64
 

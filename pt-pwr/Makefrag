@@ -1,6 +1,7 @@
 pt_toplevel = $(MODEL)
 pt_testharness = test
 pt_toplevelinst = $(MODEL)
+pt_prefix ?= $(MODEL)
 
 pt_exec = pt_shell 
 pt_build_suffix = $(MODEL)-$(shell date +%Y-%m-%d_%H-%M-%S)
@@ -43,7 +44,7 @@ pt_vars_max = \
         set PARASITIC_FILES             "$(icc_sbpf_max)";\n \
         set PT_PARASITIC                "max";\n \
 
-pt_avg_max_rpt = $(pt_cur_build_dir)/$(pt_reports_dir)/$(MODEL).power.avg.max.report
+pt_avg_max_rpt = $(pt_cur_build_dir)/$(pt_reports_dir)/$(pt_prefix).power.avg.max.report
 
 $(pt_timestamp): $(icc_timestamp) $(pt_vars_tcl) $(pt_avg_tcl) $(pt_time_tcl)
 	mkdir $(pt_build_dir)

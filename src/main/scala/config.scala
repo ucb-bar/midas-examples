@@ -1,6 +1,7 @@
 package StroberExample
 
 import Chisel._
+import cde.{Parameters, View}
 import strober._
 import junctions._
 
@@ -17,25 +18,17 @@ object SimParams {
 
 object NastiParams {
   val mask = (key: Any, site: View, here: View, up: View) => key match {
-    case NASTIAddrBits => site(NASTIName) match {
-      case "Master" => 32
-      case "Slave"  => 32
-    }
-    case NASTIDataBits => site(NASTIName) match {
-      case "Master" => 32 
-      case "Slave"  => 64
-    }
-    case NASTIIdBits => site(NASTIName) match {
-      case "Master" => 12
-      case "Slave"  => 6
-    }
-    case NASTIAddrSizeBits => 10
+    case NastiKey => site(NastiName) match {
+      case "Master" => NastiParameters(32, 32, 12)
+      case "Slave"  => NastiParameters(64, 32, 6)
+    } 
+    case NastiAddrSizeBits => 10
 
     case MIFAddrBits     => 32
     case MIFDataBits     => 16 << 3
     case MIFTagBits      => 5
     case MIFDataBeats    => 1
-    case MemBlockBytes   => 16
+    case LineSize        => 16
     case MemAddrSizeBits => 28
     case MemMaxCycles    => 256
   }

@@ -6,10 +6,11 @@ object StroberBuild extends Build {
     scalaVersion := "2.11.6",
     scalacOptions ++= Seq("-deprecation","-unchecked")
   )
-  lazy val chisel    = Project("chisel", base=file("chisel"))
-  lazy val junctions = Project("junctions", base=file("junctions")) dependsOn chisel
-  lazy val strober   = Project("strober", base=file("strober")) dependsOn junctions
-  lazy val tutorial  = Project("tutorial", base=file("tutorial/examples")) dependsOn chisel
+  lazy val chisel    = Project("chisel",     base=file("riscv-mini/chisel"))
+  lazy val cde       = Project("cde",        base=file("riscv-mini/cde")) dependsOn chisel
+  lazy val junctions = Project("junctions",  base=file("riscv-mini/junctions")) dependsOn cde
+  lazy val strober   = Project("strober",    base=file("strober")) dependsOn junctions
+  lazy val tutorial  = Project("tutorial",   base=file("tutorial/examples")) dependsOn chisel
   lazy val mini      = Project("riscv-mini", base=file("riscv-mini")) dependsOn junctions
   lazy val root      = Project("strober-examples", base=file("."), settings=settings) dependsOn (strober, tutorial, mini)
 }

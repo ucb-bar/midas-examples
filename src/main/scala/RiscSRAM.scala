@@ -12,8 +12,8 @@ class RiscSRAM extends Module {
     val valid  = Bool(OUTPUT)
     val out    = UInt(OUTPUT, 32)
   }
-  val fileMem = SeqMem(UInt(width = 32), 128)
-  val codeMem = SeqMem(UInt(width = 32), 128)
+  val fileMem = SeqMem(128, UInt(width = 32))
+  val codeMem = SeqMem(128, UInt(width = 32))
 
   val idle :: decode :: ra_read :: rb_read :: rc_write :: Nil = Enum(UInt(), 5)
   val code_read :: code_write :: Nil = Enum(UInt(), 2)
@@ -47,7 +47,7 @@ class RiscSRAM extends Module {
   io.out   := Mux(op === add_op, ra + rb, Cat(rai, rbi))
   io.valid := fileState === rc_write && rci === UInt(255)
 
-  val file_wen = fileState === rc_write && rci != UInt(255)
+  val file_wen = fileState === rc_write && rci =/= UInt(255)
   val file_addr = Mux(fileState === decode, rai, rbi)
   val file = fileMem.read(file_addr, !file_wen)
   when(file_wen) {
@@ -196,6 +196,6 @@ class RiscSRAMSimTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) with
   tests(c.target)  
 }
 
-class RiscSRAMNASTIShimTests(c: NASTIShim[SimWrapper[RiscSRAM]]) extends NASTIShimTester(c) with RiscSRAMTests { 
+class RiscSRAMNastiShimTests(c: NastiShim[SimWrapper[RiscSRAM]]) extends NastiShimTester(c) with RiscSRAMTests { 
   tests(c.sim.target)
 }

@@ -11,13 +11,13 @@ bitstream := fpga-images-zedboard/boot.bin
 
 $(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(strober)
 	mkdir -p $(gen_dir) $(log_dir) $(res_dir)
-	sbt "run $*NASTIShim $(FPGA_FLAGS)"
-	if [ -a $(gen_dir)/$*NASTIShim.conf ]; then \
-          $(memgen) $(gen_dir)/$*NASTIShim.conf >> $(gen_dir)/$*NASTIShim.v; \
+	sbt "run $*NastiShim $(FPGA_FLAGS)"
+	if [ -a $(gen_dir)/$*NastiShim.conf ]; then \
+          $(memgen) $(gen_dir)/$*NastiShim.conf >> $(gen_dir)/$*NastiShim.v; \
         fi
 	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
-$(const): %-const: %(gen_dir)/%-const.h
+$(const): %-const: $(gen_dir)/%-const.h
 	
 $(fpga): %-fpga: $(gen_dir)/%-const.h
 	cd $(zed_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)

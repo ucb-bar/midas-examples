@@ -1,11 +1,12 @@
 package Designs
 
 import Chisel._
+import cde.Parameters
 import strober._
 import mini._
 import junctions.{MemReqCmd, MemData, MemResp}
 
-class Tile extends mini.Tile {
+class Tile(implicit p: Parameters) extends mini.Tile()(p) {
   SimMemIO(io.mem)
 }
 
@@ -21,26 +22,23 @@ class TileSimTests(c: SimWrapper[Tile], args: Array[String], snapCheck: Boolean)
   cmdHandler.process()
   dataHandler.process()
   respHandler.process()
-  def regFile(x: Int) = peekAt(c.target.core.dpath.regFile.regs, x)
   def loadMem(testname: String) = mem.loadMem(testname)
-  def loadMem(test: Seq[UInt]) = mem.loadMem(test)
   def runTests(maxcycles: Int, verbose: Boolean) {
     cycles = 0
     ok &= run(c.target.io.htif.host, maxcycles, verbose)
   }
   setTraceLen(16)
-  val (file, tests, maxcycles, verbose) = parseOpts(args)
+  val (file, tests, maxcycles, verbose) = parseArgs(args)
   start(file, tests, maxcycles, verbose)
 }
 
-class TileNASTIShimTests(c: NASTIShim[SimWrapper[Tile]], args: Array[String], snapCheck: Boolean) extends NASTIShimTester(c, false, snapCheck) with MemTests {
-  def read(addr: Int) = 
-    super[NASTIShimTester].readMem(addr)
-  def write(addr: Int, data: BigInt) = 
-    super[NASTIShimTester].writeMem(addr, data)
+class TileNastiShimTests(c: NastiShim[SimWrapper[Tile]], args: Array[String], snapCheck: Boolean) extends NastiShimTester(c, false, snapCheck) with MemTests {
+  // def read(addr: Int) = 
+  //  super[NastiShimTester].readMem(addr)
+  // def write(addr: Int, data: BigInt) = 
+  //  super[NastiShimTester].writeMem(addr, data)
   override def loadMem(testname: String) = 
-    super[NASTIShimTester].slowLoadMem(testname) 
-  def loadMem(test: Seq[UInt]) = { /* do nothing ... */ }
+    super[NastiShimTester].slowLoadMem(testname) 
   override def run(host: HostIO, maxcycles: Int, verbose: Boolean) = {
     var tohost = BigInt(0)
     val startTime = System.nanoTime
@@ -58,11 +56,10 @@ class TileNASTIShimTests(c: NASTIShim[SimWrapper[Tile]], args: Array[String], sn
     println("Time elapsed = %.1f s, Simulation Speed = %.2f Hz".format(simTime, simSpeed))
     ok
   }
-  def regFile(x: Int) = peekAt(c.sim.target.core.dpath.regFile.regs, x)
   def runTests(maxcycles: Int, verbose: Boolean) = {
     ok &= run(c.sim.target.io.htif.host, maxcycles, verbose)
   }
-  val (file, tests, maxcycles, verbose) = parseOpts(args)
+  val (file, tests, maxcycles, verbose) = parseArgs(args)
   setTraceLen(16)
   setMemCycles(5)
   start(file, tests, maxcycles, verbose)

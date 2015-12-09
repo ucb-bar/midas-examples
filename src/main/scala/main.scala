@@ -9,54 +9,53 @@ object StroberExample {
   def main(args: Array[String]) {
     val (chiselArgs, testArgs) = args.tail partition (_.head != '+')
     val snapCheck = !(testArgs exists (_ contains "+nosnapcheck"))
-    val simParams = SimParams()
-    val nastiParams = NastiParams(simParams)
+    implicit val p = NastiParams(SimParams())
     val res = args(0) match {
       case "GCDWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new GCD)(simParams))(c => new GCDSimSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new GCD))(c => new GCDSimSimTests(c))
       case "ParityWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Parity)(simParams))(c => new ParitySimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Parity))(c => new ParitySimTests(c))
       case "ShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new ShiftRegister)(simParams))(c => new ShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new ShiftRegister))(c => new ShiftRegisterSimTests(c))
       case "EnableShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new EnableShiftRegister)(simParams))(c => new EnableShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new EnableShiftRegister))(c => new EnableShiftRegisterSimTests(c))
       case "ResetShiftRegisterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new ResetShiftRegister)(simParams))(c => new ResetShiftRegisterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new ResetShiftRegister))(c => new ResetShiftRegisterSimTests(c))
       case "StackWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Stack(8))(simParams))(c => new StackSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Stack(8)))(c => new StackSimTests(c))
       case "MemorySearchWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new MemorySearch)(simParams))(c => new MemorySearchSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new MemorySearch))(c => new MemorySearchSimTests(c))
       case "RouterWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Router)(simParams))(c => new RouterSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Router))(c => new RouterSimTests(c))
       case "RiscWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new Risc)(simParams))(c => new RiscSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Risc))(c => new RiscSimTests(c))
       case "RiscSRAMWrapper" =>
-        chiselMainTest(chiselArgs, () => SimWrapper(new RiscSRAM)(simParams))(c => new RiscSRAMSimTests(c))
+        chiselMainTest(chiselArgs, () => SimWrapper(new RiscSRAM))(c => new RiscSRAMSimTests(c))
       case "TileWrapper" => 
-        chiselMainTest(chiselArgs, () => SimWrapper(new Tile)(SimParams(mini.Config.params)))(c => new TileSimTests(c, testArgs, snapCheck))
+        chiselMainTest(chiselArgs, () => SimWrapper(new Tile()(mini.Config.params)))(c => new TileSimTests(c, testArgs, snapCheck))
 
-      case "GCDNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new GCD)(nastiParams))(c => new GCDNASTIShimTests(c))
-      case "ParityNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Parity)(nastiParams))(c => new ParityNASTIShimTests(c))
-      case "ShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new ShiftRegister)(nastiParams))(c => new ShiftRegisterNASTIShimTests(c))
-      case "EnableShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new EnableShiftRegister)(nastiParams))(c => new EnableShiftRegisterNASTIShimTests(c))
-      case "ResetShiftRegisterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new ResetShiftRegister)(nastiParams))(c => new ResetShiftRegisterNASTIShimTests(c))
-      case "StackNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Stack(8))(nastiParams))(c => new StackNASTIShimTests(c))
-      case "MemorySearchNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new MemorySearch)(nastiParams))(c => new MemorySearchNASTIShimTests(c))
-      case "RouterNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Router)(nastiParams))(c => new RouterNASTIShimTests(c))
-      case "RiscNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new Risc)(nastiParams))(c => new RiscNASTIShimTests(c))
-      case "RiscSRAMNASTIShim" =>
-        chiselMainTest(chiselArgs, () => NASTIShim(new RiscSRAM)(nastiParams))(c => new RiscSRAMNASTIShimTests(c))
-      case "TileNASTIShim" => 
-        chiselMainTest(chiselArgs, () => NASTIShim(new Tile)(NastiParams(SimParams(mini.Config.params))))(c => new TileNASTIShimTests(c, testArgs, snapCheck))
+      case "GCDNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new GCD))(c => new GCDNastiShimTests(c))
+      case "ParityNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new Parity))(c => new ParityNastiShimTests(c))
+      case "ShiftRegisterNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new ShiftRegister))(c => new ShiftRegisterNastiShimTests(c))
+      case "EnableShiftRegisterNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new EnableShiftRegister))(c => new EnableShiftRegisterNastiShimTests(c))
+      case "ResetShiftRegisterNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new ResetShiftRegister))(c => new ResetShiftRegisterNastiShimTests(c))
+      case "StackNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new Stack(8)))(c => new StackNastiShimTests(c))
+      case "MemorySearchNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new MemorySearch))(c => new MemorySearchNastiShimTests(c))
+      case "RouterNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new Router))(c => new RouterNastiShimTests(c))
+      case "RiscNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new Risc))(c => new RiscNastiShimTests(c))
+      case "RiscSRAMNastiShim" =>
+        chiselMainTest(chiselArgs, () => NastiShim(new RiscSRAM))(c => new RiscSRAMNastiShimTests(c))
+      case "TileNastiShim" => 
+        chiselMainTest(chiselArgs, () => NastiShim(new Tile()(mini.Config.params)))(c => new TileNastiShimTests(c, testArgs, snapCheck))
  
       case "GCDReplay" =>
         chiselMainTest(args.tail, () => Module(new GCD))(c => new Replay(c, testArgs))
@@ -79,7 +78,7 @@ object StroberExample {
       case "RouterReplay" =>
         chiselMainTest(args.tail, () => Module(new Router))(c => new Replay(c, testArgs))
       case "TileReplay" =>
-        chiselMainTest(args.tail, () => Module(new Tile)(mini.Config.params))(c => new Replay(c, testArgs))
+        chiselMainTest(args.tail, () => Module(new Tile()(mini.Config.params)))(c => new Replay(c, testArgs))
 
       case "GCD" =>
         chiselMainTest(args.tail, () => Module(new GCD))(c => new GCDTester(c))
@@ -102,7 +101,7 @@ object StroberExample {
       case "Router" =>
         chiselMainTest(args.tail, () => Module(new Router))(c => new RouterTester(c))
       case "Tile" =>
-        chiselMainTest(args.tail, () => Module(new mini.Tile)(mini.Config.params))(c => new mini.TileTester(c, testArgs))
+        chiselMainTest(args.tail, () => Module(new mini.Tile()(mini.Config.params)))(c => new mini.TileTester(c, testArgs))
       case _ =>
     }
   }

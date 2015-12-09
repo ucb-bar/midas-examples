@@ -1,6 +1,3 @@
-[submodule "chisel"]
-	path = chisel
-	url = https://github.com/ucb-bar/chisel.git
 [submodule "tutorial"]
 	path = tutorial
 	url = https://github.com/ucb-bar/chisel-tutorial.git
@@ -13,9 +10,6 @@
 [submodule "vlsi"]
 	path = vlsi
 	url = https://github.com/ucb-bar/vlsi.git
-[submodule "junctions"]
-	path = junctions
-	url = https://github.com/ucb-bar/junctions.git
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/donggyukim/riscv-mini.git

@@ -8,7 +8,7 @@ class GCDSimSimTests(c: SimWrapper[GCD]) extends SimWrapperTester(c) with GCDTes
   tests(c.target)
 }
 
-class GCDNASTIShimTests(c: NASTIShim[SimWrapper[GCD]]) extends NASTIShimTester(c) with GCDTests {
+class GCDNastiShimTests(c: NastiShim[SimWrapper[GCD]]) extends NastiShimTester(c) with GCDTests {
   tests(c.sim.target)
 }
 
@@ -16,7 +16,7 @@ class ParitySimTests(c: SimWrapper[Parity]) extends SimWrapperTester(c) with Par
   tests(c.target)
 }
 
-class ParityNASTIShimTests(c: NASTIShim[SimWrapper[Parity]]) extends NASTIShimTester(c) with ParityTests {
+class ParityNastiShimTests(c: NastiShim[SimWrapper[Parity]]) extends NastiShimTester(c) with ParityTests {
   tests(c.sim.target)
 }
 
@@ -24,7 +24,7 @@ class ShiftRegisterSimTests(c: SimWrapper[ShiftRegister]) extends SimWrapperTest
   tests(c.target) 
 }
 
-class ShiftRegisterNASTIShimTests(c: NASTIShim[SimWrapper[ShiftRegister]]) extends NASTIShimTester(c) with ShiftRegisterTests {
+class ShiftRegisterNastiShimTests(c: NastiShim[SimWrapper[ShiftRegister]]) extends NastiShimTester(c) with ShiftRegisterTests {
   tests(c.sim.target)  
 }
 
@@ -32,7 +32,7 @@ class EnableShiftRegisterSimTests(c: SimWrapper[EnableShiftRegister]) extends Si
   tests(c.target)
 }
 
-class EnableShiftRegisterNASTIShimTests(c: NASTIShim[SimWrapper[EnableShiftRegister]]) extends NASTIShimTester(c) with EnableShiftRegisterTests {
+class EnableShiftRegisterNastiShimTests(c: NastiShim[SimWrapper[EnableShiftRegister]]) extends NastiShimTester(c) with EnableShiftRegisterTests {
   tests(c.sim.target)  
 }
 
@@ -40,7 +40,7 @@ class ResetShiftRegisterSimTests(c: SimWrapper[ResetShiftRegister]) extends SimW
   tests(c.target)  
 }
 
-class ResetShiftRegisterNASTIShimTests(c: NASTIShim[SimWrapper[ResetShiftRegister]]) extends NASTIShimTester(c) with ResetShiftRegisterTests {  
+class ResetShiftRegisterNastiShimTests(c: NastiShim[SimWrapper[ResetShiftRegister]]) extends NastiShimTester(c) with ResetShiftRegisterTests {  
   tests(c.sim.target)
 }
 
@@ -48,7 +48,7 @@ class StackSimTests(c: SimWrapper[Stack]) extends SimWrapperTester(c) with Stack
   tests(c.target)
 }
 
-class StackNASTIShimTests(c: NASTIShim[SimWrapper[Stack]]) extends NASTIShimTester(c) with StackTests {
+class StackNastiShimTests(c: NastiShim[SimWrapper[Stack]]) extends NastiShimTester(c) with StackTests {
   tests(c.sim.target)  
 }
 
@@ -56,7 +56,7 @@ class MemorySearchSimTests(c: SimWrapper[MemorySearch]) extends SimWrapperTester
   tests(c.target)
 }
 
-class MemorySearchNASTIShimTests(c: NASTIShim[SimWrapper[MemorySearch]]) extends NASTIShimTester(c) with MemorySearchTests {
+class MemorySearchNastiShimTests(c: NastiShim[SimWrapper[MemorySearch]]) extends NastiShimTester(c) with MemorySearchTests {
   tests(c.sim.target)
 }
 
@@ -64,7 +64,7 @@ class RouterSimTests(c: SimWrapper[Router]) extends SimWrapperTester(c) with Rou
   tests(c.target)  
 }
 
-class RouterNASTIShimTests(c: NASTIShim[SimWrapper[Router]]) extends NASTIShimTester(c) with RouterTests {
+class RouterNastiShimTests(c: NastiShim[SimWrapper[Router]]) extends NastiShimTester(c) with RouterTests {
   tests(c.sim.target) 
 }
 
@@ -72,6 +72,6 @@ class RiscSimTests(c: SimWrapper[Risc]) extends SimWrapperTester(c) with RiscTes
   tests(c.target)
 }
 
-class RiscNASTIShimTests(c: NASTIShim[SimWrapper[Risc]]) extends NASTIShimTester(c) with RiscTests { 
+class RiscNastiShimTests(c: NastiShim[SimWrapper[Risc]]) extends NastiShimTester(c) with RiscTests { 
   tests(c.sim.target) 
 }

@@ -26,7 +26,7 @@ $(rpt_dir)/$(MODEL).fmv_matched_points.rpt:
 	cd $(dc_dir) && make fm MODEL=$(MODEL)
 
 $(MODEL).$(CONFIG): $(sim_vsrcs) $(vpi_objs) 
-	$(VCS) $(VCS_OPTS) -use_vpiobj $(vpi_objs) -o $@ $(sim_vsrcs)
+	$(VCS) $(VCS_OPTS) -o $@ $(sim_vsrcs) $(vpi_objs)
 
 $(sim_dir)/$(MODEL).match: $(rpt_dir)/$(MODEL).fmv_matched_points.rpt
 	$(base_dir)/scripts/translator.py --output $@ --match $<

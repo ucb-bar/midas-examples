@@ -2,29 +2,38 @@
 # STEP3: FPGA Simulators #
 ##########################
 
-# STEP3-1: Generate bitstream
-const     := $(addsuffix -const, $(tut) $(mini))
-fpga      := $(addsuffix -fpga,  $(tut) $(mini))
-memgen    := $(base_dir)/scripts/fpga_mem_gen
-zed_dir   := $(base_dir)/fpga-zynq/zedboard
-bitstream := fpga-images-zedboard/boot.bin
+base_dir := $(abspath ..)
+fpga_dir := $(abspath .)
+gen_dir  := $(fpga_dir)/generated-src
+res_dir  := $(fpga_dir)/results
 
-$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(strober)
-	mkdir -p $(gen_dir) $(log_dir) $(res_dir)
-	sbt "run $*NastiShim $(FPGA_FLAGS)"
+include $(base_dir)/Makefrag-strober
+
+# STEP3-1: Generate bitstream
+board     ?= zedboard
+memgen    := $(fpga_dir)/fpga_mem_gen
+board_dir := $(fpga_dir)/fpga-zynq/$(board)
+bitstream := fpga-images-$(board)/boot.bin
+
+strober   := $(addsuffix -strober, $(tut) $(mini))
+fpga      := $(addsuffix -fpga,    $(tut) $(mini))
+
+$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(chisel_src)
+	mkdir -p $(res_dir)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
 	if [ -a $(gen_dir)/$*NastiShim.conf ]; then \
           $(memgen) $(gen_dir)/$*NastiShim.conf >> $(gen_dir)/$*NastiShim.v; \
         fi
 	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
-$(const): %-const: $(gen_dir)/%-const.h
+$(strober): %-strober: $(gen_dir)/%-const.h
 	
 $(fpga): %-fpga: $(gen_dir)/%-const.h
-	cd $(zed_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
+	cd $(board_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
 
 # STEP3-2: Compile driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
-csrc_dir   := $(base_dir)/testbenches
+csrc_dir   := $(fpga_dir)/testbenches
 driver_dir := $(base_dir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
@@ -35,4 +44,7 @@ $(zynq): %-zynq: $(gen_dir)/%-const.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(res_dir)
 	$(CXX) $(CXXFLAGS) -include$< -o $(res_dir)/$(notdir $@) $(word 2, $^) $(driver_src)
 
-.PHONY: $(fpga) $(zynq) 
+clean:
+	rm -rf $(gen_dir) $(res_dir)
+
+.PHONY: $(strober) $(fpga) $(zynq) clean

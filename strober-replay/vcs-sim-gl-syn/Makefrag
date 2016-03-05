@@ -4,20 +4,18 @@ sim_vsrcs = \
 	$(res_dir)/$(MODEL).mapped.v \
 	$(generated_dir)/$(MODEL).$(CONFIG)-harness.v
 
-vpi_objs = $(generated_dir)/vpi.o
+vpi_srcs = $(generated_dir)/vpi.cpp
 tab_file = $(generated_dir)/vpi.tab
 
 CXX ?= g++
-CXXFLAGS = $(CXXFLAGS) -O2 -I$(VCS_HOME)/include -I$(generated_dir) -fPIC -std=c++11 
+CXXFLAGS := $(CXXFLAGS) -O2 -I$(VCS_HOME)/include -I$(generated_dir) -std=c++11 
 
 VCS = vcs -full64
 
 VCS_OPTS = -quiet -timescale=1ns/1ps -debug_pp -Mdir=$(MODEL).$(CONFIG).csrc -P $(tab_file) \
 	+rad +v2k +vpi +define+CLOCK_PERIOD=$(clock_period) +vcs+initreg+random \
 	+notimingcheck +no_notifier +vcs+lic+wait \
-
-$(vpi_objs): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+	-cpp $(CXX) -O2 -LDFLAGS -lstdc++ -CFLAGS "$(CXXFLAGS)" \	
 
 $(res_dir)/$(MODEL).mapped.v:
 	cd $(dc_dir) && make MODEL=$(MODEL)
@@ -25,8 +23,8 @@ $(res_dir)/$(MODEL).mapped.v:
 $(rpt_dir)/$(MODEL).fmv_matched_points.rpt:
 	cd $(dc_dir) && make fm MODEL=$(MODEL)
 
-$(MODEL).$(CONFIG): $(sim_vsrcs) $(vpi_objs) 
-	$(VCS) $(VCS_OPTS) -o $@ $(sim_vsrcs) $(vpi_objs)
+$(MODEL).$(CONFIG): $(sim_vsrcs) $(vpi_srcs)
+	$(VCS) $(VCS_OPTS) -o $@ $^
 
 $(sim_dir)/$(MODEL).match: $(rpt_dir)/$(MODEL).fmv_matched_points.rpt
 	$(base_dir)/scripts/translator.py --output $@ --match $<

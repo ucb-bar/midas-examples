@@ -1,4 +1,4 @@
-package Designs
+package StroberExamples
 
 import Chisel._
 import strober._
@@ -190,12 +190,4 @@ trait RiscSRAMTests extends Tests {
 
 class RiscSRAMTester(c: RiscSRAM) extends Tester(c) with RiscSRAMTests {
   tests(c)  
-}
-
-class RiscSRAMSimTests(c: SimWrapper[RiscSRAM]) extends SimWrapperTester(c) with RiscSRAMTests {
-  tests(c.target)  
-}
-
-class RiscSRAMNastiShimTests(c: NastiShim[SimWrapper[RiscSRAM]]) extends NastiShimTester(c) with RiscSRAMTests { 
-  tests(c.sim.target)
 }

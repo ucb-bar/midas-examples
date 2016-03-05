@@ -1,9 +1,6 @@
 [submodule "tutorial"]
 	path = tutorial
 	url = https://github.com/ucb-bar/chisel-tutorial.git
-[submodule "fpga-zynq"]
-	path = fpga-zynq
-	url = https://github.com/donggyukim/fpga-zynq.git
 [submodule "strober"]
 	path = strober
 	url = https://github.com/ucb-bar/strober.git
@@ -13,3 +10,9 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/donggyukim/riscv-mini.git
+[submodule "fpga-zynq"]
+	path = fpga-zynq
+	url = https://github.com/donggyukim/fpga-zynq.git
+[submodule "strober-fpga/fpga-zynq"]
+	path = strober-fpga/fpga-zynq
+	url = https://github.com/donggyukim/fpga-zynq.git

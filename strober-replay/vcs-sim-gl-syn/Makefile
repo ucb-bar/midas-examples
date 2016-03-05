@@ -1,4 +1,4 @@
-base_dir = $(abspath ..)
+base_dir = $(abspath ../..)
 vlsi_dir = $(base_dir)/vlsi
 dc_dir   = $(vlsi_dir)/dc-syn
 res_dir  = $(dc_dir)/current-dc/results
@@ -13,4 +13,7 @@ include $(base_dir)/Makefrag
 include $(sim_dir)/Makefrag
 
 clean:
-	rm -rf *.vpd *.$(CONFIG) *.$(CONFIG).csrc *.$(CONFIG).daidir *.match *.key
+	rm -rf *.vpd *.vcd *.saif *.match logs
+	rm -rf *.$(CONFIG) *.$(CONFIG).csrc *.$(CONFIG).daidir *.key DVEfiles
+
+.PHONY: clean

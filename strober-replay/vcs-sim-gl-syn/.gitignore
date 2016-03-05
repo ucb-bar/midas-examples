@@ -1,4 +1,8 @@
 *.VLSI*
 *.key
 *.match
+*.vcd
 *.vpd
+*.saif
+DVEfiles
+logs

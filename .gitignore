@@ -1,9 +1,6 @@
-generated-src
-logs
-results
 target
 project/target
 *.out
 *.swp
 *.key
-DVEfiles
+test-*

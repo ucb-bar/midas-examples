@@ -1,69 +1,39 @@
 base_dir := $(abspath .)
-tut_dir  := $(base_dir)/tutorial/examples
-mini_dir := $(base_dir)/riscv-mini
-gen_dir  := $(base_dir)/generated-src
-log_dir  := $(base_dir)/logs
-res_dir  := $(base_dir)/results
-strober  := $(wildcard $(base_dir)/strober/src/main/scala/*.scala)
+include $(base_dir)/Makefrag-strober
 
-SBT       = sbt
-SBT_FLAGS = 
+wrappers := sim nasti
 
-# Designs
-tut  := GCD Parity Stack Router Risc RiscSRAM \
-        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
-mini := Tile
+$(addsuffix -tut-cpp, $(wrappers)): %-tut-cpp:
+	$(SBT) $(SBT_FLAGS) "testOnly StroberExamples.TutorialSuite -- -Db=c -Dw=$*"
 
-# Chisel Flags
-C_FLAGS := --targetDir $(gen_dir) --genHarness --compile --test --vcd --vcdMem --debug 
-V_FLAGS := $(C_FLAGS) --v
-FPGA_FLAGS := --targetDir $(gen_dir) --backend fpga --configDump 
-VCS_FLAGS := --targetDir $(gen_dir) --backend null --noInlineMem --test
+$(addsuffix -tut-v, $(wrappers)): %-tut-v:
+	$(SBT) $(SBT_FLAGS) "testOnly StroberExamples.TutorialSuite -- -Db=v -Dw=$*"
 
-# VCS
-CONFIG = VLSI
-vcs_sim_rtl_dir    := $(base_dir)/vcs-sim-rtl
-vcs_sim_gl_syn_dir := $(base_dir)/vcs-sim-gl-syn
-vcs_sim_gl_par_dir := $(base_dir)/vcs-sim-gl-par
-vcs_sim_rtl        := $(addprefix $(vcs_sim_rtl_dir)/,    $(addsuffix .$(CONFIG), $(tut) $(mini)))
-vcs_sim_gl_syn     := $(addprefix $(vcs_sim_gl_syn_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
-vcs_sim_gl_par     := $(addprefix $(vcs_sim_gl_par_dir)/, $(addsuffix .$(CONFIG), $(tut) $(mini)))
+$(addsuffix -asm-cpp, $(wrappers)): %-asm-cpp:
+	$(SBT) $(SBT_FLAGS) ";\
+	testOnly StroberExamples.MiniISATests -- -Db=c -Dw=$*;\
+	testOnly StroberExamples.ReplayISATests -- -Db=c;\
+	testOnly StroberExamples.ReplayISATests -- -Db=v"
 
-# riscv-mini
-isa_dir     = $(mini_dir)/riscv-tests/isa
-isa_args    = +isa=$(isa_dir) +verbose +max-cycles=15000
-bmarks_dir  = $(mini_dir)/riscv-bmarks
-bmarks_args = +bmarks=$(bmarks_dir) +max-cycles=500000
-include $(mini_dir)/Makefrag-tests
+$(addsuffix -asm-v, $(wrappers)): %-asm-v:
+	$(SBT) $(SBT_FLAGS) ";\
+	testOnly StroberExamples.MiniISATests -- -Db=v -Dw=$*;\
+	testOnly StroberExamples.ReplayISATests -- -Db=c;\
+	testOnly StroberExamples.ReplayISATests -- -Db=v"
 
-# Rules
-include Makefrag-sim
-include Makefrag-nasti
-include Makefrag-fpga
-include Makefrag-repl
-include Makefrag-ref
+$(addsuffix -bmark-cpp, $(wrappers)): %-bmark-cpp:
+	$(SBT) $(SBT_FLAGS) ";\
+	testOnly StroberExamples.MiniBmarkTests -- -Db=c -Dw=$*;\
+	testOnly StroberExamples.ReplayBmarkTests -- -Db=c;\
+	testOnly StroberExamples.ReplayBmarkTests -- -Db=v"
 
-$(tut) $(mini): %: %-fpga %-zedboard
-
-tut:
-	$(base_dir)/scripts/run-tutorial.py
-
-NUM ?= 30
-mini:
-	$(base_dir)/scripts/run-multi-samples.py Tile $(NUM)
+$(addsuffix -bmark-v, $(wrappers)): %-bmark-v:
+	$(SBT) $(SBT_FLAGS) ";\
+	testOnly StroberExamples.MiniBmarkTests -- -Db=v -Dw=$*;\
+	testOnly StroberExamples.ReplayBmarkTests -- -Db=c;\
+	testOnly StroberExamples.ReplayBmarkTests -- -Db=v"
 
 clean:
-	rm -rf $(gen_dir) $(log_dir) $(res_dir) 
-	$(MAKE) -C $(vcs_sim_rtl_dir) clean
-	$(MAKE) -C $(vcs_sim_gl_syn_dir) clean
-	$(MAKE) -C $(vcs_sim_gl_par_dir) clean
-	$(MAKE) -C $(vcs_sim_gl_par_dir) clean
-	$(MAKE) -C pt-pwr clean
+	rm -rf test-*
 
-cleanall: clean
-	rm -rf project/target target
-	$(MAKE) -C vlsi/dc-syn clean
-	$(MAKE) -C vlsi/icc-par clean
-	$(MAKE) -C chisel clean	
-
-.PHONY: tut mini $(tut) $(mini) clean cleanall
+.PHONY: clean

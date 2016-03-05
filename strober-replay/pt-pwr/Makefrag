@@ -1,3 +1,4 @@
+#
 pt_toplevel = $(MODEL)
 pt_testharness = test
 pt_toplevelinst = $(MODEL)
@@ -65,6 +66,6 @@ $(pt_avg_max_rpt): $(pt_cur_build_dir)/$(pt_reports_dir)/%.power.avg.max.report:
 	$(pt_exec) -f $(notdir $(pt_avg_tcl)) | tee $(pt_log_dir)/$*.pt.avg.max.log; \
 	cd ..
 
-$(MODEL).$(CONFIG): $(pt_avg_max_rpt)
+pt: $(pt_avg_max_rpt)
 
-.PHONY: $(MODEL).$(CONFIG)
+.PHONY: pt

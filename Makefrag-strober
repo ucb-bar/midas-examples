@@ -1,0 +1,12 @@
+SBT       = sbt
+SBT_FLAGS =
+
+# Desings
+tut  := GCD Parity Stack Router Risc RiscSRAM \
+        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+mini := Tile
+
+src_path = src/main/scala
+modules = . strober riscv-mini/chisel riscv-mini/junctions riscv-mini
+chisel_src = $(wildcard $(base_dir)/tutorial/examples/*.scala \
+             $(addprefix $(base_dir)/, $(addsuffix /$(src_path)/*.scala, $(modules))))

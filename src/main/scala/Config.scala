@@ -26,14 +26,11 @@ class NastiConfig extends Config(new SimConfig ++ new Config(
       case e: cde.ParameterUndefinedException => 
         throw new scala.MatchError(key)
     } 
-    case NastiAddrSizeBits => 10
-
     case MIFAddrBits     => 32
-    case MIFDataBits     => 16 << 3
+    case MIFDataBits     => 64
     case MIFTagBits      => 5
-    case MIFDataBeats    => 1
-    case LineSize        => 16
-    case MemAddrSizeBits => 28
+    case MIFDataBeats    => 2
+    case CacheBlockSize  => 16
     case MemMaxCycles    => 256
   })
 )

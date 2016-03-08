@@ -14,7 +14,7 @@ public:
 
   int run(size_t trace_len = TRACE_MAX_LEN) {
     set_trace_len(trace_len);
-    set_mem_cycles(100);
+    set_mem_cycles(20);
     size_t tohost_id = get_out_id("Tile.io_htif_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 

@@ -97,7 +97,7 @@ class TileSimTests(c: SimWrapper[Tile], sampleFile: Option[String], args: MiniTe
     (resp: MemResp, in: TestMemResp) => {reg_poke(resp.data, in.data) ; reg_poke(resp.tag, in.tag)})
   lazy val mem = new TileMem(
     cmdHandler.outputs, dataHandler.outputs, respHandler.inputs, 
-    if (args.verbose) Some(log) else None, 5, c.target.icache.bBytes)
+    if (args.verbose) Some(log) else None, 5, c.target.mifDataBeats, c.target.mifDataBits)
 
   lazy val arHandler = new DecoupledSink(c.target.io.nasti.ar, (ar: NastiReadAddressChannel) =>
     new TestNastiReadAddr(peek(ar.id), peek(ar.addr), peek(ar.size), peek(ar.len)))
@@ -111,7 +111,7 @@ class TileSimTests(c: SimWrapper[Tile], sampleFile: Option[String], args: MiniTe
   lazy val nasti = new NastiMem(
     arHandler.outputs, rHandler.inputs,
     awHandler.outputs, wHandler.outputs,
-    if (args.verbose) Some(log) else None, 5, c.target.icache.nBytes)
+    if (args.verbose) Some(log) else None, 5, c.target.nastiXDataBits/8)
 
   if (c.target.core.useNasti) {
     nasti loadMem args.loadmem

@@ -115,6 +115,7 @@ abstract class MiniSuite(N: Int = 6) extends fixture.PropSpec with fixture.Confi
 
   after {
     testers foreach (_ ! TestFin)
+    Tester.close
   }
 }
 

@@ -21,15 +21,16 @@ fpga      := $(addsuffix -fpga,    $(tut) $(mini))
 $(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(chisel_src)
 	mkdir -p $(res_dir)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
-	if [ -a $(gen_dir)/$*NastiShim.conf ]; then \
-          $(memgen) $(gen_dir)/$*NastiShim.conf >> $(gen_dir)/$*NastiShim.v; \
+	if [ -a $(gen_dir)/$*NastiShim.Strober.conf ]; then \
+          $(memgen) $(gen_dir)/$*NastiShim.Strober.conf >> $(gen_dir)/$*NastiShim.Strober.v; \
         fi
 	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
 $(strober): %-strober: $(gen_dir)/%-const.h
 	
 $(fpga): %-fpga: $(gen_dir)/%-const.h
-	cd $(board_dir); make clean; time make $(bitstream) DESIGN=$*; cp $(bitstream) $(res_dir)
+	cd $(board_dir); $(MAKE) clean; time $(MAKE) $(bitstream) DESIGN=$* CONFIG=Strober; \
+	cp $(bitstream) $(res_dir)
 
 # STEP3-2: Compile driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 

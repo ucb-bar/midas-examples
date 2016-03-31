@@ -7,8 +7,8 @@ import sys.process.stringSeqToProcess
 
 class Tile(implicit p: cde.Parameters) extends mini.Tile()(p) {
   if (core.useNasti) {
+    SimMemIO(io.nasti)
   } else {
-    SimMemIO(io.mem)
   }
 }
 
@@ -25,7 +25,7 @@ object StroberExamples {
     args(0) match {
       case "strober" => {
         val chiselArgs = Array(//"--minimumCompatibility", "3.0", 
-          "--backend", "fpga", "--targetDir", dirName, "--configDump")
+          "--backend", "fpga", "--targetDir", dirName, "--configName", "Strober", "--configDump")
         implicit val p = modName match {
           case "Tile" => 
             cde.Parameters.root((new MiniNastiConfig).toInstance)
@@ -90,6 +90,7 @@ object StroberExamples {
           f.inputChannel receive {case pass: Boolean => idx -> pass}
         } foreach {case (idx, pass) => if (!pass) ChiselError.error(s"SAMPLE #${idx} FAILED")}
         replays foreach (_ ! ReplayFin)
+        Tester.close
       }
     }
   }

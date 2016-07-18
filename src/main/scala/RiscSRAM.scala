@@ -1,7 +1,7 @@
-package StroberExamples
+package examples
 
-import Chisel._
-import strober._
+import chisel3._
+import chisel3.util._
 
 class RiscSRAM extends Module {
   val io = new Bundle {
@@ -38,11 +38,6 @@ class RiscSRAM extends Module {
   val rbi  = inst( 7, 0)
   val ra   = Mux(rai === UInt(0), UInt(0), raData)
   val rb   = Mux(rbi === UInt(0), UInt(0), rbData)
-
-  debug(op)
-  debug(rci)
-  debug(rai)
-  debug(rbi)
 
   io.out   := Mux(op === add_op, ra + rb, Cat(rai, rbi))
   io.valid := fileState === rc_write && rci === UInt(255)
@@ -91,103 +86,4 @@ class RiscSRAM extends Module {
       }
     }
   }
-}
-
-trait RiscSRAMTests extends Tests {
-  def tests(c: RiscSRAM) {
-    def wr(addr: UInt, data: UInt)  = {
-      poke(c.io.isWr,   1)
-      poke(c.io.wrAddr, addr.litValue())
-      poke(c.io.wrData, data.litValue())
-      step(1)
-    }
-    def boot()  = {
-      poke(c.io.isWr, 0)
-      poke(c.io.boot, 1)
-      step(1)
-    }
-    def tick()  = {
-      poke(c.io.isWr, 0)
-      poke(c.io.boot, 0)
-      step(1)
-    }
-    def I (op: UInt, rc: Int, ra: Int, rb: Int) = 
-      Cat(op, UInt(rc, 8), UInt(ra, 8), UInt(rb, 8))
-    val app  = Array(
-      I(c.imm_op,   1, 0, 1), // r1 <- 1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 2), // r1 <- 2
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 3), // r1 <- 3
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 4), // r1 <- 4
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 5), // r1 <- 5
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 6), // r1 <- 6
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 7), // r1 <- 7
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 8), // r1 <- 8
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 9), // r1 <- 9
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   1, 0, 10), // r1 <- 10
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.add_op,   1, 1, 1), // r1 <- r1 + r1
-      I(c.imm_op,   2, 0, 1), // r2 <- 1
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 2), // r2 <- 2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 3), // r2 <- 3
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 4), // r2 <- 4
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 5), // r2 <- 5
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 6), // r2 <- 6
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 7), // r2 <- 7
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 8), // r2 <- 8
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 9), // r2 <- 9
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.imm_op,   2, 0, 10), // r2 <- 10
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op,   2, 2, 1), // r2 <- r2 + r2
-      I(c.add_op, 255, 1, 0)) // rh <- r1
-    wr(UInt(0), Bits(0)) // skip reset
-    for (addr <- 0 until app.length) 
-      wr(UInt(addr), app(addr))
-    boot()
-    var k = 0
-    do {
-      tick(); k += 1
-    } while (peek(c.io.valid) == 0 && k < 400)
-    expect(k < 400, "TIME LIMIT")
-    expect(c.io.out, 40)
-  }
-}
-
-class RiscSRAMTester(c: RiscSRAM) extends Tester(c) with RiscSRAMTests {
-  tests(c)  
 }

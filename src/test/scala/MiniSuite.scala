@@ -1,85 +1,75 @@
 package StroberExamples
 
-import Chisel._
 import strober._
-import mini._
-import org.scalatest._
-import scala.actors.Actor._
+import mini.Tile
+
+import chisel3.Module
+import chisel3.iotesters._
+import scala.reflect.ClassTag
 import sys.process.stringSeqToProcess
 import java.io.File
 
-abstract class MiniSuite(N: Int = 6) extends fixture.PropSpec with fixture.ConfigMapFixture
-    with GivenWhenThen with BeforeAndAfter with TestSuiteCommon with RiscVTests {
-  private case class TestRun(c: Module, sample: Option[String], args: MiniTestArgs)
-  private case class TileReplay(c: Tile, args: ReplayArgs)
+abstract class MiniTestSuite(N: Int = 6) extends org.scalatest.FlatSpec with mini.RiscVTests {
+  require(N > 0)
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  implicit val timeout = akka.util.Timeout(10 days)
+  private case class TestRun(c: Module, args: mini.MiniTestArgs)
   private case object TestFin
-  private val testers = List.fill(N){ actor { loop { react {
-    case TestRun(c, sample, args) => c match {
-      case w: SimWrapper[_] => 
-        val dut = w.asInstanceOf[SimWrapper[Tile]]
-        sender ! (try {
-          (new TileSimTests(dut, sample, args)).finish
-        } catch {
-          case _: Throwable => false
-        })
-      case w: NastiShim[_] => 
-        val dut = w.asInstanceOf[NastiShim[SimWrapper[Tile]]]
-        sender ! (try {
-          (new TileNastiShimTests(dut, sample, args)).finish
-        } catch {
-          case _: Throwable => false
-        })
-      case _ => sender ! false
-    }
-    case TileReplay(c, args) => sender ! (try {
-      (new Replay(c, args)).finish
-    } catch {
-      case _: Throwable => false
+  private val system = akka.actor.ActorSystem("riscv-mini")
+  private val testers = List.fill(N){
+    akka.actor.ActorDSL.actor(system)(new akka.actor.ActorDSL.ActWithStash {
+      override def receive = {
+        case TestRun(dut, args) => sender ! (
+          try {
+            dut match {
+              case sim: SimWrapper[Tile] => 
+                (new TileSimTests(sim, args)).finish
+              case zynq: ZynqShim[SimWrapper[Tile]] =>
+                (new TileZynqTests(zynq, args)).finish
+            }
+          } catch {
+            case x: Exception =>
+              x.printStackTrace
+          }
+        )
+        case TestFin => context.stop(self)
+      }
     })
-    case TestFin => exit()
-  } } } }
+  }
 
-  def runTests(t: TestType) {
-    property("riscv-mini on strober should run the following tests") { configMap =>
-      val w = configMap("w").asInstanceOf[String]
-      val b = configMap("b").asInstanceOf[String]
-      implicit val p = w match {
-        case "sim"   => cde.Parameters.root((new MiniSimConfig).toInstance)
-        case "nasti" => cde.Parameters.root((new MiniNastiConfig).toInstance)
+  def runTests[T <: Module : ClassTag](mod: => T, t: TestType, vcs: Boolean = false) {
+    val targetDir = s"$outDir/${implicitly[ClassTag[T]].runtimeClass.getSimpleName}_Tile"
+    val args = Array("--targetDir", targetDir, "--genHarness", "--compile", "--noUpdate") ++ 
+               (if (vcs) Array("--vcs") else Nil)
+    val (dir, tests, maxcycles) = t match {
+      case ISATests   => (new File("riscv-mini/riscv-tests/isa"), isaTests, 15000L)
+      case BmarkTests => (new File("riscv-mini/riscv-bmarks"), bmarkTests, 1500000L)
+    }
+    val circuit = StroberCompiler(args, mod)
+    val dut = chiselMain(args, () => mod)
+    val sim = if (vcs) "vcs" else "verilator"
+    assert(dir.exists)
+    behavior of s"${dut.name} in $sim"
+    tests.zipWithIndex map { case (t, i) => 
+      val loadmem = s"$dir/$t.hex"
+      val logFile = Some(s"$targetDir/$t-$sim.log")
+      val waveform = Some(s"$targetDir/$t.%s".format(if (vcs) "vpd" else "vcd"))
+      val testCmd = List(s"$targetDir/%s${dut.name}".format(if (vcs) "" else "V"))
+      val args = new mini.MiniTestArgs(loadmem, maxcycles, logFile, waveform, testCmd, true)
+      if (!(new File(loadmem).exists)) {
+        assert(Seq("make", "-C", dir.getPath.toString, s"$t.hex",
+                   """'RISCV_GCC=$(RISCV_PREFIX)gcc -m32'""").! == 0)
       }
-      val dut = elaborate(w match {
-        case "sim"  => SimWrapper(new Tile)
-        case "nasti" => NastiShim(new Tile)
-      }, b, true)
-      val dutName = dut.getClass.getSimpleName
-      val (dir, tests, maxcycles) = t match {
-        case ISATests   => (new File("riscv-mini/riscv-tests/isa"), isaTests, 15000L)
-        case BmarkTests => (new File("riscv-mini/riscv-bmarks"), bmarkTests, 500000L)
-      }
-      Given(t.toString)
-      tests.zipWithIndex map {case (name, i) =>
-        val loadmem = s"${dir.getPath}/${name}.hex"
-        val sample = Some(s"${outDir.getPath}/${name}.sample")
-        val dump = b match {
-          case "c" => Some(s"${dumpDir.getPath}/${dutName}-${name}.vcd")
-          case "v" => Some(s"${dumpDir.getPath}/${dutName}-${name}.vpd")
-        }
-        val log = Some(s"${logDir.getPath}/${dutName}-${name}-${b}.log") 
-        val args = new MiniTestArgs(loadmem, maxcycles, dump, log)
-        if (!(new java.io.File(loadmem).exists)) {
-          assert(Seq("make", "-C", dir.getPath.toString, s"${name}.hex",
-                     """'RISCV_GCC=$(RISCV_PREFIX)gcc -m32'""").! == 0)
-        }
-        name -> (testers(i % N) !! new TestRun(dut, sample, args))
-      } foreach {case (name, f) => 
-        f.inputChannel receive {case pass: Boolean =>
-          Then(s"should pass ${name}") 
-          assert(pass)
-        }
+      t -> (testers(i % N) ? new TestRun(dut, args))
+    } foreach { case (name, f) =>
+      scala.concurrent.Await.result(f, timeout.duration) match { case pass: Boolean =>
+        it should s"pass $name" in { assert(pass) }
       }
     }
   }
 
+  /*
   def replaySamples(t: TestType) {
     property("riscv-mini should replay the following samples") { configMap =>
       implicit val p = cde.Parameters.root((new MiniConfig).toInstance)
@@ -116,17 +106,36 @@ abstract class MiniSuite(N: Int = 6) extends fixture.PropSpec with fixture.Confi
   after {
     testers foreach (_ ! TestFin)
     Tester.close
-  }
+  } */
 }
 
+/*
 class MiniISATests extends MiniSuite {
   runTests(ISATests)
 }
+*/
 
-class MiniBmarkTests extends MiniSuite {
-  runTests(BmarkTests)
+class MiniSimVeriBmarkTests extends MiniTestSuite {
+  val param = cde.Parameters.root((new SimConfig).toInstance)
+  runTests(SimWrapper(new Tile(p))(param), BmarkTests)
 }
 
+class MiniSimVCSBmarkTests extends MiniTestSuite {
+  val param = cde.Parameters.root((new SimConfig).toInstance)
+  runTests(SimWrapper(new Tile(p))(param), BmarkTests, true)
+}
+
+class MiniZynqVeriBmarkTests extends MiniTestSuite {
+  val param = cde.Parameters.root((new ZynqConfig).toInstance)
+  runTests(ZynqShim(new Tile(p))(param), BmarkTests)
+}
+
+class MiniZynqVCSBmarkTests extends MiniTestSuite {
+  val param = cde.Parameters.root((new ZynqConfig).toInstance)
+  runTests(ZynqShim(new Tile(p))(param), BmarkTests, true)
+}
+
+/*
 class ReplayISATests extends MiniSuite {
   replaySamples(ISATests)
 }
@@ -134,3 +143,4 @@ class ReplayISATests extends MiniSuite {
 class ReplayBmarkTests extends MiniSuite {
   replaySamples(BmarkTests)
 }
+*/

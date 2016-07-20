@@ -7,31 +7,26 @@ import sys.process.stringSeqToProcess
 object StroberExamples {
   def main(args: Array[String]) {
     val modName = args(1)
-    val dirName = args(2)
-    val dut = modName match {
+    val dirPath = args(2)
+    def dut = modName match {
       case "Tile"  => new mini.Tile(cde.Parameters.root((new mini.MiniConfig).toInstance))
       case "Stack" => new examples.Stack(8)
-      case _ => 
+      case _ =>
         Class.forName(s"examples.${modName}").getConstructors.head.newInstance().asInstanceOf[chisel3.Module]
     }
     args(0) match {
-      case "strober" => {
-        val chiselArgs = Array(
-          "--v", "--targetDir", dirName, "--configName", "Strober", "--configDump")
+      case "strober" =>
         implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
-        StroberCompiler(chiselArgs, ZynqShim(dut))
-      }
+        StroberCompiler(Array("--targetDir", dirPath, "--configName", "Strober"), ZynqShim(dut))
       case "vlsi" => {
         val chiselArgs = Array("--minimumCompatibility", "3.0", 
-          "--v", "--targetDir", dirName, "--configInstance", args(3), 
+          "--v", "--targetDir", dirPath, "--configInstance", args(3), 
           "--noInlineMem", "--genHarness", "--debug", "--vcd")
-        implicit val p = cde.Parameters.root((new mini.MiniConfig).toInstance)
         chiselMain(chiselArgs, () => chisel3.Module(dut))
       }
       case "replay" => {
-        val b = args(3)
         /* val chiselArgs = Array("--minimumCompatibility", "3.0", 
-          "--backend", b, "--targetDir", dirName,
+          "--backend", b, "--targetDir", dirPath,
           "--compile", "--compileInitializationUnoptimized",
           "--genHarness", "--test", "--vcd", "--vcdMem", "--debug") ++ (args drop 8)
         implicit val p = cde.Parameters.root((new mini.MiniConfig).toInstance)
@@ -53,13 +48,13 @@ object StroberExamples {
           })
           case ReplayFin => exit()
         } } } }
-        val logDir = new java.io.File(s"${dirName}/logs")
+        val logDir = new java.io.File(s"${dirPath}/logs")
         if (!logDir.exists) logDir.mkdirs
         sample.zipWithIndex map {case (sample, idx) =>
           // assign seperate dump & log files to each snapshot in sample
-          val vcd  = s"${dirName}/${prefix}_${idx}_pipe.vcd"
-          val vpd  = s"${dirName}/${prefix}_${idx}.vpd"
-          val saif = s"${dirName}/${prefix}_${idx}.saif"
+          val vcd  = s"${dirPath}/${prefix}_${idx}_pipe.vcd"
+          val vpd  = s"${dirPath}/${prefix}_${idx}.vpd"
+          val saif = s"${dirPath}/${prefix}_${idx}.saif"
           val log  = s"${logDir.getPath}/${prefix}_${idx}.log"
           val (cmd, dump) = testCmd match {
             case None if b == "c" => (None, Some(vcd))

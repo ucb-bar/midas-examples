@@ -13,14 +13,14 @@ public:
   }
 
   int run(size_t trace_len = TRACE_MAX_LEN) {
-    set_trace_len(trace_len);
-    set_mem_cycles(20);
-    size_t tohost_id = get_out_id("Tile.io_htif_host_tohost");
+    set_tracelen(trace_len);
+    set_latency(20);
+    size_t tohost_id = get_out_id("Tile.io_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
     do {
       step(trace_len);
-      tohost = peek_port(tohost_id);
+      tohost = peek(tohost_id);
     } while (tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
     double sim_time = (double) (end_time - start_time) / 1000000.0;

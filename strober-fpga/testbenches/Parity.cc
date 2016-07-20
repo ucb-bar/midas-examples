@@ -9,10 +9,10 @@ public:
     uint32_t isOdd = 0; 
     for (int i = 0 ; i < 10 ; i++) {
       uint32_t bit = rand_next(2);
-      poke_port("Parity.io_in", bit);
+      poke("Parity.io_in", bit);
       step(1);
+      expect("Parity.io_out", isOdd);
       isOdd = (isOdd + bit) % 2;
-      expect_port("Parity.io_out", isOdd);
     }
     return 0; 
   }

@@ -5,16 +5,20 @@ class Tile_t: simif_zynq_t
 public:
   Tile_t(std::vector<std::string> args): simif_zynq_t(args, "Tile", false) { 
     max_cycles = -1;
+    latency = 20;
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
+      }
+      if (arg.find("+latency=") == 0) {
+        latency = atoi(arg.c_str()+9);
       }
     }
   }
 
   int run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
-    set_latency(20);
+    set_latency(latency);
     size_t tohost_id = get_out_id("Tile.io_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
@@ -39,6 +43,7 @@ public:
 
 private:
   uint64_t max_cycles;
+  size_t latency;
 };
 
 int main(int argc, char** argv) {

@@ -5,8 +5,7 @@ object StroberBuild extends Build {
   override lazy val settings = super.settings ++ Seq(
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-deprecation","-unchecked"),
-    libraryDependencies ++= Seq("com.typesafe.akka" %% "akka-actor" % "2.3.15"),
-    parallelExecution in Test := false
+    libraryDependencies ++= Seq("com.typesafe.akka" %% "akka-actor" % "2.3.15")
   )
   lazy val chisel    = project in file("riscv-mini/chisel")
   lazy val firrtl    = project in file("riscv-mini/firrtl")
@@ -17,6 +16,6 @@ object StroberBuild extends Build {
   lazy val strober   = project dependsOn (junctions, testers)
   lazy val tutorial  = project dependsOn testers
   lazy val mini      = project in file("riscv-mini") dependsOn (junctions, testers)
-  lazy val root      = project in file(".") settings (settings:_*) dependsOn (tutorial,
-    strober % "compile->compile;test->test", mini % "compile->compile;test->test")
+  lazy val root      = project in file(".") settings (settings:_*) dependsOn (
+    tutorial, strober, mini % "compile->compile;test->test")
 }

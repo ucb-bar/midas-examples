@@ -1,10 +1,8 @@
 package StroberExamples
 
-import strober._
 import mini.Tile
-
 import chisel3.Module
-import chisel3.iotesters._
+import strober.{SimWrapper, ZynqShim, StroberCompiler}
 import scala.reflect.ClassTag
 import sys.process.stringSeqToProcess
 import java.io.File
@@ -29,8 +27,7 @@ abstract class MiniTestSuite(N: Int = 6) extends org.scalatest.FlatSpec with min
                 (new TileZynqTests(zynq, args)).finish
             }
           } catch {
-            case x: Exception =>
-              x.printStackTrace
+            case x: Exception => x.printStackTrace
           }
         )
         case TestFin => context.stop(self)
@@ -46,8 +43,8 @@ abstract class MiniTestSuite(N: Int = 6) extends org.scalatest.FlatSpec with min
       case ISATests   => (new File("riscv-mini/riscv-tests/isa"), isaTests, 15000L)
       case BmarkTests => (new File("riscv-mini/riscv-bmarks"), bmarkTests, 1500000L)
     }
-    val circuit = StroberCompiler(args, mod)
-    val dut = chiselMain(args, () => mod)
+    StroberCompiler compile (args, mod)
+    val dut = chisel3.iotesters.chiselMain(args, () => mod)
     val sim = if (vcs) "vcs" else "verilator"
     assert(dir.exists)
     behavior of s"${dut.name} in $sim"
@@ -114,7 +111,7 @@ class MiniISATests extends MiniSuite {
   runTests(ISATests)
 }
 */
-
+/*
 class MiniSimVeriBmarkTests extends MiniTestSuite {
   val param = cde.Parameters.root((new SimConfig).toInstance)
   runTests(SimWrapper(new Tile(p))(param), BmarkTests)
@@ -134,7 +131,7 @@ class MiniZynqVCSBmarkTests extends MiniTestSuite {
   val param = cde.Parameters.root((new ZynqConfig).toInstance)
   runTests(ZynqShim(new Tile(p))(param), BmarkTests, true)
 }
-
+*/
 /*
 class ReplayISATests extends MiniSuite {
   replaySamples(ISATests)

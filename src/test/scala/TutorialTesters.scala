@@ -1,6 +1,7 @@
 package StroberExamples
 
 import strober._
+import strober.testers._
 import examples._
 
 import chisel3.iotesters.PeekPokeTests

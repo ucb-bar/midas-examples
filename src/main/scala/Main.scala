@@ -17,7 +17,7 @@ object StroberExamples {
     args(0) match {
       case "strober" =>
         implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
-        StroberCompiler(Array("--targetDir", dirPath, "--configName", "Strober"), ZynqShim(dut))
+        StroberCompiler compile (Array("--targetDir", dirPath), ZynqShim(dut))
       case "vlsi" => {
         val chiselArgs = Array("--minimumCompatibility", "3.0", 
           "--v", "--targetDir", dirPath, "--configInstance", args(3), 

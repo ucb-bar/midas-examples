@@ -27,9 +27,9 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
     it should s"replay samples in $backend" in {
       chiselMainTest(testArgs(dir, backend), () => dutGen)(c => backend match {
         case "glsim" =>
-          new strober.testers.GateLevelReplay(c, sample, Some(log.toString))
+          new strober.testers.GateLevelReplay(c, sample, Some(log))
         case _ =>
-          new strober.testers.RTLReplay(c, sample, Some(log.toString))
+          new strober.testers.RTLReplay(c, sample, Some(log))
       })
     }
   }
@@ -43,9 +43,9 @@ abstract class SimTestSuite[+T <: Module : ClassTag](c: => T, backend: String)(
   val sample = new File(dir, s"$target.sample")
   behavior of s"[SimWrapper] $target in $backend"
   test(SimWrapper(c), tester, dir, backend)
-  replaySamples(c, dir, sample, "verilator")
+  /* replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim")
+  replaySamples(c, dir, sample, "glsim") */
 }
 
 abstract class ZynqTestSuite[+T <: Module : ClassTag](c: => T, backend: String)(
@@ -56,9 +56,9 @@ abstract class ZynqTestSuite[+T <: Module : ClassTag](c: => T, backend: String)(
   val sample = new File(dir, s"$target.sample")
   behavior of s"[ZynqShim] $target in $backend"
   test(ZynqShim(c), tester, dir, backend)
-  replaySamples(c, dir, sample, "verilator")
+  /* replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim")
+  replaySamples(c, dir, sample, "glsim") */
 }
 
 class GCDSimCppTest extends SimTestSuite(new GCD, "verilator")(c => new GCDSimTests(c))
@@ -77,6 +77,8 @@ class RouterSimCppTest extends SimTestSuite(new Router, "verilator")(c => new Ro
 class RouterSimVCSTest extends SimTestSuite(new Router, "vcs")(c => new RouterSimTests(c))
 class RiscSimCppTest extends SimTestSuite(new Risc, "verilator")(c => new RiscSimTests(c))
 class RiscSimVCSTest extends SimTestSuite(new Risc, "vcs")(c => new RiscSimTests(c))
+class RiscSRAMSimCppTest extends SimTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMSimTests(c))
+class RiscSRAMSimVCSTest extends SimTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMSimTests(c))
 
 class GCDZynqCppTest extends ZynqTestSuite(new GCD, "verilator")(c => new GCDZynqTests(c))
 class GCDZynqVCSTest extends ZynqTestSuite(new GCD, "vcs")(c => new GCDZynqTests(c))
@@ -94,10 +96,5 @@ class RouterZynqCppTest extends ZynqTestSuite(new Router, "verilator")(c => new 
 class RouterZynqVCSTest extends ZynqTestSuite(new Router, "vcs")(c => new RouterZynqTests(c))
 class RiscZynqCppTest extends ZynqTestSuite(new Risc, "verilator")(c => new RiscZynqTests(c))
 class RiscZynqVCSTest extends ZynqTestSuite(new Risc, "vcs")(c => new RiscZynqTests(c))
-
-/*
-class RiscSRAMSimCppTest extends SimTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMSimTests(c))
-class RiscSRAMSimVCSTest extends SimTestSuite(new RiscSRAM, true)(c => new RiscSRAMSimTests(c))
 class RiscSRAMZynqCppTest extends ZynqTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMZynqTests(c))
-class RiscSRAMZynqVCSTest extends ZynqTestSuite(new RiscSRAM, true)(c => new RiscSRAMZynqTests(c))
-*/
+class RiscSRAMZynqVCSTest extends ZynqTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMZynqTests(c))

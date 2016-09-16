@@ -3,4 +3,5 @@ project/target
 *.out
 *.swp
 *.key
+*.tmp
 test-*

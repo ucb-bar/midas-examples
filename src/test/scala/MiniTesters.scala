@@ -36,7 +36,7 @@ class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs)
 class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs)
     extends ZynqShimTester(c, false, None, args.logFile) with MiniTests {
   setTraceLen(128)
-  setMemLatency(16)
+  setMemLatency(8)
   loadMem(args.loadmem)
 
   var tohost = BigInt(0)

@@ -15,8 +15,11 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   private def testArgs(dir: File, backend: String) = baseArgs(dir) ++
     Array("--backend", backend, "--v", "--compile", "--genHarness", "--test", "--vpdmem")
 
-  def test[T <: Module : ClassTag](dutGen: => T,
-      tester: T => StroberTester[T], dir: File, backend: String) {
+  def test[T <: Module : ClassTag](
+      dutGen: => T,
+      tester: T => StroberTester[T],
+      dir: File,
+      backend: String) {
     it should s"pass strober test" in {
       StroberCompiler(baseArgs(dir), dutGen, backend)(tester)
     }
@@ -35,30 +38,34 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   }
 }
 
-abstract class SimTestSuite[+T <: Module : ClassTag](c: => T, backend: String)(
-    tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
+abstract class SimTestSuite[+T <: Module : ClassTag](
+    c: => T,
+    backend: String)
+   (tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
   implicit val p = cde.Parameters.root((new SimConfig).toInstance)
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(outDir, s"SimWrapper/$target/$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")
   behavior of s"[SimWrapper] $target in $backend"
   test(SimWrapper(c), tester, dir, backend)
-  /* replaySamples(c, dir, sample, "verilator")
+  replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim") */
+  replaySamples(c, dir, sample, "glsim")
 }
 
-abstract class ZynqTestSuite[+T <: Module : ClassTag](c: => T, backend: String)(
-    tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
+abstract class ZynqTestSuite[+T <: Module : ClassTag](
+    c: => T,
+    backend: String)
+   (tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
   implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(outDir, s"ZynqShim/$target/$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")
   behavior of s"[ZynqShim] $target in $backend"
   test(ZynqShim(c), tester, dir, backend)
-  /* replaySamples(c, dir, sample, "verilator")
+  replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim") */
+  replaySamples(c, dir, sample, "glsim")
 }
 
 class GCDSimCppTest extends SimTestSuite(new GCD, "verilator")(c => new GCDSimTests(c))

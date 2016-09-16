@@ -2,62 +2,60 @@ package StroberExamples
 
 import chisel3.Module
 import chisel3.iotesters.Driver
+import mini._
 import strober.{SimWrapper, ZynqShim, StroberCompiler}
-import mini.{Tile, MiniConfig, MiniTestArgs, RiscVTests}
 import sys.process.stringSeqToProcess
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import java.io.File
+import TestParams.{miniParam, simParam, zynqParam}
 
 object TestParams {
-  implicit def p = cde.Parameters.root((new MiniConfig).toInstance)
+  val miniParam = cde.Parameters.root((new MiniConfig).toInstance)
   val simParam = cde.Parameters.root((new SimConfig).toInstance)
   val zynqParam = cde.Parameters.root((new ZynqConfig).toInstance)
 }
-import TestParams.{p, simParam, zynqParam}
 
 abstract class MiniTestSuite[+T <: Module : ClassTag](
-    dutGen: () => T, backend: String, N: Int = 10) extends org.scalatest.FlatSpec with RiscVTests {
+    dutGen: => T,
+    backend: String,
+    testType: TestType,
+    N: Int = 10) extends org.scalatest.FlatSpec {
   val dutName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  val testDir = new File(outDir, s"$dutName/Tile")
-  val args = Array("--targetDir", testDir.toString)
-  val dut = StroberCompiler compile (args, dutGen(), backend)
+  val dir = new File(s"test-outs/$dutName/Tile/$testType") ; dir.mkdirs
+  val args = Array("--targetDir", dir.toString)
+  val dut = StroberCompiler compile (args, dutGen, backend, false)
   val vcs = backend == "vcs"
   behavior of s"$dutName in $backend"
 
-  def runTests(testType: TestType) = {
-    val (dir, tests, maxcycles) = testType match {
-      case ISATests   => (new File("riscv-mini/riscv-tests/isa"), isaTests, 15000L)
-      case BmarkTests => (new File("riscv-mini/riscv-bmarks"), bmarkTests, 1500000L)
+  import scala.concurrent.duration._
+  import ExecutionContext.Implicits.global
+  val results = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
+    val subresults = subtests map { case (t, i) =>
+      val loadmem = getClass.getResourceAsStream(s"/$t.hex")
+      val logFile = Some(new File(dir, s"$t-$backend.log"))
+      val waveform = Some(new File(dir, s"$t.%s".format(if (vcs) "vpd" else "vcd")))
+      val testArgs = new MiniTestArgs(loadmem, logFile, false, testType.maxcycles) // latency)
+      Future(t -> (dut match {
+        case _: SimWrapper[_] =>
+          (StroberCompiler test (
+            args,
+            dutGen.asInstanceOf[SimWrapper[Tile]],
+            backend,
+            waveform, false)
+          )(m => new TileSimTests(m, testArgs))
+        case _: ZynqShim[_] =>
+          (StroberCompiler test(
+            args,
+            dutGen.asInstanceOf[ZynqShim[SimWrapper[Tile]]],
+            backend,
+            waveform, false)
+          )(m => new TileZynqTests(m, testArgs))
+      }))
     }
-    assert(dir.exists)
-    import scala.concurrent.duration._
-    import ExecutionContext.Implicits.global
-    val results = tests.zipWithIndex sliding (N, N) map { subtests => Future {
-      val subresults = subtests map {case (t, i) =>
-        val loadmem = new File(dir, s"$t.hex")
-        val logFile = Some(new File(testDir, s"$t-$backend.log"))
-        val waveform = Some(new File(testDir, s"$t.%s".format(if (vcs) "vpd" else "vcd")))
-        val testArgs = new MiniTestArgs(loadmem, logFile, false, maxcycles) // latency)
-        if (!loadmem.exists) {
-          assert(Seq("make", "-C", dir.getPath.toString, s"$t.hex",
-                     """'RISCV_GCC=$(RISCV_PREFIX)gcc -m32'""").! == 0)
-        }
-        Future { t -> (dut match {
-          case _: SimWrapper[_] =>
-            StroberCompiler.test(args, dutGen().asInstanceOf[SimWrapper[Tile]], backend)(
-              m => new TileSimTests(m, testArgs))
-          case _: ZynqShim[_] =>
-            StroberCompiler.test(args, dutGen().asInstanceOf[ZynqShim[SimWrapper[Tile]]], backend)(
-              m => new TileZynqTests(m, testArgs))
-        })}
-      }
-      Await.result(Future.sequence(subresults), Duration.Inf)
-    } }
-    Await.result(Future.sequence(results), Duration.Inf).flatten foreach {
-      case (name, pass) => it should s"pass $name" in { assert(pass) }
-    }
+    Await.result(Future.sequence(subresults), Duration.Inf)
   }
+  results.flatten foreach { case (name, pass) => it should s"pass $name" in { assert(pass) } }
 
   /*
   def replaySamples(t: TestType) {
@@ -91,18 +89,18 @@ abstract class MiniTestSuite[+T <: Module : ClassTag](
         }
       }
     }
-  }
-
-  after {
-    testers foreach (_ ! TestFin)
-    Tester.close
   } */
-
-  // runTests(ISATests)
-  runTests(BmarkTests)
 }
 
-class MiniSimCppTests extends MiniTestSuite(() => SimWrapper(new Tile(p))(simParam), "verilator")
-class MiniSimVCSTests extends MiniTestSuite(() => SimWrapper(new Tile(p))(simParam), "vcs")
-class MiniZynqCppTests extends MiniTestSuite(() => ZynqShim(new Tile(p))(zynqParam), "verilator")
-class MiniZynqVCSTests extends MiniTestSuite(() => ZynqShim(new Tile(p))(zynqParam), "vcs")
+class MiniSimCppSimpleTests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "verilator", SimpleTests)
+// class MiniSimCppISATests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "verilator", ISATests)
+// class MiniSimCppBmarkTests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "verilator", BmarkTests)
+class MiniSimVCSSimpleTests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "vcs", SimpleTests)
+// class MiniSimVCSISATests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "vcs", ISATests)
+// class MiniSimVCSBmarkTests extends MiniTestSuite(SimWrapper(new Tile(miniParam))(simParam), "vcs", BmarkTests)
+class MiniZynqCppSimpleTests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "verilator", SimpleTests)
+// class MiniZynqCppISATests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "verilator", ISATests)
+// class MiniZynqCppBmarkTests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "verilator", BmarkTests)
+class MiniZynqVCSSimpleTests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "vcs", SimpleTests)
+// class MiniZynqVCSISATests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "vcs", ISATests)
+// class MiniZynqVCSBMarkTests extends MiniTestSuite(ZynqShim(new Tile(miniParam))(zynqParam), "vcs", BmarkTests)

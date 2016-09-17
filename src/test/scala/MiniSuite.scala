@@ -20,11 +20,13 @@ abstract class MiniTestSuite[+T <: Module : ClassTag](
     dutGen: => T,
     backend: String,
     testType: TestType,
+    latency: Int = 8,
+    snapshot: Boolean = false,
     N: Int = 10) extends org.scalatest.FlatSpec {
   val dutName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(s"test-outs/$dutName/Tile/$testType") ; dir.mkdirs
   val args = Array("--targetDir", dir.toString)
-  val dut = StroberCompiler compile (args, dutGen, backend, false)
+  val dut = StroberCompiler compile (args, dutGen, backend, snapshot)
   val vcs = backend == "vcs"
   behavior of s"$dutName in $backend"
 
@@ -32,24 +34,26 @@ abstract class MiniTestSuite[+T <: Module : ClassTag](
   import ExecutionContext.Implicits.global
   val results = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
     val subresults = subtests map { case (t, i) =>
-      val loadmem = getClass.getResourceAsStream(s"/$t.hex")
+      val loadmem = getClass.getResourceAsStream(s"/mini/$t.hex")
       val logFile = Some(new File(dir, s"$t-$backend.log"))
       val waveform = Some(new File(dir, s"$t.%s".format(if (vcs) "vpd" else "vcd")))
-      val testArgs = new MiniTestArgs(loadmem, logFile, false, testType.maxcycles) // latency)
+      val testArgs = new MiniTestArgs(loadmem, logFile, false, testType.maxcycles, latency)
       Future(t -> (dut match {
         case _: SimWrapper[_] =>
           (StroberCompiler test (
             args,
             dutGen.asInstanceOf[SimWrapper[Tile]],
             backend,
-            waveform, false)
+            waveform,
+            snapshot)
           )(m => new TileSimTests(m, testArgs))
         case _: ZynqShim[_] =>
           (StroberCompiler test(
             args,
             dutGen.asInstanceOf[ZynqShim[SimWrapper[Tile]]],
             backend,
-            waveform, false)
+            waveform,
+            snapshot)
           )(m => new TileZynqTests(m, testArgs))
       }))
     }

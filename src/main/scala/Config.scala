@@ -39,7 +39,7 @@ class SimConfig extends Config(
 
 class ZynqConfig extends Config(new SimConfig ++ new Config(
   (key, site, here) => key match {
-    case MasterNastiKey => NastiParameters(32, 32, 12)
+    case CtrlNastiKey => NastiParameters(32, 32, 12)
     case SlaveNastiKey  => NastiParameters(64, 32, 6)
     // case MemMaxCycles    => 256
   })

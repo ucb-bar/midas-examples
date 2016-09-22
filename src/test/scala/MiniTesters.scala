@@ -32,7 +32,8 @@ class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs, sample: Option[File]
 class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs, sample: Option[File] = None)
     extends ZynqShimTester(c, false, sample, args.logFile) with MiniTests {
   setTraceLen(128)
-  setMemLatency(args.memlatency)
+  //TODO: Handle this more elegantly, and not with strings
+  writeCR("MemModel_0", "LATENCY", 16)
   loadMem(args.loadmem)
 
   var tohost = BigInt(0)

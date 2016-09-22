@@ -3,17 +3,18 @@ package StroberExamples
 import chisel3.Module
 import chisel3.iotesters.Driver
 import mini._
+import cde.Parameters.root
 import strober.{SimWrapper, ZynqShim, StroberCompiler}
-import sys.process.stringSeqToProcess
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import java.io.File
 import TestParams.{miniParam, simParam, zynqParam}
 
 object TestParams {
-  val miniParam = cde.Parameters.root((new MiniConfig).toInstance)
-  val simParam = cde.Parameters.root((new SimConfig).toInstance)
-  val zynqParam = cde.Parameters.root((new ZynqConfig).toInstance)
+  val chaserParam = root((new PointerChaserConfig).toInstance)
+  val miniParam = root((new MiniConfig).toInstance)
+  val simParam = root((new SimConfig).toInstance)
+  val zynqParam = root((new ZynqConfig).toInstance)
 }
 
 abstract class MiniTestSuite[+T <: Module : ClassTag](

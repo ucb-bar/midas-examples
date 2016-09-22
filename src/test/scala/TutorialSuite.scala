@@ -42,7 +42,7 @@ abstract class SimTestSuite[+T <: Module : ClassTag](
     c: => T,
     backend: String)
    (tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
-  implicit val p = cde.Parameters.root((new SimConfig).toInstance)
+  implicit val p = TestParams.simParam
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(outDir, s"SimWrapper/$target/$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")
@@ -57,7 +57,7 @@ abstract class ZynqTestSuite[+T <: Module : ClassTag](
     c: => T,
     backend: String)
    (tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
-  implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
+  implicit val p = TestParams.zynqParam
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(outDir, s"ZynqShim/$target/$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")

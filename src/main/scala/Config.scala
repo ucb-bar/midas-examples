@@ -3,6 +3,8 @@ package StroberExamples
 import strober._
 import junctions._
 import cde._
+import midas_widgets._
+import dram_midas._
 
 case object PAddrBits extends Field[Int]
 
@@ -41,6 +43,18 @@ class ZynqConfig extends Config(new SimConfig ++ new Config(
   (key, site, here) => key match {
     case CtrlNastiKey => NastiParameters(32, 32, 12)
     case SlaveNastiKey  => NastiParameters(64, 32, 6)
+    case MemModelKey => Some(new LBPipeConfig(maxReads = 16, maxWrites = 16))
+    //case MemModelKey => None
     // case MemMaxCycles    => 256
   })
 )
+
+
+class WithLBPipe extends Config(
+  (pname,_,_) => pname match {
+    case MemModelKey => Some(new LBPipeConfig(maxReads = 16, maxWrites = 16))
+  }
+)
+
+class ZynqConfigWithMemModel extends Config(new WithLBPipe ++ new ZynqConfig)
+

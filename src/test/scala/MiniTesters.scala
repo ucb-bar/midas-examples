@@ -1,5 +1,7 @@
 package StroberExamples
 
+import dram_midas.MidasMemModel
+import midas_widgets._
 import strober.{SimWrapper, ZynqShim}
 import strober.testers.{SimWrapperTester, ZynqShimTester}
 import mini.{Tile, MiniTests, MiniTestArgs}
@@ -32,8 +34,17 @@ class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs, sample: Option[File]
 class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs, sample: Option[File] = None)
     extends ZynqShimTester(c, false, sample, args.logFile) with MiniTests {
   setTraceLen(128)
-  //TODO: Handle this more elegantly, and not with strings
-  writeCR("MemModel_0", "LATENCY", 16)
+
+  c.widgets foreach {
+    case w: MidasMemModel => {
+      writeCR(w, "writeMaxReqs", 8)
+      writeCR(w, "writeLatency", 16)
+      writeCR(w, "readMaxReqs", 8)
+      writeCR(w, "readLatency", 16)}
+    case w: SimpleLatencyPipe => writeCR(w, "LATENCY", 16)
+    case _ => None
+  }
+
   loadMem(args.loadmem)
 
   var tohost = BigInt(0)

@@ -12,13 +12,11 @@ public:
       uint32_t in    = rand_next(16);
       uint32_t shift = rand_next(2);
       if (shift == 1) ins[k % 5] = in;
-      poke_port("ResetShiftRegister.io_in",    in);
-      poke_port("ResetShiftRegister.io_shift", shift);
+      poke("ResetShiftRegister.io_in",    in);
+      poke("ResetShiftRegister.io_shift", shift);
       step(1);
+      expect("ResetShiftRegister.io_out", cycles() < 4 ? 0 : ins[(k + 1) % 5]);
       if (shift == 1) k++;
-      uint32_t expected = 0;
-      if (cycles() >= 4) expected = ins[(k + 1) % 5];
-      expect_port("ResetShiftRegister.io_out", expected);
     }
     return 0; 
   }

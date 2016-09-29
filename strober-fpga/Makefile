@@ -1,17 +1,29 @@
-##########################
-# STEP3: FPGA Simulators #
-##########################
+###########################
+#     FPGA Simulators     #
+###########################
 
 base_dir := $(abspath ..)
 fpga_dir := $(abspath .)
 gen_dir  := $(fpga_dir)/generated-src
 res_dir  := $(fpga_dir)/results
 
-include $(base_dir)/Makefrag-strober
+SBT       = sbt
+SBT_FLAGS =
 
-# STEP3-1: Generate bitstream
+# Desings
+tut  := GCD Parity Stack Router Risc RiscSRAM \
+        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+mini := Tile
+
+CONFIG ?= Strober
+
+src_path = src/main/scala
+modules = . strober riscv-mini
+chisel_src = $(wildcard $(base_dir)/$(src_path)/examples/*.scala \
+	$(addprefix $(base_dir)/, $(addsuffix /$(src_path)/*.scala, $(modules))))
+
+# Generate bitstream
 board     ?= zedboard
-memgen    := $(fpga_dir)/fpga_mem_gen
 board_dir := $(fpga_dir)/fpga-zynq/$(board)
 bitstream := fpga-images-$(board)/boot.bin
 
@@ -21,18 +33,17 @@ fpga      := $(addsuffix -fpga,    $(tut) $(mini))
 $(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(chisel_src)
 	mkdir -p $(res_dir)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
-	if [ -a $(gen_dir)/$*NastiShim.Strober.conf ]; then \
-          $(memgen) $(gen_dir)/$*NastiShim.Strober.conf >> $(gen_dir)/$*NastiShim.Strober.v; \
-        fi
-	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
+	cd $(gen_dir) ; cp ZynqShim.v ZynqShim.$*.v
+	cd $(gen_dir) ; cp $*.map $(res_dir)
+	#cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
 $(strober): %-strober: $(gen_dir)/%-const.h
 	
 $(fpga): %-fpga: $(gen_dir)/%-const.h
-	cd $(board_dir); $(MAKE) clean; time $(MAKE) $(bitstream) DESIGN=$* CONFIG=Strober; \
+	cd $(board_dir); $(MAKE) clean ; time $(MAKE) $(bitstream) DESIGN=$* CONFIG=$*; \
 	cp $(bitstream) $(res_dir)
 
-# STEP3-2: Compile driver
+# Compile driver
 zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
 csrc_dir   := $(fpga_dir)/testbenches
 driver_dir := $(base_dir)/strober/csrc

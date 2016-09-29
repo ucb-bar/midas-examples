@@ -1,134 +1,115 @@
 package StroberExamples
 
-import Chisel._
-import strober._
-import TutorialExamples._
-import org.scalatest.fixture.{FlatSpec, ConfigMapFixture}
-import org.scalatest.BeforeAndAfter
-import cde.Parameters
+import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler}
+import strober.testers.{StroberTester, SimWrapperTester, ZynqShimTester}
+import examples._
+import chisel3.Module
+import chisel3.iotesters.{Driver, chiselMainTest}
 
-trait TestSuiteCommon {
-  protected val outDir = new java.io.File("test-outs")
-  protected val logDir = new java.io.File("test-logs")
-  protected val dumpDir = new java.io.File("test-dumps")
-  private val baseArgs = Array(
-    "--targetDir", outDir.getPath.toString,
-    /* "--minimumCompatibility", "3.0", */"--genHarness",
-    "--compile", "--compileInitializationUnoptimized")
-  private def testArgs(b: String) = baseArgs ++ Array("--backend", b)
-  private def debugArgs(b: String) = testArgs(b) ++ Array("--debug", "--vcd")
+import scala.reflect.ClassTag
+import java.io.File
 
-  def elaborate[T <: Module](c: => T, b: String, debug: Boolean=false): T = {
-    val args = if (debug) debugArgs(b) else testArgs(b)
-    chiselMain(args, () => c)
-  }
+abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
+  protected val outDir = new File("test-outs") ; outDir.mkdirs
+  private def baseArgs(dir: File) = Array("--targetDir", dir.getPath.toString)
 
-  def elaborateCpp[T <: Module](c: => T, debug: Boolean=false) = elaborate(c, "c", debug)
-
-  def elaborateVerilog[T <: Module](c: => T, debug: Boolean=false) = elaborate(c, "v", debug)
-
-  def replaySamples[T <: Module](c: T, sample: String, dump: String, log: String) = {
-    assert((new Replay(c, new ReplayArgs(Sample.load(sample), Some(dump), Some(log)))).finish)
-  }
-
-  if (!logDir.exists) logDir.mkdir
-  if (!dumpDir.exists) dumpDir.mkdir
-}
-
-class TutorialSuite extends FlatSpec with ConfigMapFixture with BeforeAndAfter with TestSuiteCommon {
-  def checkStrober[T <: Module](c: T, args: StroberTestArgs) {
-    assert(c match {
-      case w: SimWrapper[_] => w.target match {
-        case _: GCD => (new GCDSimTests(
-          w.asInstanceOf[SimWrapper[GCD]], args)).finish
-        case _: Parity => (new ParitySimTests(
-          w.asInstanceOf[SimWrapper[Parity]], args)).finish
-        case _: ShiftRegister => (new ShiftRegisterSimTests(
-          w.asInstanceOf[SimWrapper[ShiftRegister]], args)).finish
-        case _: ResetShiftRegister => (new ResetShiftRegisterSimTests(
-          w.asInstanceOf[SimWrapper[ResetShiftRegister]], args)).finish
-        case _: EnableShiftRegister => (new EnableShiftRegisterSimTests(
-          w.asInstanceOf[SimWrapper[EnableShiftRegister]], args)).finish
-        case _: MemorySearch => (new MemorySearchSimTests(
-          w.asInstanceOf[SimWrapper[MemorySearch]], args)).finish
-        case _: Stack => (new StackSimTests(
-          w.asInstanceOf[SimWrapper[Stack]], args)).finish
-        case _: Router => (new RouterSimTests(
-          w.asInstanceOf[SimWrapper[Router]], args)).finish
-        case _: Risc => (new RiscSimTests(
-          w.asInstanceOf[SimWrapper[Risc]], args)).finish
-        case _: RiscSRAM => (new RiscSRAMSimTests(
-          w.asInstanceOf[SimWrapper[RiscSRAM]], args)).finish
-      }
-      case w: NastiShim[_] => w.sim.asInstanceOf[SimWrapper[_]].target match {
-        case _: GCD => (new GCDNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[GCD]]], args)).finish
-        case _: Parity => (new ParityNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[Parity]]], args)).finish
-        case _: ShiftRegister => (new ShiftRegisterNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[ShiftRegister]]], args)).finish
-        case _: ResetShiftRegister => (new ResetShiftRegisterNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[ResetShiftRegister]]], args)).finish
-        case _: EnableShiftRegister => (new EnableShiftRegisterNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[EnableShiftRegister]]], args)).finish
-        case _: MemorySearch => (new MemorySearchNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[MemorySearch]]], args)).finish
-        case _: Stack => (new StackNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[Stack]]], args)).finish
-        case _: Router => (new RouterNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[Router]]], args)).finish
-        case _: Risc => (new RiscNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[Risc]]], args)).finish
-        case _: RiscSRAM => (new RiscSRAMNastiShimTests(
-          w.asInstanceOf[NastiShim[SimWrapper[RiscSRAM]]], args)).finish
-      }
-    })
-  }
-
-  def runTests[M <: Module](c: => M) {
-    val name = c.getClass.getSimpleName
-    val sample = s"${outDir.getPath}/${name}.sample"
-    behavior of s"${name}"
-    it should "pass Strober Tests" in { configMap =>
-      val b = configMap("b").asInstanceOf[String]
-      val w = configMap("w").asInstanceOf[String]
-      val log = s"${logDir.getPath}/${name}-${w}-${b}.log"
-      val dump = b match {
-        case "c" => s"${dumpDir.getPath}/${name}-${w}.vcd"
-        case "v" => s"${dumpDir.getPath}/${name}-${w}.vpd"
-      }
-      implicit val p = Parameters.root((w match {
-        case "sim"   => new SimConfig
-        case "nasti" => new NastiConfig}).toInstance)
-      checkStrober(elaborate(w match {
-        case "sim"   => SimWrapper(c)
-        case "nasti" => NastiShim(c)
-      }, b, true), new StroberTestArgs(Some(sample), Some(dump), Some(log)))
-    }
-    it should s"replay samples from Strober" in { configMap =>
-      val b = configMap("b").asInstanceOf[String]
-      val w = configMap("w").asInstanceOf[String]
-      replaySamples(elaborateCpp(Module(c), true), sample,
-        s"${dumpDir.getPath}/${name}-${w}-${b}-replay.vcd",
-        s"${logDir.getPath}/${name}-${w}-${b}-replay.log")
-      replaySamples(elaborateVerilog(Module(c), true), sample, 
-        s"${dumpDir.getPath}/${name}-${w}-${b}-replay.vpd",
-        s"${logDir.getPath}/${name}-${w}-${b}-replay.log")
+  def test[T <: Module : ClassTag](
+      dutGen: => T,
+      tester: T => StroberTester[T],
+      dir: File,
+      backend: String) {
+    it should s"pass strober test" in {
+      StroberCompiler(baseArgs(dir), dutGen, backend)(tester)
     }
   }
 
-  before { 
-    Sample.clear
-    transforms.clear
+  def replaySamples[T <: Module : ClassTag](
+      dutGen: => T,
+      dir: File,
+      sample: File,
+      backend: String) {
+    val vcd = if (backend == "verilator") "vcd" else "vpd"
+    val logFile = Some(new File(dir, s"replay-$backend.log"))
+    val waveform = Some(new File(dir, s"replay-$backend.$vcd"))
+    it should s"replay samples in $backend" in {
+      ReplayCompiler(baseArgs(dir), dutGen, backend, waveform)(c => backend match {
+        case "glsim" =>
+          new strober.testers.GateLevelReplay(c, sample, logFile)
+        case _ =>
+          new strober.testers.RTLReplay(c, sample, logFile)
+      })
+    }
   }
-  runTests(new GCD)
-  runTests(new Parity)
-  runTests(new ShiftRegister)
-  runTests(new ResetShiftRegister)
-  runTests(new EnableShiftRegister)
-  runTests(new MemorySearch)
-  runTests(new Stack(8))
-  // runTests(new Router)
-  runTests(new Risc)
-  // runTests(new RiscSRAM)
 }
+
+abstract class SimTestSuite[+T <: Module : ClassTag](
+    c: => T,
+    backend: String)
+   (tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
+  implicit val p = TestParams.simParam
+  val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+  val dir = new File(outDir, s"$target/sim-$backend") ; dir.mkdirs
+  val sample = new File(dir, s"$target.sample")
+if (backend != "verilator") {
+  behavior of s"[SimWrapper] $target in $backend"
+  test(SimWrapper(c), tester, dir, backend)
+  // replaySamples(c, dir, sample, "verilator")
+  replaySamples(c, dir, sample, "vcs")
+  replaySamples(c, dir, sample, "glsim")
+}
+}
+
+abstract class ZynqTestSuite[+T <: Module : ClassTag](
+    c: => T,
+    backend: String)
+   (tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
+  implicit val p = TestParams.zynqParam
+  val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+  val dir = new File(outDir, s"$target/zynq-$backend") ; dir.mkdirs
+  val sample = new File(dir, s"$target.sample")
+if (backend != "verilator") {
+  behavior of s"[ZynqShim] $target in $backend"
+  test(ZynqShim(c), tester, dir, backend)
+  // replaySamples(c, dir, sample, "verilator")
+  replaySamples(c, dir, sample, "vcs")
+  replaySamples(c, dir, sample, "glsim")
+}
+}
+
+class GCDSimCppTest extends SimTestSuite(new GCD, "verilator")(c => new GCDSimTests(c))
+class GCDSimVCSTest extends SimTestSuite(new GCD, "vcs")(c => new GCDSimTests(c))
+class ParitySimCppTest extends SimTestSuite(new Parity, "verilator")(c => new ParitySimTests(c))
+class ParitySimVCSTest extends  SimTestSuite(new Parity, "vcs")(c => new ParitySimTests(c))
+class ShiftRegisterSimCppTest extends SimTestSuite(new ShiftRegister, "verilator")(c => new ShiftRegisterSimTests(c))
+class ShiftRegisterSimVCSTest extends SimTestSuite(new ShiftRegister, "vcs")(c => new ShiftRegisterSimTests(c))
+class ResetShiftRegisterSimCppTest extends SimTestSuite(new ResetShiftRegister, "verilator")(c => new ResetShiftRegisterSimTests(c))
+class ResetShiftRegisterSimVCSTest extends SimTestSuite(new ResetShiftRegister, "vcs")(c => new ResetShiftRegisterSimTests(c))
+class EnableShiftRegisterSimCppTest extends SimTestSuite(new EnableShiftRegister, "verilator")(c => new EnableShiftRegisterSimTests(c))
+class EnableShiftRegisterSimVCSTest extends SimTestSuite(new EnableShiftRegister, "vcs")(c => new EnableShiftRegisterSimTests(c))
+class StackSimCppTest extends SimTestSuite(new Stack(8), "verilator")(c => new StackSimTests(c))
+class StackSimVCSTest extends SimTestSuite(new Stack(8), "vcs")(c => new StackSimTests(c))
+class RouterSimCppTest extends SimTestSuite(new Router, "verilator")(c => new RouterSimTests(c))
+class RouterSimVCSTest extends SimTestSuite(new Router, "vcs")(c => new RouterSimTests(c))
+class RiscSimCppTest extends SimTestSuite(new Risc, "verilator")(c => new RiscSimTests(c))
+class RiscSimVCSTest extends SimTestSuite(new Risc, "vcs")(c => new RiscSimTests(c))
+class RiscSRAMSimCppTest extends SimTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMSimTests(c))
+class RiscSRAMSimVCSTest extends SimTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMSimTests(c))
+
+class GCDZynqCppTest extends ZynqTestSuite(new GCD, "verilator")(c => new GCDZynqTests(c))
+class GCDZynqVCSTest extends ZynqTestSuite(new GCD, "vcs")(c => new GCDZynqTests(c))
+class ParityZynqCppTest extends ZynqTestSuite(new Parity, "verilator")(c => new ParityZynqTests(c))
+class ParityZynqVCSTest extends ZynqTestSuite(new Parity, "vcs")(c => new ParityZynqTests(c))
+class ShiftRegisterZynqCppTest extends ZynqTestSuite(new ShiftRegister, "verilator")(c => new ShiftRegisterZynqTests(c))
+class ShiftRegisterZynqVCSTest extends ZynqTestSuite(new ShiftRegister, "vcs")(c => new ShiftRegisterZynqTests(c))
+class ResetShiftRegisterZynqCppTest extends ZynqTestSuite(new ResetShiftRegister, "verilator")(c => new ResetShiftRegisterZynqTests(c))
+class ResetShiftRegisterZynqVCSTest extends ZynqTestSuite(new ResetShiftRegister, "vcs")(c => new ResetShiftRegisterZynqTests(c))
+class EnableShiftRegisterZynqCppTest extends ZynqTestSuite(new EnableShiftRegister, "verilator")(c => new EnableShiftRegisterZynqTests(c))
+class EnableShiftRegisterZynqVCSTest extends ZynqTestSuite(new EnableShiftRegister, "vcs")(c => new EnableShiftRegisterZynqTests(c))
+class StackZynqCppTest extends ZynqTestSuite(new Stack(8), "verilator")(c => new StackZynqTests(c))
+class StackZynqVCSTest extends ZynqTestSuite(new Stack(8), "vcs")(c => new StackZynqTests(c))
+class RouterZynqCppTest extends ZynqTestSuite(new Router, "verilator")(c => new RouterZynqTests(c))
+class RouterZynqVCSTest extends ZynqTestSuite(new Router, "vcs")(c => new RouterZynqTests(c))
+class RiscZynqCppTest extends ZynqTestSuite(new Risc, "verilator")(c => new RiscZynqTests(c))
+class RiscZynqVCSTest extends ZynqTestSuite(new Risc, "vcs")(c => new RiscZynqTests(c))
+class RiscSRAMZynqCppTest extends ZynqTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMZynqTests(c))
+class RiscSRAMZynqVCSTest extends ZynqTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMZynqTests(c))

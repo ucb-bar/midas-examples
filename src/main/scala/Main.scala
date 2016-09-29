@@ -1,55 +1,39 @@
 package StroberExamples
 
-import Chisel._
 import strober._
-import scala.actors.Actor._
+import chisel3.iotesters.chiselMain
 import sys.process.stringSeqToProcess
-
-class Tile(implicit p: cde.Parameters) extends mini.Tile()(p) {
-  if (core.useNasti) {
-    SimMemIO(io.nasti)
-  } else {
-  }
-}
+import cde.Parameters.root
 
 object StroberExamples {
   def main(args: Array[String]) {
     val modName = args(1)
-    val dirName = args(2)
-    def mod(implicit p: cde.Parameters) = modName match {
-      case "Tile"  => new Tile
-      case "Stack" => new TutorialExamples.Stack(8)
-      case _ => 
-        Class.forName(s"TutorialExamples.${modName}").getConstructors.head.newInstance().asInstanceOf[Module]
+    val dirPath = args(2)
+    def dut = modName match {
+      case "PointerChaser" => new PointerChaser()(root((new PointerChaserConfig).toInstance))
+      case "Tile"  => new mini.Tile(root((new mini.MiniConfig).toInstance))
+      case "Stack" => new examples.Stack(8)
+      case _ =>
+        Class.forName(s"examples.${modName}").getConstructors.head.newInstance().asInstanceOf[chisel3.Module]
     }
     args(0) match {
-      case "strober" => {
-        val chiselArgs = Array(//"--minimumCompatibility", "3.0", 
-          "--backend", "fpga", "--targetDir", dirName, "--configName", "Strober", "--configDump")
-        implicit val p = modName match {
-          case "Tile" => 
-            cde.Parameters.root((new MiniNastiConfig).toInstance)
-          case _ => 
-            cde.Parameters.root((new NastiConfig).toInstance)
-        }
-        chiselMain(chiselArgs, () => NastiShim(mod))
-      }
+      case "strober" =>
+        implicit val p = root((new ZynqConfig).toInstance)
+        StroberCompiler compile (Array("--targetDir", dirPath), ZynqShim(dut), true)
       case "vlsi" => {
         val chiselArgs = Array("--minimumCompatibility", "3.0", 
-          "--v", "--targetDir", dirName, "--configInstance", args(3), 
+          "--v", "--targetDir", dirPath, "--configInstance", args(3), 
           "--noInlineMem", "--genHarness", "--debug", "--vcd")
-        implicit val p = cde.Parameters.root((new mini.MiniConfig).toInstance)
-        chiselMain(chiselArgs, () => Module(mod))
+        chiselMain(chiselArgs, () => chisel3.Module(dut))
       }
       case "replay" => {
-        val b = args(3)
-        val chiselArgs = Array("--minimumCompatibility", "3.0", 
-          "--backend", b, "--targetDir", dirName,
+        /* val chiselArgs = Array("--minimumCompatibility", "3.0", 
+          "--backend", b, "--targetDir", dirPath,
           "--compile", "--compileInitializationUnoptimized",
           "--genHarness", "--test", "--vcd", "--vcdMem", "--debug") ++ (args drop 8)
         implicit val p = cde.Parameters.root((new mini.MiniConfig).toInstance)
         // elaborate the design first
-        val dut = chiselMain(chiselArgs, () => Module(mod))
+        val dut = chiselMain(chiselArgs, () => chisel3.Module(mod))
         // should load samples after design elaboration
         val sample = Sample.load(args(4))
         val prefix = (new java.io.File(args(4)).getName split '.').head
@@ -66,13 +50,13 @@ object StroberExamples {
           })
           case ReplayFin => exit()
         } } } }
-        val logDir = new java.io.File(s"${dirName}/logs")
+        val logDir = new java.io.File(s"${dirPath}/logs")
         if (!logDir.exists) logDir.mkdirs
         sample.zipWithIndex map {case (sample, idx) =>
           // assign seperate dump & log files to each snapshot in sample
-          val vcd  = s"${dirName}/${prefix}_${idx}_pipe.vcd"
-          val vpd  = s"${dirName}/${prefix}_${idx}.vpd"
-          val saif = s"${dirName}/${prefix}_${idx}.saif"
+          val vcd  = s"${dirPath}/${prefix}_${idx}_pipe.vcd"
+          val vpd  = s"${dirPath}/${prefix}_${idx}.vpd"
+          val saif = s"${dirPath}/${prefix}_${idx}.saif"
           val log  = s"${logDir.getPath}/${prefix}_${idx}.log"
           val (cmd, dump) = testCmd match {
             case None if b == "c" => (None, Some(vcd))
@@ -90,7 +74,7 @@ object StroberExamples {
           f.inputChannel receive {case pass: Boolean => idx -> pass}
         } foreach {case (idx, pass) => if (!pass) ChiselError.error(s"SAMPLE #${idx} FAILED")}
         replays foreach (_ ! ReplayFin)
-        Tester.close
+        Tester.close */
       }
     }
   }

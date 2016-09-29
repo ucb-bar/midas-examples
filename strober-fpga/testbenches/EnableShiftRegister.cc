@@ -11,16 +11,14 @@ public:
     for (int i = 0 ; i < 16 ; i++) {
       uint32_t in    = rand_next(2);
       uint32_t shift = rand_next(2);
-      simif_t::poke_port("EnableShiftRegister.io_in",    in);
-      simif_t::poke_port("EnableShiftRegister.io_shift", shift);
+      poke("EnableShiftRegister.io_in",    in);
+      poke("EnableShiftRegister.io_shift", shift);
       step(1);
+      expect("EnableShiftRegister.io_out", reg[3]);
       if (shift) {
-        for (int j = 3 ; j > 0 ; j--) {
-          reg[j] = reg[j-1];
-        }
+        for (int j = 3 ; j > 0 ; j--) reg[j] = reg[j-1];
         reg[0] = in;
       }
-      expect_port("EnableShiftRegister.io_out", reg[3]);
     }
     return 0; 
   }

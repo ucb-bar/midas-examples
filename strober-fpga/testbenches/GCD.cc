@@ -9,14 +9,12 @@ public:
   virtual int run() {
     uint32_t a = 64, b = 48, z = 16; //test vectors
     do {
-      uint32_t first = 0;
-      if (cycles() == 0) first = 1;
-      poke_port("GCD.io_a", a);
-      poke_port("GCD.io_b", b);
-      poke_port("GCD.io_e", first);
+      poke("GCD.io_a", a);
+      poke("GCD.io_b", b);
+      poke("GCD.io_e", cycles() == 0 ? 1 : 0);
       step(1);
-    } while (cycles() <= 1 || peek_port("GCD.io_v") == 0);
-    expect_port("GCD.io_z", z);
+    } while (cycles() <= 1 || peek("GCD.io_v") == 0);
+    expect("GCD.io_z", z);
     return 0;
   }
 };

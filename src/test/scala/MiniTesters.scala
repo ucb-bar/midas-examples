@@ -3,11 +3,11 @@ package StroberExamples
 import strober.{SimWrapper, ZynqShim}
 import strober.testers.{SimWrapperTester, ZynqShimTester}
 import mini.{Tile, MiniTests, MiniTestArgs}
-
 import junctions._
+import java.io.File
 
-class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs)
-    extends SimWrapperTester(c, false, None, args.logFile) with MiniTests {
+class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs, sample: Option[File] = None)
+    extends SimWrapperTester(c, false, sample, args.logFile) with MiniTests {
   val arHandler = new DecoupledSink(c.target.io.nasti.ar, (ar: NastiReadAddressChannel) =>
     new mini.TestNastiReadAddr(peek(ar.id), peek(ar.addr), peek(ar.size), peek(ar.len)))
   val awHandler = new DecoupledSink(c.target.io.nasti.aw, (aw: NastiWriteAddressChannel) =>
@@ -24,17 +24,13 @@ class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs)
 
   nasti loadMem args.loadmem
   preprocessors += nasti
-  arHandler.process()
-  awHandler.process()
-  rHandler.process()
-  wHandler.process()
 
-  setTraceLen(16)
+  setTraceLen(128)
   if (!run(c.target.io.host, args.maxcycles)) fail
 }
 
-class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs)
-    extends ZynqShimTester(c, false, None, args.logFile) with MiniTests {
+class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs, sample: Option[File] = None)
+    extends ZynqShimTester(c, false, sample, args.logFile) with MiniTests {
   setTraceLen(128)
   setMemLatency(args.memlatency)
   loadMem(args.loadmem)

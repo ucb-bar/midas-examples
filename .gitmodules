@@ -9,7 +9,7 @@
 	url = https://github.com/ucb-bar/vlsi.git
 [submodule "riscv-mini"]
 	path = riscv-mini
-	url = https://github.com/donggyukim/riscv-mini.git
+	url = https://github.com/ucb-bar/riscv-mini.git
 [submodule "fpga-zynq"]
 	path = fpga-zynq
 	url = https://github.com/donggyukim/fpga-zynq.git

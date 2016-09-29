@@ -1,6 +1,6 @@
 package StroberExamples
 
-import strober.{SimWrapper, ZynqShim, StroberCompiler}
+import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler}
 import strober.testers.{StroberTester, SimWrapperTester, ZynqShimTester}
 import examples._
 import chisel3.Module
@@ -12,8 +12,6 @@ import java.io.File
 abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   protected val outDir = new File("test-outs") ; outDir.mkdirs
   private def baseArgs(dir: File) = Array("--targetDir", dir.getPath.toString)
-  private def testArgs(dir: File, backend: String) = baseArgs(dir) ++
-    Array("--backend", backend, "--v", "--compile", "--genHarness", "--test", "--vpdmem")
 
   def test[T <: Module : ClassTag](
       dutGen: => T,
@@ -25,14 +23,20 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
     }
   }
 
-  def replaySamples[T <: Module](dutGen: => T, dir: File, sample: File, backend: String) {
-    val log = new File(dir, s"replay-$backend.log")
+  def replaySamples[T <: Module : ClassTag](
+      dutGen: => T,
+      dir: File,
+      sample: File,
+      backend: String) {
+    val vcd = if (backend == "verilator") "vcd" else "vpd"
+    val logFile = Some(new File(dir, s"replay-$backend.log"))
+    val waveform = Some(new File(dir, s"replay-$backend.$vcd"))
     it should s"replay samples in $backend" in {
-      chiselMainTest(testArgs(dir, backend), () => dutGen)(c => backend match {
+      ReplayCompiler(baseArgs(dir), dutGen, backend, waveform)(c => backend match {
         case "glsim" =>
-          new strober.testers.GateLevelReplay(c, sample, Some(log))
+          new strober.testers.GateLevelReplay(c, sample, logFile)
         case _ =>
-          new strober.testers.RTLReplay(c, sample, Some(log))
+          new strober.testers.RTLReplay(c, sample, logFile)
       })
     }
   }
@@ -44,13 +48,15 @@ abstract class SimTestSuite[+T <: Module : ClassTag](
    (tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
   implicit val p = TestParams.simParam
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  val dir = new File(outDir, s"SimWrapper/$target/$backend") ; dir.mkdirs
+  val dir = new File(outDir, s"$target/sim-$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")
+if (backend != "verilator") {
   behavior of s"[SimWrapper] $target in $backend"
   test(SimWrapper(c), tester, dir, backend)
-  replaySamples(c, dir, sample, "verilator")
+  // replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
   replaySamples(c, dir, sample, "glsim")
+}
 }
 
 abstract class ZynqTestSuite[+T <: Module : ClassTag](
@@ -59,13 +65,15 @@ abstract class ZynqTestSuite[+T <: Module : ClassTag](
    (tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
   implicit val p = TestParams.zynqParam
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  val dir = new File(outDir, s"ZynqShim/$target/$backend") ; dir.mkdirs
+  val dir = new File(outDir, s"$target/zynq-$backend") ; dir.mkdirs
   val sample = new File(dir, s"$target.sample")
+if (backend != "verilator") {
   behavior of s"[ZynqShim] $target in $backend"
   test(ZynqShim(c), tester, dir, backend)
-  replaySamples(c, dir, sample, "verilator")
+  // replaySamples(c, dir, sample, "verilator")
   replaySamples(c, dir, sample, "vcs")
   replaySamples(c, dir, sample, "glsim")
+}
 }
 
 class GCDSimCppTest extends SimTestSuite(new GCD, "verilator")(c => new GCDSimTests(c))

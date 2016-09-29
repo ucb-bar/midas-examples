@@ -72,15 +72,17 @@ abstract class PointerChaserTestSuite[+T <: Module : ClassTag](
   }
 }
 
+/*
 class PointerChaserCppTests extends PointerChaserTestSuite(
   new PointerChaser()(chaserParam), "verilator")
 class PointerChaserVCSTests extends PointerChaserTestSuite(
   new PointerChaser()(chaserParam), "vcs")
-class PointerChaserSimCppTests extends PointerChaserTestSuite(
-  SimWrapper(new PointerChaser()(chaserParam))(simParam), "verilator")
-class PointerChaserSimVCSTests extends PointerChaserTestSuite(
-  SimWrapper(new PointerChaser()(chaserParam))(simParam), "vcs")
-class PointerChaserZynqCppTests extends PointerChaserTestSuite(
-  ZynqShim(new PointerChaser()(chaserParam))(zynqParam), "verilator")
-class PointerChaserZynqVCSTests extends PointerChaserTestSuite(
-  ZynqShim(new PointerChaser()(chaserParam))(zynqParam), "vcs")
+*/
+/* class PointerChaserSimCppTests extends PointerChaserTestSuite(
+  SimWrapper(new PointerChaser()(chaserParam))(simParam), "verilator") */
+/* class PointerChaserSimVCSTests extends PointerChaserTestSuite(
+  SimWrapper(new PointerChaser()(chaserParam))(simParam), "vcs") */
+/* class PointerChaserZynqCppTests extends PointerChaserTestSuite(
+  ZynqShim(new PointerChaser()(chaserParam))(zynqParam), "verilator") */
+/* class PointerChaserZynqVCSTests extends PointerChaserTestSuite(
+  ZynqShim(new PointerChaser()(chaserParam))(zynqParam), "vcs") */

@@ -7,20 +7,9 @@ fpga_dir := $(abspath .)
 gen_dir  := $(fpga_dir)/generated-src
 res_dir  := $(fpga_dir)/results
 
-SBT       = sbt
-SBT_FLAGS =
-
-# Desings
-tut  := GCD Parity Stack Router Risc RiscSRAM \
-        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
-mini := Tile
+include $(base_dir)/Makefrag-strober
 
 CONFIG ?= Strober
-
-src_path = src/main/scala
-modules = . strober riscv-mini
-chisel_src = $(wildcard $(base_dir)/$(src_path)/examples/*.scala \
-	$(addprefix $(base_dir)/, $(addsuffix /$(src_path)/*.scala, $(modules))))
 
 # Generate bitstream
 board     ?= zedboard
@@ -35,7 +24,7 @@ $(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-co
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
 	cd $(gen_dir) ; cp ZynqShim.v ZynqShim.$*.v
 	cd $(gen_dir) ; cp $*.map $(res_dir)
-	#cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
+	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
 
 $(strober): %-strober: $(gen_dir)/%-const.h
 	

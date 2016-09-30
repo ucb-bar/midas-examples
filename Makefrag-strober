@@ -1,0 +1,14 @@
+#
+SBT       = sbt
+SBT_FLAGS =
+
+# Desings
+tut  := GCD Parity Stack Router Risc RiscSRAM \
+        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+mini := Tile
+
+src_path = src/main/scala
+modules = . strober riscv-mini tutorial \
+	$(addprefix riscv-mini/, chisel firrtl cde interp testers)
+scala_srcs = $(foreach module, $(modules), \
+	$(shell find ($base_dir)/$(module)/$(src_path) -name "*.scala"))

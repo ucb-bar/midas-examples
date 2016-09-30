@@ -4,14 +4,14 @@ import chisel3._
 import chisel3.util._
 
 class RiscSRAM extends Module {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val isWr   = Bool(INPUT)
     val wrAddr = UInt(INPUT, 8)
     val wrData = UInt(INPUT, 32)
     val boot   = Bool(INPUT)
     val valid  = Bool(OUTPUT)
     val out    = UInt(OUTPUT, 32)
-  }
+  })
   val fileMem = SeqMem(128, UInt(width = 32))
   val codeMem = SeqMem(128, UInt(width = 32))
 

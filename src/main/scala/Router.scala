@@ -28,7 +28,7 @@ class RouterIO(n: Int) extends Bundle {
 class Router extends Module {
   val depth = 32
   val n     = 4
-  val io    = new RouterIO(n)
+  val io    = IO(new RouterIO(n))
   val tbl   = Mem(depth, UInt(width = BigInt(n).bitLength))
   io.reads.init()
   io.replies.init()

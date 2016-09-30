@@ -14,11 +14,11 @@ case object CacheBlockOffsetBits extends Field[Int]
 // Inputs: (Decoupled) start address: the location of the first node in memory
 // Outputs: (Decoupled) result: The sum of the list
 class PointerChaser(implicit val p: Parameters) extends Module with HasNastiParameters {
-  val io = new Bundle {
+  val io = IO(new Bundle {
     val nasti = new NastiIO
     val result = Decoupled(SInt(width = p(MIFDataBits)))
-    val startAddr = Decoupled(UInt(width = p(MIFAddrBits))).flip
-  }
+    val startAddr = Flipped(Decoupled(UInt(width = p(MIFAddrBits))))
+  })
   
   val memoryIF = io.nasti
   val busy = Reg(init = Bool(false))

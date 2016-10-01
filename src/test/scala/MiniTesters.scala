@@ -1,11 +1,11 @@
 package StroberExamples
 
-import dram_midas.MidasMemModel
+import junctions._
 import midas_widgets._
+import dram_midas.MidasMemModel
 import strober.{SimWrapper, ZynqShim}
 import strober.testers.{SimWrapperTester, ZynqShimTester}
 import mini.{Tile, MiniTests, MiniTestArgs}
-import junctions._
 import java.io.File
 
 class TileSimTests(c: SimWrapper[Tile], args: MiniTestArgs, sample: Option[File] = None)
@@ -36,13 +36,14 @@ class TileZynqTests(c: ZynqShim[SimWrapper[Tile]], args: MiniTestArgs, sample: O
   setTraceLen(128)
 
   c.widgets foreach {
-    case w: MidasMemModel => {
+    case w: MidasMemModel =>
       writeCR(w, "writeMaxReqs", 8)
-      writeCR(w, "writeLatency", 16)
+      writeCR(w, "writeLatency", args.memlatency)
       writeCR(w, "readMaxReqs", 8)
-      writeCR(w, "readLatency", 16)}
-    case w: SimpleLatencyPipe => writeCR(w, "LATENCY", 16)
-    case _ => None
+      writeCR(w, "readLatency", args.memlatency)
+    case w: SimpleLatencyPipe =>
+      writeCR(w, "LATENCY", args.memlatency)
+    case _ =>
   }
 
   loadMem(args.loadmem)

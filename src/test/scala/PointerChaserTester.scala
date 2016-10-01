@@ -1,5 +1,7 @@
 package StroberExamples
 
+import midas_widgets._
+import dram_midas.MidasMemModel
 import strober.{SimWrapper, ZynqShim}
 import strober.testers.{SimWrapperTester, ZynqShimTester, FastLoadMem}
 import mini.{Tile, MiniTests, MiniTestArgs}
@@ -100,7 +102,17 @@ class PointerChaserZynqTester(c: ZynqShim[SimWrapper[PointerChaser]], args: Poin
   val startAddrHandler = DecoupledSource(c.sim.target.io.startAddr)
   val resultHandler = DecoupledSink(c.sim.target.io.result)
 
-  setMemLatency(args.memlatency)
+  c.widgets foreach {
+    case w: MidasMemModel =>
+      writeCR(w, "writeMaxReqs", 8)
+      writeCR(w, "writeLatency", args.memlatency)
+      writeCR(w, "readMaxReqs", 8)
+      writeCR(w, "readLatency", args.memlatency)
+    case w: SimpleLatencyPipe =>
+      writeCR(w, "LATENCY", args.memlatency)
+    case _ => None
+  }
+
   loadMem(args.loadmem)
   
   if (!run(startAddrHandler.inputs, args.addr,

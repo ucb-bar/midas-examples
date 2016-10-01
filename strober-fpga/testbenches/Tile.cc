@@ -18,7 +18,14 @@ public:
 
   int run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
-    set_latency(latency);
+#if MEMMODEL
+    poke_channel(MEMMODEL_0_readMaxReqs, 8);
+    poke_channel(MEMMODEL_0_writeMaxReqs, 8);
+    poke_channel(MEMMODEL_0_readLatency, latency);
+    poke_channel(MEMMODEL_0_writeLatency, latency);
+#else
+    poke_channel(MEMMODEL_0_LATENCY, latency);
+#endif
     size_t tohost_id = get_out_id("Tile.io_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 

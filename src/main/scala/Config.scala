@@ -45,7 +45,7 @@ class ZynqConfig extends Config(new SimConfig ++ new Config(
     case SlaveNastiKey  => NastiParameters(64, 32, 6)
     case MemModelKey => Some(new LatencyPipeConfig(new BaseParams(maxReads = 16, maxWrites = 16)))
     //case MemModelKey => None
-    // case MemMaxCycles    => 256
+    case ZynqMMIOSize => BigInt(1) << 12 // 4 KB
   })
 )
 

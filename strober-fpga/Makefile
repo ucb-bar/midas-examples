@@ -19,7 +19,7 @@ bitstream := fpga-images-$(board)/boot.bin
 strober   := $(addsuffix -strober, $(tut) $(mini))
 fpga      := $(addsuffix -fpga,    $(tut) $(mini))
 
-$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(chisel_src)
+$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(scala_srcs)
 	mkdir -p $(res_dir)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
 	cd $(gen_dir) ; cp ZynqShim.v ZynqShim.$*.v

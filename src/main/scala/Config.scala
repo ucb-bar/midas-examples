@@ -31,11 +31,12 @@ class PointerChaserConfig extends Config(
 
 class SimConfig extends Config(
   (key, site, here) => key match {
-    case TraceMaxLen  => 1024
-    case DaisyWidth   => 32
-    case SRAMChainNum => 1
-    case ChannelLen   => 16
-    case ChannelWidth => 32
+    case TraceMaxLen    => 1024
+    case DaisyWidth     => 32
+    case SRAMChainNum   => 1
+    case ChannelLen     => 16
+    case ChannelWidth   => 32
+    case EnableSnapshot => false // true
   }
 )
 

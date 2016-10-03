@@ -24,7 +24,7 @@ object StroberExamples {
     args(0) match {
       case "strober" =>
         implicit val p = root((new ZynqConfig).toInstance)
-        StroberCompiler compile (Array("--targetDir", dirPath), ZynqShim(dut), true)
+        StroberCompiler compile (Array("--targetDir", dirPath), ZynqShim(dut))
       case "replay" =>
         val backend = args(3)
         val sampleFile = new File(args(4))

@@ -3,7 +3,7 @@ package StroberExamples
 import chisel3.Module
 import mini._
 import cde.Parameters.root
-import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler}
+import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler, EnableSnapshot}
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import java.io.File
@@ -21,12 +21,11 @@ abstract class MiniTestSuite[+T <: Module : ClassTag](
     backend: String,
     testType: TestType,
     latency: Int = 8,
-    snapshot: Boolean = true,
     N: Int = 10) extends org.scalatest.FlatSpec {
   val dutName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(s"test-outs/Tile/$dutName-$backend/$testType") ; dir.mkdirs
   val args = Array("--targetDir", dir.toString)
-  val dut = StroberCompiler compile (args, dutGen, backend, snapshot)
+  val dut = StroberCompiler compile (args, dutGen, backend)
   val vcd = if (backend == "verilator") "vcd" else "vpd"
   behavior of s"$dutName in $backend"
 
@@ -45,16 +44,14 @@ abstract class MiniTestSuite[+T <: Module : ClassTag](
             args,
             dutGen.asInstanceOf[SimWrapper[Tile]],
             backend,
-            waveform,
-            snapshot)
+            waveform)
           )(m => new TileSimTests(m, testArgs, sampleFile))
         case _: ZynqShim[_] =>
           (StroberCompiler test(
             args,
             dutGen.asInstanceOf[ZynqShim[SimWrapper[Tile]]],
             backend,
-            waveform,
-            snapshot)
+            waveform)
           )(m => new TileZynqTests(m, testArgs, sampleFile))
       }))
     }

@@ -1,6 +1,6 @@
 package StroberExamples
 
-import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler}
+import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler, EnableSnapshot}
 import strober.testers.{StroberTester, SimWrapperTester, ZynqShimTester}
 import examples._
 import chisel3.Module
@@ -53,9 +53,11 @@ abstract class SimTestSuite[+T <: Module : ClassTag](
 if (backend != "verilator") {
   behavior of s"[SimWrapper] $target in $backend"
   test(SimWrapper(c), tester, dir, backend)
-  // replaySamples(c, dir, sample, "verilator")
-  replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim")
+  if (p(EnableSnapshot)) {
+    // replaySamples(c, dir, sample, "verilator")
+    replaySamples(c, dir, sample, "vcs")
+    replaySamples(c, dir, sample, "glsim")
+  }
 }
 }
 
@@ -70,9 +72,11 @@ abstract class ZynqTestSuite[+T <: Module : ClassTag](
 if (backend != "verilator") {
   behavior of s"[ZynqShim] $target in $backend"
   test(ZynqShim(c), tester, dir, backend)
-  // replaySamples(c, dir, sample, "verilator")
-  replaySamples(c, dir, sample, "vcs")
-  replaySamples(c, dir, sample, "glsim")
+  if (p(EnableSnapshot)) {
+    // replaySamples(c, dir, sample, "verilator")
+    replaySamples(c, dir, sample, "vcs")
+    replaySamples(c, dir, sample, "glsim")
+  }
 }
 }
 

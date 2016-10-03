@@ -14,7 +14,6 @@ import TestParams.{chaserParam, simParam, zynqParam}
 abstract class PointerChaserTestSuite[+T <: Module : ClassTag](
     dutGen: => T,
     backend: String,
-    snapshot: Boolean = false,
     N: Int = 10) extends org.scalatest.FlatSpec {
   val dutName = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   val dir = new File(s"test-outs/$dutName/PointerChaser") ; dir.mkdirs
@@ -25,7 +24,7 @@ abstract class PointerChaserTestSuite[+T <: Module : ClassTag](
         "--backend", backend, "--v", "--genHarness", "--compile")
       chiselMain(chiselArgs, () => dutGen)
     case _ =>
-      StroberCompiler compile (args, dutGen, backend, snapshot)
+      StroberCompiler compile (args, dutGen, backend)
   }
   val vcs = backend == "vcs"
   behavior of s"$dutName in $backend"
@@ -54,16 +53,14 @@ abstract class PointerChaserTestSuite[+T <: Module : ClassTag](
           args,
           dutGen.asInstanceOf[SimWrapper[PointerChaser]],
           backend,
-          waveform,
-          snapshot)
+          waveform)
         )(m => new PointerChaserSimTester(m, testArgs))
       case _: ZynqShim[_] =>
         (StroberCompiler test(
           args,
           dutGen.asInstanceOf[ZynqShim[SimWrapper[PointerChaser]]],
           backend,
-          waveform,
-          snapshot)
+          waveform)
         )(m => new PointerChaserZynqTester(m, testArgs))
     }))
   }

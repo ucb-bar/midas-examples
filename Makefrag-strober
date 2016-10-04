@@ -6,7 +6,7 @@ SBT_FLAGS =
 tutorial := GCD Parity Stack Risc ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
 examples := RiscSRAM Router PointerChaser
 mini := Tile
-designs := $(tutotial) $(examples) $(mini)
+designs := $(tutorial) $(examples) $(mini)
 
 src_path = src/main/scala
 modules = . strober riscv-mini tutorial \

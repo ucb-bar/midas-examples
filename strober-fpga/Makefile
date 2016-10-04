@@ -37,7 +37,7 @@ $(fpga): %-fpga: $(gen_dir)/%-const.h
 
 # Compile driver
 zynq       := $(addsuffix -zynq, $(designs))
-csrc_dir   := $(fpga_dir)/testbenches
+csrc_dir   := $(base_dir)/src/main/cc
 driver_dir := $(base_dir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))

@@ -3,9 +3,10 @@ SBT       = sbt
 SBT_FLAGS =
 
 # Desings
-tut  := GCD Parity Stack Router Risc RiscSRAM \
-        ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+tutorial := GCD Parity Stack Risc ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+examples := RiscSRAM Router PointerChaser
 mini := Tile
+designs := $(tutotial) $(examples) $(mini)
 
 src_path = src/main/scala
 modules = . strober riscv-mini tutorial \

@@ -17,15 +17,17 @@ board     ?= zedboard
 board_dir := $(fpga_dir)/fpga-zynq/$(board)
 bitstream := fpga-images-$(board)/boot.bin
 
-strober   := $(addsuffix -strober, $(tut) $(mini))
-fpga      := $(addsuffix -fpga,    $(tut) $(mini))
+strober   := $(addsuffix -strober, $(designs))
+fpga      := $(addsuffix -fpga,    $(designs))
 
-$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(tut) $(mini))): $(gen_dir)/%-const.h: $(scala_srcs)
+$(addprefix $(gen_dir)/, $(addsuffix -const.h, $(designs))): $(gen_dir)/%-const.h: $(scala_srcs)
 	mkdir -p $(res_dir)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
-	cd $(gen_dir) ; cp ZynqShim.v ZynqShim.$*.v
-	cd $(gen_dir) ; cp $*.map $(res_dir)
-	cd $(gen_dir) ; cp $*.map $*.chain $(res_dir)
+	cd $(gen_dir) && cp ZynqShim.v ZynqShim.$*.v
+	cd $(gen_dir) && cp $*.map $(res_dir)
+	if [ -a $(gen_dir)/$*.chain ]; \
+	then cd $(gen_dir) && cp $*.chain $(res_dir); \
+	fi;
 
 $(strober): %-strober: $(gen_dir)/%-const.h
 	
@@ -34,7 +36,7 @@ $(fpga): %-fpga: $(gen_dir)/%-const.h
 	cp $(bitstream) $(res_dir)
 
 # Compile driver
-zynq       := $(addsuffix -zynq, $(tut) $(mini)) 
+zynq       := $(addsuffix -zynq, $(designs))
 csrc_dir   := $(fpga_dir)/testbenches
 driver_dir := $(base_dir)/strober/csrc
 driver_src := $(wildcard $(driver_dir)/*.cc)

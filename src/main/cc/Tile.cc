@@ -3,9 +3,9 @@
 class Tile_t: simif_zynq_t
 {
 public:
-  Tile_t(std::vector<std::string> args): simif_zynq_t(args, "Tile", false) { 
+  Tile_t(std::vector<std::string> args): simif_zynq_t(args, false) { 
     max_cycles = -1;
-    latency = 20;
+    latency = 16;
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
@@ -19,19 +19,18 @@ public:
   int run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
 #if MEMMODEL
-    poke_channel(MEMMODEL_0_readMaxReqs, 8);
-    poke_channel(MEMMODEL_0_writeMaxReqs, 8);
-    poke_channel(MEMMODEL_0_readLatency, latency);
-    poke_channel(MEMMODEL_0_writeLatency, latency);
+    write(MEMMODEL_0_readMaxReqs, 8);
+    write(MEMMODEL_0_writeMaxReqs, 8);
+    write(MEMMODEL_0_readLatency, latency);
+    write(MEMMODEL_0_writeLatency, latency);
 #else
-    poke_channel(MEMMODEL_0_LATENCY, latency);
+    write(MEMMODEL_0_LATENCY, latency);
 #endif
-    size_t tohost_id = get_out_id("Tile.io_host_tohost");
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
     do {
       step(trace_len);
-      tohost = peek(tohost_id);
+      tohost = peek(io_host_tohost);
     } while (tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
     double sim_time = (double) (end_time - start_time) / 1000000.0;

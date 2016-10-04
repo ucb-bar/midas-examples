@@ -5,55 +5,59 @@ class Router_t: simif_zynq_t
 {
 public:
   Router_t(std::vector<std::string> args, int n_): 
-    simif_zynq_t(args, "Router", true), n(n_) {}
+    simif_zynq_t(args, true), n(n_),
+    out_chunks(
+      OUTPUT_CHUNKS[io_outs_0_bits_body] +
+      OUTPUT_CHUNKS[io_outs_0_bits_header] +
+      OUTPUT_CHUNKS[io_outs_0_valid]
+    ) {}
   int run() {
     wr(0, 1);
     rd(0, 1);
     rt(0, 1);
-    return 0;
+    return exitcode();
   }
 private:
-  const int n;
+  const size_t n;
+  const size_t out_chunks;
   void rd(biguint_t addr, biguint_t data) {
     biguint_t zero = 0;
     biguint_t one = 1;
-    poke("Router.io_in_valid",        zero);
-    poke("Router.io_writes_valid",    zero);
-    poke("Router.io_reads_valid",     one);
-    poke("Router.io_replies_ready",   one);
-    poke("Router.io_reads_bits_addr", addr);
-    while (!peek("Router.io_replies_valid")) step(1);
-    expect("Router.io_replies_bits",  data);
+    poke(io_in_valid,        zero);
+    poke(io_writes_valid,    zero);
+    poke(io_reads_valid,     one);
+    poke(io_replies_ready,   one);
+    poke(io_reads_bits_addr, addr);
+    while (!peek(io_replies_valid)) step(1);
+    expect(io_replies_bits,  data);
   }
   void wr(biguint_t addr, biguint_t data) {
     biguint_t zero = 0;
     biguint_t one = 1;
-    poke("Router.io_in_valid",         zero);
-    poke("Router.io_reads_valid",      zero);
-    poke("Router.io_writes_valid",     one);
-    poke("Router.io_writes_bits_addr", addr);
-    poke("Router.io_writes_bits_data", data);
+    poke(io_in_valid,         zero);
+    poke(io_reads_valid,      zero);
+    poke(io_writes_valid,     one);
+    poke(io_writes_bits_addr, addr);
+    poke(io_writes_bits_data, data);
     step(1);
   }
   bool isAnyValidOuts() {
-    for (int i = 0 ; i < n ; i++) {
-      std::string path = "Router.io_outs_" + std::to_string(i) + "_valid";
-      if (peek(path)) return true;  
+    for (size_t i = 0 ; i < n ; i++) {
+      if (peek(io_outs_0_valid + i * out_chunks)) return true;  
     }
     return false;
   }
   void rt(biguint_t header, biguint_t body) {
-    for (int i = 0 ; i < n ; i++) {
-      std::string path =  "Router.io_outs_" + std::to_string(i) + "_ready";
-      poke(path, 1);
+    for (size_t i = 0 ; i < n ; i++) {
+      poke(io_outs_0_ready + i, 1);
     }
     biguint_t zero = 0;
     biguint_t one = 1;
-    poke("Router.io_reads_valid",    zero);
-    poke("Router.io_writes_valid",   zero);
-    poke("Router.io_in_valid",       one);
-    poke("Router.io_in_bits_header", header);
-    poke("Router.io_in_bits_body",   body);
+    poke(io_reads_valid,    zero);
+    poke(io_writes_valid,   zero);
+    poke(io_in_valid,       one);
+    poke(io_in_bits_header, header);
+    poke(io_in_bits_body,   body);
     size_t i = 0;
     do {
       step(1); i += 1;

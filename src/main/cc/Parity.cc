@@ -4,17 +4,17 @@ class Parity_t: simif_zynq_t
 {
 public:
   Parity_t(std::vector<std::string> args): 
-    simif_zynq_t(args, "Parity", true) { }
+    simif_zynq_t(args, true) { }
   int run() {
-    uint32_t isOdd = 0; 
+    uint32_t is_odd = 0;
     for (int i = 0 ; i < 10 ; i++) {
       uint32_t bit = rand_next(2);
-      poke("Parity.io_in", bit);
+      poke(io_in, bit);
       step(1);
-      expect("Parity.io_out", isOdd);
-      isOdd = (isOdd + bit) % 2;
+      expect(io_out, is_odd);
+      is_odd = (is_odd + bit) % 2;
     }
-    return 0; 
+    return exitcode();
   }
 };
 

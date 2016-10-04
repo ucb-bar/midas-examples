@@ -5,7 +5,7 @@ class Stack_t: simif_zynq_t
 {
 public:
   Stack_t(std::vector<std::string> args, size_t size_): 
-    simif_zynq_t(args, "Stack", true), size(size_) {}
+    simif_zynq_t(args, true), size(size_) {}
   int run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 
@@ -24,15 +24,15 @@ public:
           stack.pop();
         }
       }
-      poke("Stack.io_pop",  pop);
-      poke("Stack.io_push", push);
-      poke("Stack.io_en",   enable);
-      poke("Stack.io_dataIn", dataIn);
+      poke(io_pop,    pop);
+      poke(io_push,   push);
+      poke(io_en,     enable);
+      poke(io_dataIn, dataIn);
       step(1);
-      expect("Stack.io_dataOut", dataOut);
+      expect(io_dataOut, dataOut);
     }
 
-    return 0; 
+    return exitcode();
   }
 private:
   const size_t size;

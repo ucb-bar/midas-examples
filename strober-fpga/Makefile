@@ -24,7 +24,6 @@ $(addprefix $(gen_dir)/, $(addsuffix -const.h, $(designs))): $(gen_dir)/%-const.
 	mkdir -p $(res_dir)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)" 
 	cd $(gen_dir) && cp ZynqShim.v ZynqShim.$*.v
-	cd $(gen_dir) && cp $*.map $(res_dir)
 	if [ -a $(gen_dir)/$*.chain ]; \
 	then cd $(gen_dir) && cp $*.chain $(res_dir); \
 	fi;
@@ -38,11 +37,11 @@ $(fpga): %-fpga: $(gen_dir)/%-const.h
 # Compile driver
 zynq       := $(addsuffix -zynq, $(designs))
 csrc_dir   := $(base_dir)/src/main/cc
-driver_dir := $(base_dir)/strober/csrc
+driver_dir := $(base_dir)/strober/src/main/cc
 driver_src := $(wildcard $(driver_dir)/*.cc)
 driver_obj := $(addprefix $(gen_dir)/, $(notdir $(patsubst %.cc, %.o, $(driver_src))))
 CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir) -DMEMMODEL=$(MEMMODEL)
+CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir) -I$(csrc_dir) -DMEMMODEL=$(MEMMODEL)
 
 $(zynq): %-zynq: $(gen_dir)/%-const.h $(csrc_dir)/%.cc $(driver_src)
 	mkdir -p $(res_dir)

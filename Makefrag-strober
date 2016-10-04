@@ -3,7 +3,7 @@ SBT       = sbt
 SBT_FLAGS =
 
 # Desings
-tutorial := GCD Parity Stack Risc ShiftRegister ResetShiftRegister EnableShiftRegister MemorySearch
+tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
 examples := RiscSRAM Router PointerChaser
 mini := Tile
 designs := $(tutorial) $(examples) $(mini)

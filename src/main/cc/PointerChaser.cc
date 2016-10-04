@@ -3,8 +3,7 @@
 class PointerChaser_t: simif_zynq_t
 {
 public:
-  PointerChaser_t(std::vector<std::string> args):
-      simif_zynq_t(args, "PointerChaser", false) {
+  PointerChaser_t(std::vector<std::string> args): simif_zynq_t(args, true) {
     max_cycles = -1;
     latency = 16;
     address = 64;
@@ -27,31 +26,30 @@ public:
 
   int run() {
 #if MEMMODEL
-    poke_channel(MEMMODEL_0_readMaxReqs, 8);
-    poke_channel(MEMMODEL_0_writeMaxReqs, 8);
-    poke_channel(MEMMODEL_0_readLatency, latency);
-    poke_channel(MEMMODEL_0_writeLatency, latency);
+    write(MEMMODEL_0_readMaxReqs, 8);
+    write(MEMMODEL_0_writeMaxReqs, 8);
+    write(MEMMODEL_0_readLatency, latency);
+    write(MEMMODEL_0_writeLatency, latency);
 #else
-    poke_channel(MEMMODEL_0_LATENCY, latency);
+    write(MEMMODEL_0_LATENCY, latency);
 #endif
-    poke("PointerChaser.io_startAddr_bits", address);
-    poke("PointerChaser.io_startAddr_valid", 1);
+    poke(io_startAddr_bits, address);
+    poke(io_startAddr_valid, 1);
     do {
       step(1);
-    } while (!peek("PointerChaser.io_startAddr_ready"));
-    poke("PointerChaser.io_startAddr_valid", 0);
-    poke("PointerChaser.io_result_ready", 1);
+    } while (!peek(io_startAddr_ready));
+    poke(io_startAddr_valid, 0);
+    poke(io_result_ready, 1);
     do {
       step(1);
-    } while (!peek("PointerChaser.io_result_valid"));
-    expect("PointerChaser.io_result_bits", result);
-    fprintf(stdout, "Runs %llu cycles\n", cycles());
+    } while (!peek(io_result_valid));
+    expect(io_result_bits, result);
     return 0;
   }
 private:
   uint64_t max_cycles;
   uint64_t address;
-  uint64_t result;
+  biguint_t result; // 64 bit
   size_t latency;
 };
 

@@ -4,7 +4,7 @@ class ResetShiftRegister_t: simif_zynq_t
 {
 public:
   ResetShiftRegister_t(std::vector <std::string> args): 
-    simif_zynq_t(args, "ResetShiftRegister", true) { }
+    simif_zynq_t(args, true) { }
   int run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
@@ -12,13 +12,13 @@ public:
       uint32_t in    = rand_next(16);
       uint32_t shift = rand_next(2);
       if (shift == 1) ins[k % 5] = in;
-      poke("ResetShiftRegister.io_in",    in);
-      poke("ResetShiftRegister.io_shift", shift);
+      poke(io_in,    in);
+      poke(io_shift, shift);
       step(1);
-      expect("ResetShiftRegister.io_out", cycles() < 4 ? 0 : ins[(k + 1) % 5]);
+      expect(io_out, cycles() < 4 ? 0 : ins[(k + 1) % 5]);
       if (shift == 1) k++;
     }
-    return 0; 
+    return exitcode();
   }
 };
 

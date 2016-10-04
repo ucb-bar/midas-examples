@@ -1,13 +1,13 @@
 # Strober Examples
 This repository contains [Strober](https://github.com/ucb-bar/strober.git) and its examples including:
 + [Chisel tutorial](https://github.com/ucb-bar/chisel-tutorial.git)
-  + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, MemorySearch, Risc, Router
+  + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, Risc, Router
 + More simple examples:
   + RiscSRAM: Implementation of Risc with SeqMem
   + PointerChaser: Simple pointer chaser following a random list.
 + [riscv-mini](https://github.com/donggyukim/riscv-mini.git)
   + Tile: the top module of riscv-mini
-  + ISA: RISCV RV32I 
+  + ISA: RISCV RV32I
   + 3 stage pipeline with caches
   + Passes all rv32ui tests except FENCE.I
   + Passes all rv32mi tests except timer
@@ -35,7 +35,7 @@ First, launch `sbt` in the main directory. If you run `test`, it will run all te
 Or, just run `testOnly StroberExample.<test_name>` to run a specific test only.
 
 ## <a name="step2"></a> STEP 2: Run FPGA Simulation
-You need to write a C++ testbench to run FPGA Simulation. Next, move to `strober-fpga`:
+You need to write a C++ testbench to run FPGA Simulation(`src/main/cc`). Next, move to `strober-fpga`:
 
     $ cd strober-fpga
 
@@ -55,8 +55,7 @@ You need to copy `results/boot.bin` to the SD card to program FPGA.
 Also, you should copy the following files in `results` to the board:
 
     * <design>-zynq: driver executable
-    * <design>.map: mapping for I/O and traces
-    * <design>.chain: scan chain information(optional)
+    * <design>.chain: scan chain & I/O trace information(optional)
     
 To execute simulation on FPGA, run:
 

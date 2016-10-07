@@ -2,7 +2,6 @@
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Risc_t Risc(args);
+  Risc_t Risc(argc, argv);
   return Risc.run(4, 10);
 }

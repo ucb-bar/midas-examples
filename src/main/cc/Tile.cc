@@ -3,9 +3,11 @@
 class Tile_t: simif_zynq_t
 {
 public:
-  Tile_t(std::vector<std::string> args): simif_zynq_t(args, false) { 
+  Tile_t(int argc, char** argv): simif_zynq_t(argc, argv, false)
+  {
     max_cycles = -1;
     latency = 16;
+    std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
@@ -53,7 +55,6 @@ private:
 };
 
 int main(int argc, char** argv) {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Tile_t Tile(args);
+  Tile_t Tile(argc, argv);
   return Tile.run(128);
 }

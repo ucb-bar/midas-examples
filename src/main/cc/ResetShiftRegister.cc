@@ -3,8 +3,8 @@
 class ResetShiftRegister_t: simif_zynq_t
 {
 public:
-  ResetShiftRegister_t(std::vector <std::string> args): 
-    simif_zynq_t(args, true) { }
+  ResetShiftRegister_t(int argc, char** argv):
+    simif_zynq_t(argc, argv, true) { }
   int run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
@@ -24,7 +24,6 @@ public:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  ResetShiftRegister_t ResetShiftRegister(args);
+  ResetShiftRegister_t ResetShiftRegister(argc, argv);
   return ResetShiftRegister.run();
 }

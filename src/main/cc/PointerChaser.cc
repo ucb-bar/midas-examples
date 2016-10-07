@@ -3,11 +3,14 @@
 class PointerChaser_t: simif_zynq_t
 {
 public:
-  PointerChaser_t(std::vector<std::string> args): simif_zynq_t(args, true) {
+  PointerChaser_t(int argc, char** argv):
+    simif_zynq_t(argc, argv, true)
+  {
     max_cycles = -1;
     latency = 16;
     address = 64;
     result = 1176;
+    std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
@@ -55,7 +58,6 @@ private:
 
 int main(int argc, char** argv)
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  PointerChaser_t PointerChaser(args);
+  PointerChaser_t PointerChaser(argc, argv);
   return PointerChaser.run();
 }

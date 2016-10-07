@@ -4,8 +4,8 @@
 class Stack_t: simif_zynq_t
 {
 public:
-  Stack_t(std::vector<std::string> args, size_t size_): 
-    simif_zynq_t(args, true), size(size_) {}
+  Stack_t(int argc, char** argv, size_t size_):
+    simif_zynq_t(argc, argv, true), size(size_) {}
   int run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 
@@ -40,7 +40,6 @@ private:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Stack_t Stack(args, 8);
+  Stack_t Stack(argc, argv, 8);
   return Stack.run();
 }

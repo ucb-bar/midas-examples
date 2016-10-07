@@ -4,8 +4,8 @@
 class Router_t: simif_zynq_t
 {
 public:
-  Router_t(std::vector<std::string> args, int n_): 
-    simif_zynq_t(args, true), n(n_),
+  Router_t(int argc, char** argv, int n_):
+    simif_zynq_t(argc, argv, true), n(n_),
     out_chunks(
       OUTPUT_CHUNKS[io_outs_0_bits_body] +
       OUTPUT_CHUNKS[io_outs_0_bits_header] +
@@ -68,7 +68,6 @@ private:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Router_t Router(args, 4);
+  Router_t Router(argc, argv, 4);
   return Router.run();
 }

@@ -5,8 +5,8 @@ typedef std::vector< uint32_t > app_t;
 class Risc_t: simif_zynq_t
 {
 public:
-  Risc_t(std::vector<std::string> args): 
-    simif_zynq_t(args, true) { }
+  Risc_t(int argc, char** argv): 
+    simif_zynq_t(argc, argv, true) { }
 
   int run(uint32_t expected, uint64_t timeout) {
     app_t app;

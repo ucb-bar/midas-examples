@@ -3,8 +3,8 @@
 class EnableShiftRegister_t: simif_zynq_t
 {
 public:
-  EnableShiftRegister_t(std::vector<std::string> args):
-    simif_zynq_t(args, true) { }
+  EnableShiftRegister_t(int argc, char** argv):
+    simif_zynq_t(argc, argv, true) { }
  
   virtual int run() {
     std::vector<uint32_t> reg(4, 0);
@@ -26,7 +26,6 @@ public:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  EnableShiftRegister_t EnableShiftRegister(args);
+  EnableShiftRegister_t EnableShiftRegister(argc, argv);
   return EnableShiftRegister.run();
 }

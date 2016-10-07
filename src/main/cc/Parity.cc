@@ -3,8 +3,8 @@
 class Parity_t: simif_zynq_t
 {
 public:
-  Parity_t(std::vector<std::string> args): 
-    simif_zynq_t(args, true) { }
+  Parity_t(int argc, char** argv):
+    simif_zynq_t(argc, argv, true) { }
   int run() {
     uint32_t is_odd = 0;
     for (int i = 0 ; i < 10 ; i++) {
@@ -20,7 +20,6 @@ public:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Parity_t Parity(args);
+  Parity_t Parity(argc, argv);
   return Parity.run();
 }

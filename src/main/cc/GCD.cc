@@ -3,8 +3,8 @@
 class GCD_t: simif_zynq_t
 {
 public:
-  GCD_t(std::vector<std::string> args): 
-    simif_zynq_t(args, true) { }
+  GCD_t(int argc, char** argv):
+    simif_zynq_t(argc, argv, true) { }
 
   virtual int run() {
     uint32_t a = 64, b = 48, z = 16; //test vectors
@@ -21,7 +21,6 @@ public:
 
 int main(int argc, char** argv) 
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  GCD_t GCD(args);
+  GCD_t GCD(argc, argv);
   return GCD.run();
 }

@@ -1,4 +1,5 @@
 generated-src
 results
 DVEfiles
+libdramsim.a
 *.hex

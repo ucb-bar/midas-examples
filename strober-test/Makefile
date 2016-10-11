@@ -9,15 +9,27 @@ res_dir  := $(test_dir)/results
 
 include $(base_dir)/Makefrag-strober
 
-MEMMODEL ?= 0
+MEMMODEL ?= 1
 DEBUG ?=
 LOADMEM ?=
 ARGS ?=
 
-CXXFLAGS := $(CXXFLAGS) -std=c++11 -Wall -I$(driver_dir) -I$(src_dir) -DMEMMODEL=$(MEMMODEL)
-LDFLAGS := $(LDFLAGS) -lstdc++ -lpthread
+CXXFLAGS := $(CXXFLAGS) -std=c++11 -Wall -I$(driver_dir) -I$(src_dir) -I$(test_dir)/dramsim2 \
+	-DMEMMODEL=$(MEMMODEL)
+LDFLAGS := $(LDFLAGS) -L$(abspath $(test_dir)) -lstdc++ -lpthread -ldramsim
 
-driver_files := $(default_driver_files) mmio mm context simif_emul
+# compile DRAMSim2
+DRAMSIM_OBJS := $(patsubst %.cpp, %.o, $(wildcard $(test_dir)/dramsim2/*.cpp))
+$(DRAMSIM_OBJS): %.o: %.cpp
+	$(CXX) $(CXXFLAGS) -DNO_STORAGE -DNO_OUTPUT -Dmain=nomain -c -o $@ $<
+$(test_dir)/libdramsim.a: $(DRAMSIM_OBJS)
+	ar rcs $@ $^
+
+$(res_dir)/dramsim2_ini: $(test_dir)/dramsim2_ini
+	mkdir -p $(res_dir)
+	cd $(res_dir) && ln -s $<
+
+driver_files := $(default_driver_files) mmio mm mm_dramsim2 context simif_emul
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 prefix = $(if $(LOADMEM),$(notdir $(basename $(LOADMEM))),$1)
 waveform = +waveform=$(call prefix,$1).$2
@@ -34,8 +46,8 @@ else
 verilator_binaries := $(addprefix $(res_dir)/V, $(designs))
 endif
 
-$(verilator_binaries): $(res_dir)/V%$(if $(DEBUG),-debug,): $(src_dir)/%-emul.cc \
-	$(gen_dir)/%/ZynqShim.v $(driver_cpp) $(driver_h) $(src_dir)/%.h
+$(verilator_binaries): $(res_dir)/V%$(if $(DEBUG),-debug,): $(src_dir)/%-emul.cc $(gen_dir)/%/ZynqShim.v \
+	$(test_dir)/libdramsim.a $(driver_cpp) $(driver_h) $(src_dir)/%.h $(res_dir)/dramsim2_ini
 	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(gen_dir)/$* \
 	-CFLAGS "-include $(gen_dir)/$*/$*-const.h -include $(gen_dir)/$*/VZynqShim.h" \
 	-o $@ $< $(word 2, $^) $(driver_cpp)
@@ -43,7 +55,7 @@ $(verilator_binaries): $(res_dir)/V%$(if $(DEBUG),-debug,): $(src_dir)/%-emul.cc
 
 $(verilator): %-verilator: $(res_dir)/V%$(if $(DEBUG),-debug,)
 	cd $(res_dir) && \
-	./$(notdir $<) $(loadmem) $(call waveform,$*,vcd) $(ARGS) 2> $(call logfile,$*,verilator)
+	./$(notdir $<) +dramsim $(loadmem) $(call waveform,$*,vcd) $(ARGS) 2> $(call logfile,$*,verilator)
 
 # Compile VCS
 VCS := vcs -full64
@@ -58,14 +70,14 @@ else
 vcs_binaries := $(addprefix $(res_dir)/, $(designs))
 endif
 
-$(vcs_binaries): $(res_dir)/%$(if $(DEBUG),-debug,): $(gen_dir)/%/ZynqShim.v \
-	$(src_dir)/%-emul.cc $(driver_v) $(driver_cpp) $(driver_h) $(src_dir)/%.h
+$(vcs_binaries): $(res_dir)/%$(if $(DEBUG),-debug,): $(gen_dir)/%/ZynqShim.v $(src_dir)/%-emul.cc \
+	$(test_dir)/libdramsim.a $(driver_v) $(driver_cpp) $(driver_h) $(src_dir)/%.h  $(res_dir)/dramsim2_ini
 	$(VCS) $(VCS_FLAGS) -Mdir=$(gen_dir)/$*/$*.csrc -CC "-include $(gen_dir)/$*/$*-const.h" \
-	-o $@ $< $(gen_dir)/$*/$*-const.vh $(driver_v) $(driver_cpp) $(word 2, $^) 
+	-o $@ $< $(gen_dir)/$*/$*-const.vh $(driver_v) $(driver_cpp) $(word 2, $^) $(word 3, $^)
 
 $(vcs): %-vcs: $(res_dir)/%$(if $(DEBUG),-debug,)
 	cd $(res_dir) && \
-	./$(notdir $<) $(loadmem) $(call waveform,$*,vpd) $(ARGS) 2> $(call logfile,$*,vcs)
+	./$(notdir $<) +dramsim $(loadmem) $(call waveform,$*,vpd) $(ARGS) 2> $(call logfile,$*,vcs)
 
 clean:
 	rm -rf $(gen_dir) $(res_dir)

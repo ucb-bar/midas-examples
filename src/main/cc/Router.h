@@ -1,21 +1,18 @@
 #include <sstream>
-#include "simif_zynq.h"
+#include "simif.h"
 
-class Router_t: simif_zynq_t
+class Router_t: public virtual simif_t
 {
 public:
-  Router_t(int argc, char** argv, int n_):
-    simif_zynq_t(argc, argv, true), n(n_),
-    out_chunks(
-      OUTPUT_CHUNKS[io_outs_0_bits_body] +
-      OUTPUT_CHUNKS[io_outs_0_bits_header] +
-      OUTPUT_CHUNKS[io_outs_0_valid]
-    ) {}
-  int run() {
+  Router_t(int n_): n(n_), out_chunks(
+    OUTPUT_CHUNKS[io_outs_0_bits_body] +
+    OUTPUT_CHUNKS[io_outs_0_bits_header] +
+    OUTPUT_CHUNKS[io_outs_0_valid]
+  ) {}
+  void run() {
     wr(0, 1);
     rd(0, 1);
     rt(0, 1);
-    return exitcode();
   }
 private:
   const size_t n;
@@ -65,9 +62,3 @@ private:
     expect(i < 10, "FIND VALID OUT");
   }
 };
-
-int main(int argc, char** argv) 
-{
-  Router_t Router(argc, argv, 4);
-  return Router.run();
-}

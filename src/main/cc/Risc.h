@@ -1,16 +1,13 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
 typedef std::vector< uint32_t > app_t;
 
-class Risc_t: simif_zynq_t
+class Risc_t: virtual simif_t
 {
 public:
-  Risc_t(int argc, char** argv): 
-    simif_zynq_t(argc, argv, true) { }
-
-  int run(uint32_t expected, uint64_t timeout) {
+  void run(uint32_t expected, uint64_t timeout) {
     app_t app;
-    init(app);
+    init_app(app);
     wr(0, 0);
     for (size_t addr = 0 ; addr < app.size() ; addr++) {
       wr(addr, app[addr]);
@@ -22,12 +19,12 @@ public:
     } while (peek(io_valid) == 0 && k < timeout);
     expect(k < timeout, "TIME LIMIT");
     expect(io_out, expected);
-    return exitcode();
   }
 
 private:
   void wr(uint32_t addr, uint32_t data) {
     poke(io_isWr, 1);
+    poke(io_boot, 0);
     poke(io_wrAddr, addr);
     poke(io_wrData, data);
     step(1);
@@ -47,7 +44,7 @@ private:
   }
 
 protected:
-  virtual void init(app_t& app) {
+  virtual void init_app(app_t& app) {
     short_app(app);  
   }
 

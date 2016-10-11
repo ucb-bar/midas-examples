@@ -1,15 +1,31 @@
-#
-SBT       = sbt
-SBT_FLAGS =
-
 # Desings
 tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
 examples := RiscSRAM Router PointerChaser
 mini := Tile
 designs := $(tutorial) $(examples) $(mini)
+zynq_verilog := $(addprefix $(gen_dir)/, $(addsuffix /ZynqShim.v, $(designs)))
 
+src_dir = $(base_dir)/src/main/cc
+driver_dir = $(base_dir)/strober/src/main/cc
+default_driver_files := biguint sample simif
+driver_files ?= $(default_driver_files) simif_zynq
+driver_h = $(addprefix $(driver_dir)/, $(addsuffix .h, $(driver_files)))
+driver_cpp = $(addprefix $(driver_dir)/, $(addsuffix .cc, $(driver_files)))
+driver_v = $(base_dir)/strober/src/main/verilog/vcs-harness.v
+
+# Scala source files
 src_path = src/main/scala
 modules = . strober riscv-mini tutorial \
 	$(addprefix riscv-mini/, chisel firrtl cde interp testers)
 scala_srcs = $(foreach module, $(modules), \
 	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
+
+SBT ?= sbt
+SBT_FLAGS ?=
+
+$(zynq_verilog): $(gen_dir)/%/ZynqShim.v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)/$*"
+	mkdir -p $(res_dir)
+	if [ -a $(gen_dir)/$*/$*.chain ]; \
+	then cp $(gen_dir)/$*/$*.chain $(res_dir); \
+	fi;

@@ -1,12 +1,9 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
-class ShiftRegister_t: simif_zynq_t
+class ShiftRegister_t: virtual simif_t
 {
 public:
-  ShiftRegister_t(int argc, char** argv):
-    simif_zynq_t(argc, argv, true) {}
-
-  int run() {
+  void run() {
     std::vector<uint32_t> reg(4, 0);
     for (int i = 0 ; i < 64 ; i++) {
       uint32_t in = rand_next(2);
@@ -16,12 +13,5 @@ public:
       for (int j = 3 ; j > 0 ; j--) reg[j] = reg[j-1];
       reg[0] = in;
     } 
-    return exitcode();
   }
 };
-
-int main(int argc, char** argv) 
-{
-  ShiftRegister_t ShiftRegister(argc, argv);
-  return ShiftRegister.run();
-}

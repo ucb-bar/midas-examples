@@ -1,12 +1,11 @@
 #include <stack>
-#include "simif_zynq.h"
+#include "simif.h"
 
-class Stack_t: simif_zynq_t
+class Stack_t: public virtual simif_t
 {
 public:
-  Stack_t(int argc, char** argv, size_t size_):
-    simif_zynq_t(argc, argv, true), size(size_) {}
-  int run() {
+  Stack_t(size_t size_): size(size_) {}
+  void run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0; 
     for (int i = 0 ; i < 16 ; i++) {
@@ -31,15 +30,7 @@ public:
       step(1);
       expect(io_dataOut, dataOut);
     }
-
-    return exitcode();
   }
 private:
   const size_t size;
 };
-
-int main(int argc, char** argv) 
-{
-  Stack_t Stack(argc, argv, 8);
-  return Stack.run();
-}

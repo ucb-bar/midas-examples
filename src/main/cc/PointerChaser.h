@@ -1,11 +1,9 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
-class PointerChaser_t: simif_zynq_t
+class PointerChaser_t: virtual simif_t
 {
 public:
-  PointerChaser_t(int argc, char** argv):
-    simif_zynq_t(argc, argv, true)
-  {
+  PointerChaser_t(int argc, char** argv) {
     max_cycles = -1;
     latency = 16;
     address = 64;
@@ -27,7 +25,7 @@ public:
     }
   }
 
-  int run() {
+  void run() {
 #if MEMMODEL
     write(MEMMODEL_0_readMaxReqs, 8);
     write(MEMMODEL_0_writeMaxReqs, 8);
@@ -36,6 +34,7 @@ public:
 #else
     write(MEMMODEL_0_LATENCY, latency);
 #endif
+
     poke(io_startAddr_bits, address);
     poke(io_startAddr_valid, 1);
     do {
@@ -47,7 +46,6 @@ public:
       step(1);
     } while (!peek(io_result_valid));
     expect(io_result_bits, result);
-    return 0;
   }
 private:
   uint64_t max_cycles;
@@ -55,9 +53,3 @@ private:
   biguint_t result; // 64 bit
   size_t latency;
 };
-
-int main(int argc, char** argv)
-{
-  PointerChaser_t PointerChaser(argc, argv);
-  return PointerChaser.run();
-}

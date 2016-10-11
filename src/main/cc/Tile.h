@@ -1,10 +1,9 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
-class Tile_t: simif_zynq_t
+class Tile_t: virtual simif_t
 {
 public:
-  Tile_t(int argc, char** argv): simif_zynq_t(argc, argv, false)
-  {
+  Tile_t(int argc, char** argv) {
     max_cycles = -1;
     latency = 16;
     std::vector<std::string> args(argv + 1, argv + argc);
@@ -18,7 +17,7 @@ public:
     }
   }
 
-  int run(size_t trace_len = TRACE_MAX_LEN) {
+  void run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
 #if MEMMODEL
     write(MEMMODEL_0_readMaxReqs, 8);
@@ -36,25 +35,24 @@ public:
     } while (tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
     double sim_time = (double) (end_time - start_time) / 1000000.0;
-    double sim_speed = (double) cycles() / sim_time / 1000000.0;
-    fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed);
-    int exitcode = tohost >> 1;
-    if (exitcode) {
-      fprintf(stdout, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
-    } else if (cycles() > max_cycles) {
-      fprintf(stdout, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
+    double sim_speed = (double) cycles() / sim_time / 1000.0;
+    if (sim_speed > 1000.0) {
+      fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed / 1000.0);
     } else {
-      fprintf(stdout, "*** PASSED *** after %llu cycles\n", cycles());
+      fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f KHz\n", sim_time, sim_speed);
     }
-    return exitcode;
+    int code = tohost >> 1;
+    if (code) {
+      fprintf(stdout, "*** FAILED *** (code = %d) after %" PRIu64 " cycles\n", code, cycles());
+    } else if (cycles() > max_cycles) {
+      fprintf(stdout, "*** FAILED *** (timeout) after %" PRIu64 " cycles\n", cycles());
+    } else {
+      fprintf(stdout, "*** PASSED *** after %" PRIu64 " cycles\n", cycles());
+    }
+    expect(!code, NULL);
   }
 
 private:
   uint64_t max_cycles;
   size_t latency;
 };
-
-int main(int argc, char** argv) {
-  Tile_t Tile(argc, argv);
-  return Tile.run(128);
-}

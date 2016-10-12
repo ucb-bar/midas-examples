@@ -2,9 +2,11 @@ import sbt._
 import Keys._
 
 object StroberBuild extends Build {
+  lazy val dramsim = settingKey[Unit]("compile DRAMSim2")
   override lazy val settings = super.settings ++ Seq(
     scalaVersion := "2.11.7",
-    scalacOptions ++= Seq("-deprecation","-unchecked")
+    scalacOptions ++= Seq("-deprecation","-unchecked"),
+    dramsim := s"make -C strober-test ${baseDirectory.value}/strober-test/libdramsim.a".!
   )
   lazy val chisel    = project in file("riscv-mini/chisel")
   lazy val firrtl    = project in file("riscv-mini/firrtl")

@@ -12,6 +12,8 @@ include $(base_dir)/Makefrag-strober
 MEMMODEL ?= 1
 DEBUG ?=
 LOADMEM ?=
+LOGFILE ?=
+WAVEFORM ?=
 ARGS ?=
 
 CXXFLAGS := $(CXXFLAGS) -std=c++11 -Wall -I$(driver_dir) -I$(src_dir) -I$(test_dir)/dramsim2 \
@@ -32,8 +34,8 @@ $(res_dir)/dramsim2_ini: $(test_dir)/dramsim2_ini
 driver_files := $(default_driver_files) mmio mm mm_dramsim2 context simif_emul
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 prefix = $(if $(LOADMEM),$(notdir $(basename $(LOADMEM))),$1)
-waveform = +waveform=$(call prefix,$1).$2
-logfile = $(call prefix,$1)-$2.log
+logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(call prefix,$1)-$2.log)
+waveform = +waveform=$(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(call prefix,$1).$2)
 
 # Compile verilator
 VERILATOR := verilator --cc --exe
@@ -80,6 +82,6 @@ $(vcs): %-vcs: $(res_dir)/%$(if $(DEBUG),-debug,)
 	./$(notdir $<) +dramsim $(loadmem) $(call waveform,$*,vpd) $(ARGS) 2> $(call logfile,$*,vcs)
 
 clean:
-	rm -rf $(gen_dir) $(res_dir)
+	rm -rf $(gen_dir) $(res_dir) DVEfiles libdramsim.a *.hex
 
 .PHONY: $(verilator) $(vcs) clean

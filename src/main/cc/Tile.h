@@ -37,17 +37,17 @@ public:
     double sim_time = (double) (end_time - start_time) / 1000000.0;
     double sim_speed = (double) cycles() / sim_time / 1000.0;
     if (sim_speed > 1000.0) {
-      fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed / 1000.0);
+      fprintf(stderr, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed / 1000.0);
     } else {
-      fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f KHz\n", sim_time, sim_speed);
+      fprintf(stderr, "time elapsed: %.1f s, simulation speed = %.2f KHz\n", sim_time, sim_speed);
     }
     int code = tohost >> 1;
     if (code) {
-      fprintf(stdout, "*** FAILED *** (code = %d) after %" PRIu64 " cycles\n", code, cycles());
+      fprintf(stderr, "*** FAILED *** (code = %d) after %" PRIu64 " cycles\n", code, cycles());
     } else if (cycles() > max_cycles) {
-      fprintf(stdout, "*** FAILED *** (timeout) after %" PRIu64 " cycles\n", cycles());
+      fprintf(stderr, "*** FAILED *** (timeout) after %" PRIu64 " cycles\n", cycles());
     } else {
-      fprintf(stdout, "*** PASSED *** after %" PRIu64 " cycles\n", cycles());
+      fprintf(stderr, "*** PASSED *** after %" PRIu64 " cycles\n", cycles());
     }
     expect(!code, NULL);
   }

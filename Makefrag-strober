@@ -4,14 +4,21 @@ examples := RiscSRAM Router PointerChaser
 mini := Tile
 designs := $(tutorial) $(examples) $(mini)
 zynq_verilog := $(addprefix $(gen_dir)/, $(addsuffix /ZynqShim.v, $(designs)))
+replay_verilog := $(addprefix $(gen_dir)/, $(addsuffix .v, $(designs)))
 
 src_dir = $(base_dir)/src/main/cc
 driver_dir = $(base_dir)/strober/src/main/cc
-default_driver_files := biguint sample simif
-driver_files ?= $(default_driver_files) simif_zynq
+default_files := biguint sample
+
+driver_files ?= $(default_files) simif simif_zynq
 driver_h = $(addprefix $(driver_dir)/, $(addsuffix .h, $(driver_files)))
 driver_cpp = $(addprefix $(driver_dir)/, $(addsuffix .cc, $(driver_files)))
 driver_v = $(base_dir)/strober/src/main/verilog/vcs-harness.v
+
+replay_files ?= $(default_files) context replay_vpi
+replay_h = $(addprefix $(driver_dir)/, $(addsuffix .h, $(replay_files) replay))
+replay_cpp = $(addprefix $(driver_dir)/, $(addsuffix .cc, $(replay_files)))
+replay_v = $(base_dir)/strober/src/main/verilog/replay.v
 
 # Scala source files
 src_path = src/main/scala
@@ -26,6 +33,33 @@ SBT_FLAGS ?=
 $(zynq_verilog): $(gen_dir)/%/ZynqShim.v: $(scala_srcs)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(gen_dir)/$*"
 	mkdir -p $(res_dir)
+
+$(res_dir)/%/%.chain:
 	if [ -a $(gen_dir)/$*/$*.chain ]; \
 	then cp $(gen_dir)/$*/$*.chain $(res_dir); \
 	fi;
+
+$(replay_verilog): $(gen_dir)/%.v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run replay $* $(gen_dir)"
+	mkdir -p $(res_dir)
+
+CXXFLAGS := $(CXXFLAGS) -std=c++11 -Wall -I$(driver_dir)
+LDFLAGS := $(LDFLAGS) -lstdc++ -lpthread
+VERILATOR := verilator --cc --exe
+VERILATOR_FLAGS = --assert -Wno-STMTDLY -O3 -CFLAGS "$(CXXFLAGS)" -LDFLAGS "$(LDFLAGS)"
+verilator := $(addsuffix -verilator, $(designs))
+ifdef DEBUG
+verilator_binaries := $(addprefix $(res_dir)/V, $(addsuffix -debug, $(designs)))
+else
+verilator_binaries := $(addprefix $(res_dir)/V, $(designs))
+endif
+
+VCS := vcs -full64
+VCS_FLAGS = -quiet -timescale=1ns/1ps +v2k +rad +vcs+initreg+random +vcs+lic+wait \
+	-cpp $(CXX) -CFLAGS "$(CXXFLAGS) -I$(VCS_HOME)/include -DVCS" -LDFLAGS "$(LDFLAGS)"
+vcs := $(addsuffix -vcs, $(designs))
+ifdef DEBUG
+vcs_binaries := $(addprefix $(res_dir)/, $(addsuffix -debug, $(designs)))
+else
+vcs_binaries := $(addprefix $(res_dir)/, $(designs))
+endif

@@ -1,6 +1,6 @@
 package StroberExamples
 
-import strober.{StroberCompiler, ZynqShim, ReplayCompiler, EnableSnapshot}
+import strober.{StroberCompiler, ZynqShim, EnableSnapshot}
 import examples._
 import chisel3.Module
 import scala.reflect.ClassTag
@@ -11,15 +11,19 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   val testDir = new File("strober-test")
   val genDir = new File(testDir, "generated-src") ; genDir.mkdirs
   val resDir = new File(testDir, "results") ; resDir.mkdirs
+  val replayDir = new File("strober-replay")
 
   implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
 
-  def compile[T <: Module : ClassTag](dut: => T, backend: String) = {
+  def compile[T <: Module : ClassTag](dut: => T, backend: String, debug: Boolean = false) = {
     val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
     val compArgs = Array("--targetDir", (new File(genDir, target)).toString)
+    val binary = new File(resDir, s"%s$target%s".format(
+      if (backend == "vcs") "" else "V", if (debug) "-debug" else ""))
+    val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath) ++
+      (if (debug) Seq("DEBUG=1") else Nil)
     StroberCompiler compile (compArgs, ZynqShim(dut))
-    assert(Seq("make", "-C", testDir.toString, (new File(resDir,
-      s"%s$target".format(if (backend == "vcs") "" else "V")).getAbsolutePath)).! == 0)
+    assert(cmd.! == 0)
     target
   }
 
@@ -35,34 +39,53 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
       (loadmem match { case None => Nil case Some(p) => Seq(s"LOADMEM=$p") }) ++
       (logFile match { case None => Nil case Some(p) => Seq(s"LOGFILE=$p") }) ++
       (waveform match { case None => Nil case Some(p) => Seq(s"WAVEFORM=$p") }) ++
-      Seq("ARGS=\"%s\"".format(args mkString " "))
+      Seq("ARGS=%s".format(args mkString " "))
     println("cmd: %s".format(cmd mkString " "))
     cmd.!
   }
-}
 
-abstract class TutorialSuite[T <: Module : ClassTag](
-    dutGen: => T, backend: String) extends TestSuiteCommon {
-  it should "pass strober test" in {
-    assert(run(compile(dutGen, backend), backend, true) == 0)
+  def compileReplay[T <: Module : ClassTag](dutGen: => T, b: String) = {
+    val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    if (p(EnableSnapshot)) {
+      strober.replay.Compiler(dutGen, new File(replayDir, "generated-src"))
+      val resDir = new File(replayDir, "results") ; resDir.mkdir
+      val binary = new File(resDir, s"%s$target".format(if (b == "vcs") "" else "V"))
+      assert(Seq("make", "-C", replayDir.toString, binary.getAbsolutePath).! == 0)
+    }
+    target
+  }
+
+  def replay(target: String, backend: String, sample: Option[File] = None) = {
+    Seq("make", "-C", replayDir.toString, s"${target}-replay-${backend}",
+      sample match { case None => "" case Some(p) => s"SAMPLE=${p.getAbsolutePath}" }).!
   }
 }
 
-class GCDCppTest extends TutorialSuite(new GCD, "verilator")
-class GCDVCSTest extends TutorialSuite(new GCD, "vcs")
-class ParityCppTest extends TutorialSuite(new Parity, "verilator")
-class ParityVCSTest extends  TutorialSuite(new Parity, "vcs")
-class ShiftRegisterCppTest extends TutorialSuite(new ShiftRegister, "verilator")
-class ShiftRegisterVCSTest extends TutorialSuite(new ShiftRegister, "vcs")
-class ResetShiftRegisterCppTest extends TutorialSuite(new ResetShiftRegister, "verilator")
-class ResetShiftRegisterVCSTest extends TutorialSuite(new ResetShiftRegister, "vcs")
-class EnableShiftRegisterCppTest extends TutorialSuite(new EnableShiftRegister, "verilator")
-class EnableShiftRegisterVCSTest extends TutorialSuite(new EnableShiftRegister, "vcs")
-class StackCppTest extends TutorialSuite(new Stack(8), "verilator")
-class StackVCSTest extends TutorialSuite(new Stack(8), "vcs")
-class RouterCppTest extends TutorialSuite(new Router, "verilator")
-class RouterVCSTest extends TutorialSuite(new Router, "vcs")
-class RiscCppTest extends TutorialSuite(new Risc, "verilator")
-class RiscVCSTest extends TutorialSuite(new Risc, "vcs")
-class RiscSRAMCppTest extends TutorialSuite(new RiscSRAM, "verilator")
-class RiscSRAMVCSTest extends TutorialSuite(new RiscSRAM, "vcs")
+abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestSuiteCommon {
+  def runTest(b: String) {
+    val target = compile(dutGen, b, true)
+    val sample = new File(resDir, s"$target-$b.sample")
+    behavior of s"$target in $b"
+    it should s"pass strober test" in {
+      assert(run(target, b, true, args=Seq(s"+sample=${sample.getAbsolutePath}")) == 0)
+    }
+    if (p(EnableSnapshot)) {
+      it should "replay samples in vcs" in {
+        assert(replay(target, "vcs", Some(sample)) == 0)
+      }
+    }
+  }
+  compileReplay(dutGen, "vcs")
+  runTest("verilator")
+  runTest("vcs")
+}
+
+class GCDTests extends TutorialSuite(new GCD)
+class ParityTests extends TutorialSuite(new Parity)
+class ShiftRegisterTests extends TutorialSuite(new ShiftRegister)
+class ResetShiftRegisterTests extends TutorialSuite(new ResetShiftRegister)
+class EnableShiftRegisterTests extends TutorialSuite(new EnableShiftRegister)
+class StackTests extends TutorialSuite(new Stack(8))
+class RouterTests extends TutorialSuite(new Router)
+class RiscTests extends TutorialSuite(new Risc)
+class RiscSRAMTests extends TutorialSuite(new RiscSRAM)

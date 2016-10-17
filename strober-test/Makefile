@@ -32,7 +32,7 @@ $(res_dir)/dramsim2_ini: $(test_dir)/dramsim2_ini
 
 driver_files := $(default_files) mmio mm mm_dramsim2 context simif simif_emul
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
-prefix = $(if $(LOADMEM),$(notdir $(basename $(LOADMEM))),$1)
+prefix = $(notdir $(basename $(if $(LOADMEM),$(LOADMEM),$1)))
 logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(call prefix,$1)-$2.log)
 waveform = +waveform=$(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(call prefix,$1).$2)
 

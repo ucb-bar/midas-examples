@@ -12,6 +12,8 @@ vcs_sim_gl_par_dir = $(replay_dir)/vcs-sim-gl-par
 pt_pwr_dir = $(replay_dir)/pt-pwr
 
 DEBUG :=
+SAMPLE ?=
+LOGFILE ?=
 
 include $(base_dir)/Makefrag-strober
 
@@ -45,9 +47,11 @@ $(vcs_sim_gl_syn_dir)/%.match:
 $(vcs_sim_gl_par_dir)/%.match:
 	cd $(vcs_sim_gl_par_dir) && $(MAKE) $(notdir $@) MODEL=$*
 
-SAMPLE ?=
 sample = $(if $(SAMPLE),$(abspath $(SAMPLE)),$(res_dir)/$(1).sample)
-waveform = $(notdir $(basename $(if $(SAMPLE), $(SAMPLE), $(1)))).vpd
+prefix = $(notdir $(basename $(call sample,$1)))
+logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(call prefix,$1)-$2.log)
+waveform = $(call prefix,$1).vpd
+
 ifndef SAMPLE
 $(base_dir)/strober-test/results/%.sample:
 	$(MAKE) -C $(base_dir)/strober-test $*-verilator
@@ -55,8 +59,6 @@ $(base_dir)/strober-test/results/%.sample:
 $(res_dir)/%.sample: $(base_dir)/strober-test/results/%.sample
 	cp $< $@
 endif
-
-N ?= 6
 
 # Replay on Verilator
 # $(replay_cpp): %-replay-cpp: $(call sample,%) $(gen_dir)/%.v
@@ -71,7 +73,7 @@ $(vcs_binaries): $(res_dir)/%: $(gen_dir)/%.v $(gen_dir)/%.vfrag $(replay_cpp) $
 
 $(replay_vcs): %-replay-vcs: $(res_dir)/% $(call sample,%)
 	cd $(res_dir) && \
-	./$(notdir $<) +sample=$(word 2, $^) +verbose +waveform=$(call waveform, $*)
+	./$(notdir $<) +sample=$(word 2, $^) +verbose +waveform=$(call waveform, $*) 2> $(call logfile,$*,vcs)
 
 # Replay on Post-Synthesis Simulation
 #$(replay_gl_syn): %-replay-gl-syn: $(call sample,%) $(addprefix $(vcs_sim_gl_syn_dir)/, %.match %.$(CONFIG))

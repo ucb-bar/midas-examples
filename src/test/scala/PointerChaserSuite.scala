@@ -35,7 +35,7 @@ abstract class PointerChaserTestSuite(
       it should s"pass latency: $latency" in { assert(exitcode == 0) }
     }
     if (p(strober.EnableSnapshot)) {
-      val replays = (1 to 5) map (math.pow(2, _).toInt) map { latency =>
+      val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
         val sample = new File(replayGenDir, s"$target-$latency-$backend.sample")
         Future(latency -> replay(target, "vcs", Some(sample)))
       }

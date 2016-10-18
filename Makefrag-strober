@@ -8,6 +8,8 @@ replay_verilog := $(addprefix $(gen_dir)/, $(addsuffix .v, $(designs)))
 
 testbench_dir = $(base_dir)/src/main/cc
 src_dir = $(base_dir)/strober/src/main/cc
+src_h = $(wildcard $(src_dir)/*.h) $(wildcard $(src_dir)/utils/*.cc)
+src_cc = $(wildcard $(src_dir)/*.cc) $(wildcard $(src_dir)/utils/*.cc)
 
 # Scala source files
 src_path = src/main/scala

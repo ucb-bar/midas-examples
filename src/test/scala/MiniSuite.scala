@@ -42,8 +42,8 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
   }
   compileReplay(new mini.Tile(tp), "vcs")
   runTests("verilator", mini.ISATests)
-  // runTests("verilator", mini.BmarkTests)
+  runTests("verilator", mini.BmarkTests)
   runTests("vcs", mini.ISATests)
-  // runTests("vcs", mini.BmarkTests)
+  runTests("vcs", mini.BmarkTests)
 }
 class MiniTests extends MiniTestSuite()

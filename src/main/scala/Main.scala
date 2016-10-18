@@ -23,7 +23,7 @@ object StroberExamples extends App {
   args(0) match {
     case "strober" =>
       implicit val p = root((new ZynqConfig).toInstance)
-      StroberCompiler compile (Array("--targetDir", dirPath), ZynqShim(dut))
+      StroberCompiler(dut, new File(dirPath))
     case "replay" =>
       replay.Compiler(dut, new File(dirPath))
   }

@@ -21,7 +21,7 @@ object StroberBuild extends Build {
   lazy val cde       = project in file("riscv-mini/cde") dependsOn chisel
   lazy val junctions = project in file("riscv-mini/junctions") dependsOn cde
   lazy val mini      = project in file("riscv-mini") dependsOn (junctions, testers)
-  lazy val strober   = project dependsOn (junctions, testers)
+  lazy val strober   = project dependsOn (firrtl, junctions)
   lazy val memModel  = project in file("midas-memory-model") dependsOn strober
   lazy val root      = project in file(".") settings (settings:_*) dependsOn (
     tutorial, mini % "compile->compile;test->test", memModel)

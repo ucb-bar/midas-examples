@@ -23,10 +23,9 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
     val genDir = new File(testGenDir, target)
     val binary = new File(testOutDir, s"%s${target}%s".format(
       if (b == "verilator") "V" else "", if (debug) "-debug" else ""))
-    val compArgs = Array("--targetDir", genDir.toString)
     val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath,
                   "DEBUG=%s".format(if (debug) "1" else ""))
-    StroberCompiler compile (compArgs, ZynqShim(dut))
+    StroberCompiler(dut, genDir)
     assert(cmd.! == 0)
     target
   }

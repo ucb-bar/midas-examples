@@ -23,9 +23,9 @@ abstract class PointerChaserTestSuite(
     val vcd = if (backend == "vcs") "vpd" else "vcd"
     behavior of s"$target in $backend"
     val results = (1 to N) map (math.pow(2, _).toInt) map { latency =>
-      val sample = new File(resDir, s"$target-$latency-$backend.sample")
-      val logFile = Some(new File("results", s"$target-$backend-$latency.log"))
-      val waveform = Some(new File("results", s"$target-${latency}.${vcd}"))
+      val sample = new File(replayGenDir, s"$target-$latency-$backend.sample")
+      val logFile = Some(new File("outputs", s"$target-$backend-$latency.log"))
+      val waveform = Some(new File("outputs", s"$target-${latency}.${vcd}"))
       val args = Seq(s"+latency=$latency", s"+sample=${sample.getAbsolutePath}")
       Future(latency ->
         run(target, backend, debug, Some(new File("init.hex")), logFile, waveform, args)
@@ -36,7 +36,7 @@ abstract class PointerChaserTestSuite(
     }
     if (p(strober.EnableSnapshot)) {
       val replays = (1 to 5) map (math.pow(2, _).toInt) map { latency =>
-        val sample = new File(resDir, s"$target-$latency-$backend.sample")
+        val sample = new File(replayGenDir, s"$target-$latency-$backend.sample")
         Future(latency -> replay(target, "vcs", Some(sample)))
       }
       Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>

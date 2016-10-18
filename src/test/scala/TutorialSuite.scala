@@ -8,20 +8,24 @@ import scala.sys.process.stringSeqToProcess
 import java.io.File
 
 abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
+  val srcDir = new File("strober/src/main/cc")
   val testDir = new File("strober-test")
-  val genDir = new File(testDir, "generated-src") ; genDir.mkdirs
-  val resDir = new File(testDir, "results") ; resDir.mkdirs
+  val testGenDir = new File(testDir, "generated-src") ; testGenDir.mkdirs
+  val testOutDir = new File(testDir, "outputs"); testOutDir.mkdirs
   val replayDir = new File("strober-replay")
+  val replayGenDir = new File(replayDir, "generated-src") ; replayGenDir.mkdirs
+  val replayOutDir = new File(replayDir, "outputs"); replayOutDir.mkdirs
 
   implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
 
-  def compile[T <: Module : ClassTag](dut: => T, backend: String, debug: Boolean = false) = {
+  def compile[T <: Module : ClassTag](dut: => T, b: String, debug: Boolean = false) = {
     val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-    val compArgs = Array("--targetDir", (new File(genDir, target)).toString)
-    val binary = new File(resDir, s"%s$target%s".format(
-      if (backend == "vcs") "" else "V", if (debug) "-debug" else ""))
-    val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath) ++
-      (if (debug) Seq("DEBUG=1") else Nil)
+    val genDir = new File(testGenDir, target)
+    val binary = new File(testOutDir, s"%s${target}%s".format(
+      if (b == "verilator") "V" else "", if (debug) "-debug" else ""))
+    val compArgs = Array("--targetDir", genDir.toString)
+    val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath,
+                  "DEBUG=%s".format(if (debug) "1" else ""))
     StroberCompiler compile (compArgs, ZynqShim(dut))
     assert(cmd.! == 0)
     target
@@ -34,12 +38,12 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
           logFile: Option[File] = None,
           waveform: Option[File] = None,
           args: Seq[String] = Nil) = {
-    val cmd = Seq("make", "-C", testDir.toString, s"$target-$backend") ++
-      (if (debug) Seq("DEBUG=1") else Nil) ++
-      (loadmem match { case None => Nil case Some(p) => Seq(s"LOADMEM=$p") }) ++
-      (logFile match { case None => Nil case Some(p) => Seq(s"LOGFILE=$p") }) ++
-      (waveform match { case None => Nil case Some(p) => Seq(s"WAVEFORM=$p") }) ++
-      Seq("ARGS=%s".format(args mkString " "))
+    val cmd = Seq("make", "-C", testDir.toString, s"$target-$backend",
+      "DEBUG=%s".format(if (debug) "1" else ""),
+      "LOADMEM=%s".format(loadmem map (_.toString) getOrElse ""),
+      "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
+      "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
+      "ARGS=%s".format(args mkString " "))
     println("cmd: %s".format(cmd mkString " "))
     cmd.!
   }
@@ -47,10 +51,10 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   def compileReplay[T <: Module : ClassTag](dutGen: => T, b: String) = {
     val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
     if (p(EnableSnapshot)) {
-      strober.replay.Compiler(dutGen, new File(replayDir, "generated-src"))
-      val resDir = new File(replayDir, "results") ; resDir.mkdir
-      val binary = new File(resDir, s"%s$target".format(if (b == "vcs") "" else "V"))
-      assert(Seq("make", "-C", replayDir.toString, binary.getAbsolutePath).! == 0)
+      val binary = new File(replayOutDir, s"%s$target-replay".format(if (b == "verilator") "V" else ""))
+      val cmd = Seq("make", "-C", replayDir.toString, binary.getAbsolutePath)
+      strober.replay.Compiler(dutGen, replayGenDir)
+      assert(cmd.! == 0)
     }
     target
   }
@@ -64,7 +68,7 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
 abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestSuiteCommon {
   def runTest(b: String) {
     val target = compile(dutGen, b, true)
-    val sample = new File(resDir, s"$target-$b.sample")
+    val sample = new File(replayOutDir, s"$target-$b.sample")
     behavior of s"$target in $b"
     it should s"pass strober test" in {
       assert(run(target, b, true, args=Seq(s"+sample=${sample.getAbsolutePath}")) == 0)

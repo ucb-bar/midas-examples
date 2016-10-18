@@ -2,11 +2,16 @@ import sbt._
 import Keys._
 
 object StroberBuild extends Build {
-  lazy val dramsim = settingKey[Unit]("compile DRAMSim2")
+  lazy val testlib = settingKey[Unit]("compile test libraries")
   override lazy val settings = super.settings ++ Seq(
     scalaVersion := "2.11.7",
     scalacOptions ++= Seq("-deprecation","-unchecked"),
-    dramsim := s"make -C strober-test ${baseDirectory.value}/strober-test/libdramsim.a".!
+    testlib := {
+      val dir = s"${baseDirectory.value}/strober/src/main/cc"
+      val make = Seq("make", "-C", dir)
+      assert((make :+ s"$dir/utils/libemul.a").! == 0)
+      assert((make :+ s"$dir/utils/libreplay.a").! == 0)
+    }
   )
   lazy val chisel    = project in file("riscv-mini/chisel")
   lazy val firrtl    = project in file("riscv-mini/firrtl")

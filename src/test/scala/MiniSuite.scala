@@ -17,10 +17,10 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     behavior of s"${testType.toString} in $backend"
     val results = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
       val subresults = subtests map { case (t, i) =>
-        val sample = new File(resDir, s"$t-$backend.sample")
+        val sample = new File(replayGenDir, s"$t-$backend.sample")
         val loadmem = Some(new File("hex", s"$t.hex"))
-        val logFile = Some(new File("results", s"$t-$backend.log"))
-        val waveform = Some(new File("results", s"$t-$backend.$vcd"))
+        val logFile = Some(new File("outputs", s"$t-$backend.log"))
+        val waveform = Some(new File("outputs", s"$t-$backend.$vcd"))
         val args = Seq(s"+latency=$latency", s"+sample=${sample.getAbsolutePath}")
         Future(t -> run(target, backend, debug, loadmem, logFile, waveform, args))
       }
@@ -31,7 +31,7 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     if (p(strober.EnableSnapshot)) {
       val replays = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
         val subreplays = subtests map { case (t, i) =>
-          val sample = new File(resDir, s"$t-$backend.sample")
+          val sample = new File(replayGenDir, s"$t-$backend.sample")
           Future(t -> replay(target, "vcs", Some(sample)))
         }
         Await.result(Future.sequence(subreplays), Duration.Inf)
@@ -42,8 +42,8 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
   }
   compileReplay(new mini.Tile(tp), "vcs")
   runTests("verilator", mini.ISATests)
-  runTests("verilator", mini.BmarkTests)
+  // runTests("verilator", mini.BmarkTests)
   runTests("vcs", mini.ISATests)
-  runTests("vcs", mini.BmarkTests)
+  // runTests("vcs", mini.BmarkTests)
 }
 class MiniTests extends MiniTestSuite()

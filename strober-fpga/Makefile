@@ -5,26 +5,23 @@
 base_dir := $(abspath ..)
 fpga_dir := $(abspath .)
 gen_dir  := $(fpga_dir)/generated-src
-res_dir  := $(fpga_dir)/results
+out_dir  := $(fpga_dir)/outputs
 
 include $(base_dir)/Makefrag-strober
 
 CONFIG ?= Strober
 MEMMODEL ?= 1
 
-CXX := arm-xilinx-linux-gnueabi-g++
-CXXFLAGS := $(CXXFLAGS) -static -O2 -std=c++11 -Wall -I$(driver_dir) -I$(src_dir) -DMEMMODEL=$(MEMMODEL)
-
 # Compile driver
+export CXX := arm-xilinx-linux-gnueabi-g++
+export CXXFLAGS := $(CXXFLAGS) -static -O2 -DMEMMODEL=$(MEMMODEL)
+
 zynq := $(addsuffix -zynq, $(designs))
-zynq_binaries := $(addprefix $(res_dir)/, $(designs))
-zynq_src = $(src_dir)/$(1)-
 
-$(zynq_binaries): $(res_dir)/%: $(src_dir)/%-zynq.cc $(gen_dir)/%/ZynqShim.v \
-	$(driver_cpp) $(driver_h) $(src_dir)/%.h
-	$(CXX) $(CXXFLAGS) -include $(gen_dir)/$*/$*-const.h -o $@ $< $(driver_cpp)
+$(out_dir)/%-zynq: $(testbench_dir)/%-zynq.cc $(gen_dir)/%/ZynqShim.v
+	$(MAKE) -C $(src_dir) zynq DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) TESTBENCH=$<
 
-$(zynq): %-zynq: $(res_dir)/%
+$(zynq): %-zynq: $(out_dir)/%-zynq
 
 # Generate bitstream
 board     ?= zedboard
@@ -35,14 +32,14 @@ strober   := $(addsuffix -strober, $(designs))
 fpga      := $(addsuffix -fpga,    $(designs))
 
 $(strober): %-strober: $(gen_dir)/%-const.h
-	mkdir -p $(res_dir)
+	mkdir -p $(out_dir)
 	cd $(gen_dir) && cp ZynqShim.v ZynqShim.$*.v
 	
 $(fpga): %-fpga: $(gen_dir)/%/ZynqShim.v
 	cd $(board_dir); $(MAKE) clean ; time $(MAKE) $(bitstream) DESIGN=$* CONFIG=$*; \
-	cp $(bitstream) $(res_dir)
+	cp $(bitstream) $(out_dir)
 
 clean:
-	rm -rf $(gen_dir) $(res_dir)
+	rm -rf $(gen_dir) $(out_dir)
 
-.PHONY: $(strober) $(fpga) $(zynq) clean
+.PHONY: $(zynq) $(fpga) clean

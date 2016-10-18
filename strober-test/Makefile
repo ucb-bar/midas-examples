@@ -5,7 +5,7 @@
 base_dir := $(abspath ..)
 test_dir := $(abspath .)
 gen_dir  := $(test_dir)/generated-src
-res_dir  := $(test_dir)/results
+out_dir  := $(test_dir)/outputs
 
 MEMMODEL ?= 1
 DEBUG ?=
@@ -14,57 +14,45 @@ LOGFILE ?=
 WAVEFORM ?=
 ARGS ?=
 
+export CXXFLAGS := $(CXXFLAGS) -DMEMMODEL=$(MEMMODEL)
+
 include $(base_dir)/Makefrag-strober
 
-CXXFLAGS := $(CXXFLAGS) -I$(src_dir) -I$(test_dir)/dramsim2 -DMEMMODEL=$(MEMMODEL)
-LDFLAGS := $(LDFLAGS) -L$(abspath $(test_dir)) -ldramsim
+$(out_dir)/dramsim2_ini:
+	$(MAKE) -C $(src_dir) OUT_DIR=$(out_dir) $@
 
-# compile DRAMSim2
-DRAMSIM_OBJS := $(patsubst %.cpp, %.o, $(wildcard $(test_dir)/dramsim2/*.cpp))
-$(DRAMSIM_OBJS): %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -DNO_STORAGE -DNO_OUTPUT -Dmain=nomain -c -o $@ $<
-$(test_dir)/libdramsim.a: $(DRAMSIM_OBJS)
-	ar rcs $@ $^
+$(out_dir)/%.chain:
+	$(MAKE) -C $(src_dir) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) $@
 
-$(res_dir)/dramsim2_ini: $(test_dir)/dramsim2_ini
-	mkdir -p $(res_dir)
-	cd $(res_dir) && ln -s $<
-
-driver_files := $(default_files) mmio mm mm_dramsim2 context simif simif_emul
+debug := $(if $(DEBUG),-debug,)
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 prefix = $(notdir $(basename $(if $(LOADMEM),$(LOADMEM),$1)))
 logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(call prefix,$1)-$2.log)
-waveform = +waveform=$(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(call prefix,$1).$2)
+waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(call prefix,$1).$2)
 
 # Compile verilator
-VERILATOR_FLAGS := $(VERILATOR_FLAGS) --top-module ZynqShim $(if $(DEBUG),--trace,)
+verilator := $(addsuffix -verilator, $(designs))
 
-$(verilator_binaries): $(res_dir)/V%$(if $(DEBUG),-debug,): $(src_dir)/%-emul.cc $(gen_dir)/%/ZynqShim.v \
-	$(test_dir)/libdramsim.a $(driver_cpp) $(driver_h) $(src_dir)/%.h $(res_dir)/dramsim2_ini
-	$(VERILATOR) $(VERILATOR_FLAGS) -Mdir $(gen_dir)/$* \
-	-CFLAGS "-include $(gen_dir)/$*/$*-const.h -include $(gen_dir)/$*/VZynqShim.h" \
-	-o $@ $< $(word 2, $^) $(driver_cpp)
-	$(MAKE) -C $(gen_dir)/$* -f VZynqShim.mk
+$(out_dir)/V%$(debug): $(testbench_dir)/%-emul.cc $(testbench_dir)/%.h $(gen_dir)/%/ZynqShim.v
+	$(MAKE) -C $(src_dir) verilator$(debug) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) TESTBENCH=$<
 
-$(verilator): %-verilator: $(res_dir)/V%$(if $(DEBUG),-debug,) $(res_dir)/%/%.chain
-	cd $(res_dir) && \
-	./$(notdir $<) +dramsim $(loadmem) $(call waveform,$*,vcd) $(ARGS) 2> $(call logfile,$*,verilator)
+$(verilator): %-verilator: $(out_dir)/V%$(debug) $(out_dir)/%.chain $(out_dir)/dramsim2_ini
+	mkdir -p $(out_dir)
+	cd $(out_dir) && ./$(notdir $<) $(ARGS) $(loadmem) \
+	+dramsim +waveform=$(call waveform,$*,vcd) 2> $(call logfile,$*,verilator)
 
 # Compile VCS
-VCS_FLAGS := $(VCS_FLAGS) +vc+list -e vcs_main +define+CLOCK_PERIOD=0.5 \
-	$(if $(DEBUG), -debug_pp +define+DEBUG,)
+vcs := $(addsuffix -vcs, $(designs))
 
-$(vcs_binaries): $(res_dir)/%$(if $(DEBUG),-debug,): $(gen_dir)/%/ZynqShim.v $(src_dir)/%-emul.cc \
-	$(test_dir)/libdramsim.a $(driver_v) $(driver_cpp) $(driver_h) $(src_dir)/%.h  $(res_dir)/dramsim2_ini
-	rm -rf $(gen_dir)/$*/$*.csrc $(res_dir)/$.daidir
-	$(VCS) $(VCS_FLAGS) -Mdir=$(gen_dir)/$*/$*.csrc -CC "-include $(gen_dir)/$*/$*-const.h" \
-	-o $@ $< $(gen_dir)/$*/$*-const.vh $(driver_v) $(driver_cpp) $(word 2, $^) $(word 3, $^)
+$(out_dir)/%$(debug): $(testbench_dir)/%-emul.cc $(testbench_dir)/%.h $(gen_dir)/%/ZynqShim.v
+	$(MAKE) -C $(src_dir) vcs$(debug) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) TESTBENCH=$<
 
-$(vcs): %-vcs: $(res_dir)/%$(if $(DEBUG),-debug,) $(res_dir)/%/%.chain
-	cd $(res_dir) && \
-	./$(notdir $<) +dramsim $(loadmem) $(call waveform,$*,vpd) $(ARGS) 2> $(call logfile,$*,vcs)
+$(vcs): %-vcs: $(out_dir)/%$(debug) $(out_dir)/%.chain $(out_dir)/dramsim2_ini
+	mkdir -p $(out_dir)
+	cd $(out_dir) && ./$(notdir $<) $(ARGS) $(loadmem) \
+	+dramsim +waveform=$(call waveform,$*,vcd) 2> $(call logfile,$*,vcs)
 
 clean:
-	rm -rf $(gen_dir) $(res_dir) DVEfiles libdramsim.a *.hex
+	rm -rf $(gen_dir) $(out_dir) *.hex
 
 .PHONY: $(verilator) $(vcs) clean

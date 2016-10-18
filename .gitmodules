@@ -19,6 +19,3 @@
 [submodule "midas-memory-model"]
 	path = midas-memory-model
 	url = git@github.com:ucb-bar/midas-memory-model.git
-[submodule "strober-test/DRAMSim2"]
-	path = strober-test/dramsim2
-	url = https://github.com/dramninjasUMD/DRAMSim2.git

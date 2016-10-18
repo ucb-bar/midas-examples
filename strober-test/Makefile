@@ -7,14 +7,11 @@ test_dir := $(abspath .)
 gen_dir  := $(test_dir)/generated-src
 out_dir  := $(test_dir)/outputs
 
-MEMMODEL ?= 1
 DEBUG ?=
 LOADMEM ?=
 LOGFILE ?=
 WAVEFORM ?=
 ARGS ?=
-
-export CXXFLAGS := $(CXXFLAGS) -DMEMMODEL=$(MEMMODEL)
 
 include $(base_dir)/Makefrag-strober
 

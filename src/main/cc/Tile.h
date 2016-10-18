@@ -19,7 +19,7 @@ public:
 
   void run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
-#if MEMMODEL
+#ifdef MEMMODEL_0_readLatency
     write(MEMMODEL_0_readMaxReqs, 8);
     write(MEMMODEL_0_writeMaxReqs, 8);
     write(MEMMODEL_0_readLatency, latency);

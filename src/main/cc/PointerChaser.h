@@ -26,7 +26,7 @@ public:
   }
 
   void run() {
-#if MEMMODEL
+#ifdef MEMMODEL_0_readLatency
     write(MEMMODEL_0_readMaxReqs, 8);
     write(MEMMODEL_0_writeMaxReqs, 8);
     write(MEMMODEL_0_readLatency, latency);

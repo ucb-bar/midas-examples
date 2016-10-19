@@ -1,5 +1,5 @@
 generated-src
 outputs
 DVEfiles
-*.sample
-*.csv
+libdramsim.a
+*.hex

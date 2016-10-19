@@ -1,15 +1,26 @@
-#
-SBT       = sbt
-SBT_FLAGS =
-
 # Desings
 tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
-examples := RiscSRAM Router PointerChaser
+examples := RiscSRAM PointerChaser
 mini := Tile
 designs := $(tutorial) $(examples) $(mini)
+zynq_verilog := $(addprefix $(gen_dir)/, $(addsuffix /ZynqShim.v, $(designs)))
+replay_verilog := $(addprefix $(gen_dir)/, $(addsuffix .v, $(designs)))
 
+testbench_dir = $(base_dir)/src/main/cc
+src_dir = $(base_dir)/strober/src/main/cc
+src_h = $(wildcard $(src_dir)/*.h) $(wildcard $(src_dir)/utils/*.cc)
+src_cc = $(wildcard $(src_dir)/*.cc) $(wildcard $(src_dir)/utils/*.cc)
+
+# Scala source files
 src_path = src/main/scala
-modules = . strober riscv-mini tutorial \
-	$(addprefix riscv-mini/, chisel firrtl cde interp testers)
-scala_srcs = $(foreach module, $(modules), \
-	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
+modules = . firrtl strober riscv-mini tutorial $(addprefix riscv-mini/, cde junctions)
+scala_srcs = $(foreach module, $(modules), $(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
+
+SBT ?= sbt
+SBT_FLAGS ?=
+
+$(zynq_verilog): $(gen_dir)/%/ZynqShim.v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $* $(dir $@)"
+
+$(replay_verilog): $(gen_dir)/%.v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run replay $* $(dir $@)"

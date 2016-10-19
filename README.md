@@ -31,15 +31,30 @@ In addtion, you need to download the isa tests and benchmarks for riscv-mini by 
 You can also enable/disable snapshotting by changing a Chiesl parameter(`EnableSnapshot`).
 
 ## <a name="step1"></a> STEP 1: Test
-First, launch `sbt` in the main directory. If you run `test`, it will run all tests.
-Or, just run `testOnly StroberExample.<test_name>` to run a specific test only.
+First of all, you need to write a C++ testbench. Examples are given in `src/main/cc`.
+In order to reuse test benches for [FPGA simulation](step2), write a testbench in
+a header file with virtual base class `simif_t`(`src/main/cc/<design>.h`).
+Also, add your design in `Makefrag-strober` in the main directory.
+For testing, just write a wrapper properly with `simif_emul_t`(`src/main/cc/<design>-emul.cc`).
+
+Next, move to `strober-test`. To run tests with verilator, run:
+
+     $ make <design>-verilator [LOADMEM=<hexfile>] [DEBUG=1] [ARGS="<testbench specific arguments>"]
+
+The Chisel generated files are in `generated-src`, while simulator binaries, log files, waveforms are in `results`.
+Waveforms are not dumped by default, but you can get waveforms by running with `DEBUG=1`.
+
+To run tests with vcs, run:
+
+     $ make <design>-vcs [LOADMEM=<hexfile>] [DEBUG=1] [ARGS="<testbench specific arguments>"]
+     
+For integration tests, run `sbt test` in the main directory.
 
 ## <a name="step2"></a> STEP 2: Run FPGA Simulation
-You need to write a C++ testbench to run FPGA Simulation(`src/main/cc`). Next, move to `strober-fpga`:
+You should want to resuse the testbench written for [tests](step1), even for FPGA simulation.
+Thus, write a proper wrapper with `simif_zynq_t`(`src/main/cc/<design>-zynq.cc`).
 
-    $ cd strober-fpga
-
-To generate verilog, run:
+Next, move to `strober-fpga`. To generate verilog, run:
 
     $ make <design>-strober
     

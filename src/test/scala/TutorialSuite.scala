@@ -1,119 +1,93 @@
 package StroberExamples
 
-import strober.{SimWrapper, ZynqShim, StroberCompiler, ReplayCompiler, EnableSnapshot}
-import strober.testers.{StroberTester, SimWrapperTester, ZynqShimTester}
+import strober.{StroberCompiler, ZynqShim, EnableSnapshot}
 import examples._
 import chisel3.Module
-import chisel3.iotesters.{Driver, chiselMainTest}
-
 import scala.reflect.ClassTag
+import scala.sys.process.stringSeqToProcess
 import java.io.File
 
 abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
-  protected val outDir = new File("test-outs") ; outDir.mkdirs
-  private def baseArgs(dir: File) = Array("--targetDir", dir.getPath.toString)
+  val srcDir = new File("strober/src/main/cc")
+  val testDir = new File("strober-test")
+  val testGenDir = new File(testDir, "generated-src") ; testGenDir.mkdirs
+  val testOutDir = new File(testDir, "outputs"); testOutDir.mkdirs
+  val replayDir = new File("strober-replay")
+  val replayGenDir = new File(replayDir, "generated-src") ; replayGenDir.mkdirs
+  val replayOutDir = new File(replayDir, "outputs"); replayOutDir.mkdirs
 
-  def test[T <: Module : ClassTag](
-      dutGen: => T,
-      tester: T => StroberTester[T],
-      dir: File,
-      backend: String) {
+  implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
+
+  def compile[T <: Module : ClassTag](dut: => T, b: String, debug: Boolean = false) = {
+    val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    val genDir = new File(testGenDir, target)
+    val binary = new File(testOutDir, s"%s${target}%s".format(
+      if (b == "verilator") "V" else "", if (debug) "-debug" else ""))
+    val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath,
+                  "DEBUG=%s".format(if (debug) "1" else ""))
+    StroberCompiler(dut, genDir)
+    assert(cmd.! == 0)
+    target
+  }
+
+  def run(target: String,
+          backend: String,
+          debug: Boolean = false,
+          loadmem: Option[File] = None,
+          logFile: Option[File] = None,
+          waveform: Option[File] = None,
+          args: Seq[String] = Nil) = {
+    val cmd = Seq("make", "-C", testDir.toString, s"$target-$backend",
+      "DEBUG=%s".format(if (debug) "1" else ""),
+      "LOADMEM=%s".format(loadmem map (_.toString) getOrElse ""),
+      "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
+      "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
+      "ARGS=%s".format(args mkString " "))
+    println("cmd: %s".format(cmd mkString " "))
+    cmd.!
+  }
+
+  def compileReplay[T <: Module : ClassTag](dutGen: => T, b: String) = {
+    val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+    if (p(EnableSnapshot)) {
+      val binary = new File(replayOutDir, s"%s$target-replay".format(if (b == "verilator") "V" else ""))
+      val cmd = Seq("make", "-C", replayDir.toString, binary.getAbsolutePath)
+      strober.replay.Compiler(dutGen, replayGenDir)
+      assert(cmd.! == 0)
+    }
+    target
+  }
+
+  def replay(target: String, backend: String, sample: Option[File] = None) = {
+    Seq("make", "-C", replayDir.toString, s"${target}-replay-${backend}",
+      sample match { case None => "" case Some(p) => s"SAMPLE=${p.getAbsolutePath}" }).!
+  }
+}
+
+abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestSuiteCommon {
+  def runTest(b: String) {
+    val target = compile(dutGen, b, true)
+    val sample = new File(replayOutDir, s"$target-$b.sample")
+    behavior of s"$target in $b"
     it should s"pass strober test" in {
-      StroberCompiler(baseArgs(dir), dutGen, backend)(tester)
+      assert(run(target, b, true, args=Seq(s"+sample=${sample.getAbsolutePath}")) == 0)
+    }
+    if (p(EnableSnapshot)) {
+      it should "replay samples in vcs" in {
+        assert(replay(target, "vcs", Some(sample)) == 0)
+      }
     }
   }
-
-  def replaySamples[T <: Module : ClassTag](
-      dutGen: => T,
-      dir: File,
-      sample: File,
-      backend: String) {
-    val vcd = if (backend == "verilator") "vcd" else "vpd"
-    val logFile = Some(new File(dir, s"replay-$backend.log"))
-    val waveform = Some(new File(dir, s"replay-$backend.$vcd"))
-    it should s"replay samples in $backend" in {
-      ReplayCompiler(baseArgs(dir), dutGen, backend, waveform)(c => backend match {
-        case "glsim" =>
-          new strober.testers.GateLevelReplay(c, sample, logFile)
-        case _ =>
-          new strober.testers.RTLReplay(c, sample, logFile)
-      })
-    }
-  }
+  compileReplay(dutGen, "vcs")
+  runTest("verilator")
+  runTest("vcs")
 }
 
-abstract class SimTestSuite[+T <: Module : ClassTag](
-    c: => T,
-    backend: String)
-   (tester: SimWrapper[T] => SimWrapperTester[T]) extends TestSuiteCommon {
-  implicit val p = TestParams.simParam
-  val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  val dir = new File(outDir, s"$target/sim-$backend") ; dir.mkdirs
-  val sample = new File(dir, s"$target.sample")
-if (backend != "verilator") {
-  behavior of s"[SimWrapper] $target in $backend"
-  test(SimWrapper(c), tester, dir, backend)
-  if (p(EnableSnapshot)) {
-    // replaySamples(c, dir, sample, "verilator")
-    replaySamples(c, dir, sample, "vcs")
-    replaySamples(c, dir, sample, "glsim")
-  }
-}
-}
-
-abstract class ZynqTestSuite[+T <: Module : ClassTag](
-    c: => T,
-    backend: String)
-   (tester: ZynqShim[SimWrapper[T]] => ZynqShimTester[SimWrapper[T]]) extends TestSuiteCommon {
-  implicit val p = TestParams.zynqParam
-  val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  val dir = new File(outDir, s"$target/zynq-$backend") ; dir.mkdirs
-  val sample = new File(dir, s"$target.sample")
-if (backend != "verilator") {
-  behavior of s"[ZynqShim] $target in $backend"
-  test(ZynqShim(c), tester, dir, backend)
-  if (p(EnableSnapshot)) {
-    // replaySamples(c, dir, sample, "verilator")
-    replaySamples(c, dir, sample, "vcs")
-    replaySamples(c, dir, sample, "glsim")
-  }
-}
-}
-
-class GCDSimCppTest extends SimTestSuite(new GCD, "verilator")(c => new GCDSimTests(c))
-class GCDSimVCSTest extends SimTestSuite(new GCD, "vcs")(c => new GCDSimTests(c))
-class ParitySimCppTest extends SimTestSuite(new Parity, "verilator")(c => new ParitySimTests(c))
-class ParitySimVCSTest extends  SimTestSuite(new Parity, "vcs")(c => new ParitySimTests(c))
-class ShiftRegisterSimCppTest extends SimTestSuite(new ShiftRegister, "verilator")(c => new ShiftRegisterSimTests(c))
-class ShiftRegisterSimVCSTest extends SimTestSuite(new ShiftRegister, "vcs")(c => new ShiftRegisterSimTests(c))
-class ResetShiftRegisterSimCppTest extends SimTestSuite(new ResetShiftRegister, "verilator")(c => new ResetShiftRegisterSimTests(c))
-class ResetShiftRegisterSimVCSTest extends SimTestSuite(new ResetShiftRegister, "vcs")(c => new ResetShiftRegisterSimTests(c))
-class EnableShiftRegisterSimCppTest extends SimTestSuite(new EnableShiftRegister, "verilator")(c => new EnableShiftRegisterSimTests(c))
-class EnableShiftRegisterSimVCSTest extends SimTestSuite(new EnableShiftRegister, "vcs")(c => new EnableShiftRegisterSimTests(c))
-class StackSimCppTest extends SimTestSuite(new Stack(8), "verilator")(c => new StackSimTests(c))
-class StackSimVCSTest extends SimTestSuite(new Stack(8), "vcs")(c => new StackSimTests(c))
-class RouterSimCppTest extends SimTestSuite(new Router, "verilator")(c => new RouterSimTests(c))
-class RouterSimVCSTest extends SimTestSuite(new Router, "vcs")(c => new RouterSimTests(c))
-class RiscSimCppTest extends SimTestSuite(new Risc, "verilator")(c => new RiscSimTests(c))
-class RiscSimVCSTest extends SimTestSuite(new Risc, "vcs")(c => new RiscSimTests(c))
-class RiscSRAMSimCppTest extends SimTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMSimTests(c))
-class RiscSRAMSimVCSTest extends SimTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMSimTests(c))
-
-class GCDZynqCppTest extends ZynqTestSuite(new GCD, "verilator")(c => new GCDZynqTests(c))
-class GCDZynqVCSTest extends ZynqTestSuite(new GCD, "vcs")(c => new GCDZynqTests(c))
-class ParityZynqCppTest extends ZynqTestSuite(new Parity, "verilator")(c => new ParityZynqTests(c))
-class ParityZynqVCSTest extends ZynqTestSuite(new Parity, "vcs")(c => new ParityZynqTests(c))
-class ShiftRegisterZynqCppTest extends ZynqTestSuite(new ShiftRegister, "verilator")(c => new ShiftRegisterZynqTests(c))
-class ShiftRegisterZynqVCSTest extends ZynqTestSuite(new ShiftRegister, "vcs")(c => new ShiftRegisterZynqTests(c))
-class ResetShiftRegisterZynqCppTest extends ZynqTestSuite(new ResetShiftRegister, "verilator")(c => new ResetShiftRegisterZynqTests(c))
-class ResetShiftRegisterZynqVCSTest extends ZynqTestSuite(new ResetShiftRegister, "vcs")(c => new ResetShiftRegisterZynqTests(c))
-class EnableShiftRegisterZynqCppTest extends ZynqTestSuite(new EnableShiftRegister, "verilator")(c => new EnableShiftRegisterZynqTests(c))
-class EnableShiftRegisterZynqVCSTest extends ZynqTestSuite(new EnableShiftRegister, "vcs")(c => new EnableShiftRegisterZynqTests(c))
-class StackZynqCppTest extends ZynqTestSuite(new Stack(8), "verilator")(c => new StackZynqTests(c))
-class StackZynqVCSTest extends ZynqTestSuite(new Stack(8), "vcs")(c => new StackZynqTests(c))
-class RouterZynqCppTest extends ZynqTestSuite(new Router, "verilator")(c => new RouterZynqTests(c))
-class RouterZynqVCSTest extends ZynqTestSuite(new Router, "vcs")(c => new RouterZynqTests(c))
-class RiscZynqCppTest extends ZynqTestSuite(new Risc, "verilator")(c => new RiscZynqTests(c))
-class RiscZynqVCSTest extends ZynqTestSuite(new Risc, "vcs")(c => new RiscZynqTests(c))
-class RiscSRAMZynqCppTest extends ZynqTestSuite(new RiscSRAM, "verilator")(c => new RiscSRAMZynqTests(c))
-class RiscSRAMZynqVCSTest extends ZynqTestSuite(new RiscSRAM, "vcs")(c => new RiscSRAMZynqTests(c))
+class GCDTests extends TutorialSuite(new GCD)
+class ParityTests extends TutorialSuite(new Parity)
+class ShiftRegisterTests extends TutorialSuite(new ShiftRegister)
+class ResetShiftRegisterTests extends TutorialSuite(new ResetShiftRegister)
+class EnableShiftRegisterTests extends TutorialSuite(new EnableShiftRegister)
+class StackTests extends TutorialSuite(new Stack(8))
+class RiscTests extends TutorialSuite(new Risc)
+class RiscSRAMTests extends TutorialSuite(new RiscSRAM)

@@ -1,11 +1,9 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
-class ResetShiftRegister_t: simif_zynq_t
+class ResetShiftRegister_t: public virtual simif_t
 {
 public:
-  ResetShiftRegister_t(std::vector <std::string> args): 
-    simif_zynq_t(args, true) { }
-  int run() {
+  void run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
     for (int i = 0 ; i < 16 ; i++) {
@@ -18,13 +16,5 @@ public:
       expect(io_out, cycles() < 4 ? 0 : ins[(k + 1) % 5]);
       if (shift == 1) k++;
     }
-    return exitcode();
   }
 };
-
-int main(int argc, char** argv) 
-{
-  std::vector<std::string> args(argv + 1, argv + argc);
-  ResetShiftRegister_t ResetShiftRegister(args);
-  return ResetShiftRegister.run();
-}

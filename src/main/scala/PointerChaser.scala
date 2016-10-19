@@ -13,7 +13,8 @@ case object CacheBlockOffsetBits extends Field[Int]
 // node consists of a pointer to the next node and a 64 bit SInt
 // Inputs: (Decoupled) start address: the location of the first node in memory
 // Outputs: (Decoupled) result: The sum of the list
-class PointerChaser(implicit val p: Parameters) extends Module with HasNastiParameters {
+class PointerChaser(seed: Long = System.currentTimeMillis)
+                   (implicit val p: Parameters) extends Module with HasNastiParameters {
   val io = IO(new Bundle {
     val nasti = new NastiIO
     val result = Decoupled(SInt(width = p(MIFDataBits)))
@@ -79,8 +80,16 @@ class PointerChaser(implicit val p: Parameters) extends Module with HasNastiPara
   memoryIF.ar.valid := arValid
   memoryIF.r.ready := Bool(true)
 
-  memoryIF.w.valid := Bool(false)
+  val rnd = new scala.util.Random(seed)
+  memoryIF.aw.bits := NastiWriteAddressChannel(
+    id = UInt(rnd.nextInt(1 << nastiWIdBits)),
+    len = UInt(rnd.nextInt(1 << nastiXLenBits)),
+    size = UInt(rnd.nextInt(1 << nastiXSizeBits)),
+    addr = SInt(rnd.nextInt).asUInt)
   memoryIF.aw.valid := Bool(false)
+  memoryIF.w.bits := NastiWriteDataChannel(
+    SInt(rnd.nextLong).asUInt)
+  memoryIF.w.valid := Bool(false)
   memoryIF.b.ready := Bool(true)
 
   //TODO: Figure out how to prevent chisel from optimizing these parameters away

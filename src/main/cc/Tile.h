@@ -1,11 +1,12 @@
-#include "simif_zynq.h"
+#include "simif.h"
 
-class Tile_t: simif_zynq_t
+class Tile_t: virtual simif_t
 {
 public:
-  Tile_t(std::vector<std::string> args): simif_zynq_t(args, false) { 
+  Tile_t(int argc, char** argv) {
     max_cycles = -1;
     latency = 16;
+    std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
@@ -16,9 +17,9 @@ public:
     }
   }
 
-  int run(size_t trace_len = TRACE_MAX_LEN) {
+  void run(size_t trace_len = TRACE_MAX_LEN) {
     set_tracelen(trace_len);
-#if MEMMODEL
+#ifdef MEMMODEL_0_readLatency
     write(MEMMODEL_0_readMaxReqs, 8);
     write(MEMMODEL_0_writeMaxReqs, 8);
     write(MEMMODEL_0_readLatency, latency);
@@ -34,26 +35,24 @@ public:
     } while (tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
     double sim_time = (double) (end_time - start_time) / 1000000.0;
-    double sim_speed = (double) cycles() / sim_time / 1000000.0;
-    fprintf(stdout, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed);
-    int exitcode = tohost >> 1;
-    if (exitcode) {
-      fprintf(stdout, "*** FAILED *** (code = %d) after %llu cycles\n", exitcode, cycles());
-    } else if (cycles() > max_cycles) {
-      fprintf(stdout, "*** FAILED *** (timeout) after %llu cycles\n", cycles());
+    double sim_speed = (double) cycles() / sim_time / 1000.0;
+    if (sim_speed > 1000.0) {
+      fprintf(stderr, "time elapsed: %.1f s, simulation speed = %.2f MHz\n", sim_time, sim_speed / 1000.0);
     } else {
-      fprintf(stdout, "*** PASSED *** after %llu cycles\n", cycles());
+      fprintf(stderr, "time elapsed: %.1f s, simulation speed = %.2f KHz\n", sim_time, sim_speed);
     }
-    return exitcode;
+    int code = tohost >> 1;
+    if (code) {
+      fprintf(stderr, "*** FAILED *** (code = %d) after %" PRIu64 " cycles\n", code, cycles());
+    } else if (cycles() > max_cycles) {
+      fprintf(stderr, "*** FAILED *** (timeout) after %" PRIu64 " cycles\n", cycles());
+    } else {
+      fprintf(stderr, "*** PASSED *** after %" PRIu64 " cycles\n", cycles());
+    }
+    expect(!code, NULL);
   }
 
 private:
   uint64_t max_cycles;
   size_t latency;
 };
-
-int main(int argc, char** argv) {
-  std::vector<std::string> args(argv + 1, argv + argc);
-  Tile_t Tile(args);
-  return Tile.run(128);
-}

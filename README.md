@@ -1,7 +1,7 @@
 # Strober Examples
 This repository contains [Strober](https://github.com/ucb-bar/strober.git) and its examples including:
 + [Chisel tutorial](https://github.com/ucb-bar/chisel-tutorial.git)
-  + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, Risc, Router
+  + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, Risc
 + More simple examples:
   + RiscSRAM: Implementation of Risc with SeqMem
   + PointerChaser: Simple pointer chaser following a random list.
@@ -18,8 +18,9 @@ To initiate the project, run the following commands:
 
     $ git clone https://github.com/donggyukim/strober-examples.git
     $ cd strober-example
-    $ git submodule init
-    $ git submodule update
+    $ git submodule update --init --recursive
+    # pulish chisel & firrtl to local maven
+    $ make publishLocal
     
 Note that the <b>vlsi</b> repository is not available outside Berkeley due to the license contract. 
 

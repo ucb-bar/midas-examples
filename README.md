@@ -24,11 +24,6 @@ To initiate the project, run the following commands:
     
 Note that the <b>vlsi</b> repository is not available outside Berkeley due to the license contract. 
 
-In addtion, you need to download the isa tests and benchmarks for riscv-mini by the following commands:
-
-    $ cd riscv-mini
-    $ git submodule update --init --recursive
-
 You can also enable/disable snapshotting by changing a Chiesl parameter(`EnableSnapshot`).
 
 ## <a name="step1"></a> STEP 1: Test

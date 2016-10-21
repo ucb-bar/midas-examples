@@ -47,7 +47,7 @@ $(out_dir)/%$(debug): $(testbench_dir)/%-emul.cc $(testbench_dir)/%.h $(gen_dir)
 $(vcs): %-vcs: $(out_dir)/%$(debug) $(out_dir)/%.chain $(out_dir)/dramsim2_ini
 	mkdir -p $(out_dir)
 	cd $(out_dir) && ./$(notdir $<) $(ARGS) $(loadmem) \
-	+dramsim +waveform=$(call waveform,$*,vcd) 2> $(call logfile,$*,vcs)
+	+dramsim +waveform=$(call waveform,$*,vpd) 2> $(call logfile,$*,vcs)
 
 clean:
 	rm -rf $(gen_dir) $(out_dir) *.hex

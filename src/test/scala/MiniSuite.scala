@@ -17,7 +17,7 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     behavior of s"${testType.toString} in $backend"
     val results = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
       val subresults = subtests map { case (t, i) =>
-        val sample = new File(replayGenDir, s"$t-$backend.sample")
+        val sample = new File(replayOutDir, s"$t-$backend.sample")
         val loadmem = Some(new File("hex", s"$t.hex"))
         val logFile = Some(new File("outputs", s"$t-$backend.log"))
         val waveform = Some(new File("outputs", s"$t-$backend.$vcd"))
@@ -31,7 +31,7 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     if (p(strober.EnableSnapshot)) {
       val replays = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
         val subreplays = subtests map { case (t, i) =>
-          val sample = new File(replayGenDir, s"$t-$backend.sample")
+          val sample = new File(replayOutDir, s"$t-$backend.sample")
           Future(t -> replay(target, "vcs", Some(sample)))
         }
         Await.result(Future.sequence(subreplays), Duration.Inf)

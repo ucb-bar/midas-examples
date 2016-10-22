@@ -5,4 +5,5 @@ project/target
 *.key
 *.tmp
 *.log
+*.ir
 test-*

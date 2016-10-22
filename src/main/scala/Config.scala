@@ -43,7 +43,7 @@ class SimConfig extends Config(
 class ZynqConfig extends Config(new SimConfig ++ new Config(
   (key, site, here) => key match {
     case CtrlNastiKey => NastiParameters(32, 32, 12)
-    case SlaveNastiKey  => NastiParameters(64, 32, 6)
+    case SlaveNastiKey => NastiParameters(64, 32, 6)
     case MemModelKey => Some((p: Parameters) => new MidasMemModel(
       new LatencyPipeConfig(new BaseParams(maxReads = 16, maxWrites = 16)))(p))
     // case MemModelKey => None

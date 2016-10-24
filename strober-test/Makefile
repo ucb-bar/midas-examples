@@ -15,12 +15,6 @@ ARGS ?=
 
 include $(base_dir)/Makefrag-strober
 
-$(out_dir)/dramsim2_ini:
-	$(MAKE) -C $(src_dir) OUT_DIR=$(out_dir) $@
-
-$(out_dir)/%.chain:
-	$(MAKE) -C $(src_dir) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) $@
-
 debug := $(if $(DEBUG),-debug,)
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 prefix = $(notdir $(basename $(if $(LOADMEM),$(LOADMEM),$1)))

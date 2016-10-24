@@ -13,9 +13,6 @@
 [submodule "fpga-zynq"]
 	path = fpga-zynq
 	url = https://github.com/donggyukim/fpga-zynq.git
-[submodule "strober-fpga/fpga-zynq"]
-	path = strober-fpga/fpga-zynq
-	url = https://github.com/donggyukim/fpga-zynq.git
 [submodule "midas-memory-model"]
 	path = midas-memory-model
 	url = git@github.com:ucb-bar/midas-memory-model.git
@@ -25,3 +22,6 @@
 [submodule "chisel3"]
 	path = chisel
 	url = https://github.com/ucb-bar/chisel3.git
+[submodule "strober-fpga/midas-zynq"]
+	path = strober-fpga/midas-zynq
+	url = https://github.com/donggyukim/midas-zynq.git

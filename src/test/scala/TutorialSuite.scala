@@ -16,7 +16,9 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   val replayGenDir = new File(replayDir, "generated-src") ; replayGenDir.mkdirs
   val replayOutDir = new File(replayDir, "outputs"); replayOutDir.mkdirs
 
-  implicit val p = cde.Parameters.root((new ZynqConfig).toInstance)
+  implicit val p = cde.Parameters.root((new ZynqConfigWithMemModel).toInstance)
+  // implicit val p = cde.Parameters.root((new strober.ZynqConfigWithSnapshot).toInstance)
+  // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def compile[T <: Module : ClassTag](dut: => T, b: String, debug: Boolean = false) = {
     val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName

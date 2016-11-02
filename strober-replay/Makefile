@@ -64,8 +64,8 @@ endif
 # $(replay_cpp): %-replay-cpp: $(call sample,%) $(gen_dir)/%.v
 
 # Replay on VCS
-$(out_dir)/%-replay: $(gen_dir)/%.v $(src_cc) $(src_h)
-	$(MAKE) -C $(src_dir) vcs-replay DESIGN=$* GEN_DIR=$(gen_dir) OUT_DIR=$(out_dir)
+$(out_dir)/%-replay: $(gen_dir)/%.v $(simif_cc) $(simif_h)
+	$(MAKE) -C $(simif_dir) vcs-replay DESIGN=$* GEN_DIR=$(gen_dir) OUT_DIR=$(out_dir)
 
 $(replay_vcs): %-replay-vcs: $(out_dir)/%-replay $(call sample,%)
 	cd $(out_dir) && \

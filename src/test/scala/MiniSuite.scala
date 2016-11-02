@@ -15,8 +15,8 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     val target = compile(new mini.Tile(tp), backend, debug)
     val vcd = if (backend == "verilator") "vcd" else "vpd"
     behavior of s"${testType.toString} in $backend"
-    val results = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
-      val subresults = subtests map { case (t, i) =>
+    val results = testType.tests sliding (N, N) map { subtests =>
+      val subresults = subtests map { t =>
         val sample = new File(replayOutDir, s"$t-$backend.sample")
         val loadmem = Some(new File("hex", s"$t.hex"))
         val logFile = Some(new File("outputs", s"$t-$backend.log"))
@@ -29,8 +29,8 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     results.flatten foreach { case (name, exitcode) =>
       it should s"pass $name" in { assert(exitcode == 0) } }
     if (p(strober.EnableSnapshot)) {
-      val replays = testType.tests.zipWithIndex sliding (N, N) map { subtests =>
-        val subreplays = subtests map { case (t, i) =>
+      val replays = testType.tests sliding (N, N) map { subtests =>
+        val subreplays = subtests map { t =>
           val sample = new File(replayOutDir, s"$t-$backend.sample")
           Future(t -> replay(target, "vcs", Some(sample)))
         }

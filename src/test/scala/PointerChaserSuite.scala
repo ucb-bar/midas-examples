@@ -26,7 +26,7 @@ abstract class PointerChaserTestSuite(
       val sample = new File(replayGenDir, s"$target-$latency-$backend.sample")
       val logFile = Some(new File("outputs", s"$target-$backend-$latency.log"))
       val waveform = Some(new File("outputs", s"$target-${latency}.${vcd}"))
-      val args = Seq(s"+latency=$latency", s"+sample=${sample.getAbsolutePath}")
+      val args = Seq(s"+latency=$latency", s"+sample=${sample.getAbsolutePath}", "+fastloadmem")
       Future(latency ->
         run(target, backend, debug, Some(new File("init.hex")), logFile, waveform, args)
       )

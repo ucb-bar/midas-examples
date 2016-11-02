@@ -29,35 +29,14 @@ class PointerChaserConfig extends Config(
   }
 )
 
-class SimConfig extends Config(
-  (key, site, here) => key match {
-    case TraceMaxLen    => 1024
-    case DaisyWidth     => 32
-    case SRAMChainNum   => 1
-    case ChannelLen     => 16
-    case ChannelWidth   => 32
-    case EnableSnapshot => false // true
-  }
-)
-
-class ZynqConfig extends Config(new SimConfig ++ new Config(
-  (key, site, here) => key match {
-    case CtrlNastiKey => NastiParameters(32, 32, 12)
-    case SlaveNastiKey => NastiParameters(64, 32, 6)
-    case MemModelKey => Some((p: Parameters) => new MidasMemModel(
-      new LatencyPipeConfig(new BaseParams(maxReads = 16, maxWrites = 16)))(p))
-    // case MemModelKey => None
-    case ZynqMMIOSize => BigInt(1) << 12 // 4 KB
-  })
-)
-
-
 class WithLBPipe extends Config(
-  (pname,_,_) => pname match {
+  (pname, _, _) => pname match {
     case MemModelKey => Some((p: Parameters) => new MidasMemModel(
       new LatencyPipeConfig(new BaseParams(maxReads = 16, maxWrites = 16)))(p))
   }
 )
 
-class ZynqConfigWithMemModel extends Config(new WithLBPipe ++ new ZynqConfig)
-
+class ZynqConfigWithMemModel extends Config(
+  new WithLBPipe ++ new strober.ZynqConfig)
+class ZynqConfigWithMemModelAndSnapshot extends Config(
+  new WithLBPipe ++ new strober.ZynqConfigWithSnapshot)

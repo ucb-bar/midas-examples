@@ -22,7 +22,9 @@ object StroberExamples extends App {
   }
   args(0) match {
     case "strober" =>
-      implicit val p = root((new ZynqConfig).toInstance)
+      implicit val p = root((new ZynqConfigWithMemModel).toInstance)
+      // implicit val p = root((new strober.ZynqConfigWithSnapshot).toInstance)
+      // implicit val p = root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
       StroberCompiler(dut, new File(dirPath))
     case "replay" =>
       replay.Compiler(dut, new File(dirPath))

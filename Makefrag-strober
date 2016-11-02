@@ -7,9 +7,9 @@ zynq_verilog := $(addprefix $(gen_dir)/, $(addsuffix /ZynqShim.v, $(designs)))
 replay_verilog := $(addprefix $(gen_dir)/, $(addsuffix .v, $(designs)))
 
 testbench_dir = $(base_dir)/src/main/cc
-src_dir = $(base_dir)/strober/src/main/cc
-src_h = $(wildcard $(src_dir)/*.h) $(wildcard $(src_dir)/utils/*.cc)
-src_cc = $(wildcard $(src_dir)/*.cc) $(wildcard $(src_dir)/utils/*.cc)
+simif_dir = $(base_dir)/strober/src/main/cc
+simif_h = $(wildcard $(simif_dir)/*.h) $(wildcard $(simif_dir)/utils/*.cc)
+simif_cc = $(wildcard $(simif_dir)/*.cc) $(wildcard $(simif_dir)/utils/*.cc)
 
 # Scala source files
 src_path = src/main/scala
@@ -26,7 +26,7 @@ $(replay_verilog): $(gen_dir)/%.v: $(scala_srcs)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run replay $* $(dir $@)"
 
 $(out_dir)/dramsim2_ini:
-	$(MAKE) -C $(src_dir) OUT_DIR=$(out_dir) $@
+	$(MAKE) -C $(simif_dir) OUT_DIR=$(out_dir) $@
 
 $(out_dir)/%.chain:
-	$(MAKE) -C $(src_dir) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) $@
+	$(MAKE) -C $(simif_dir) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) $@

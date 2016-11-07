@@ -8,6 +8,7 @@ public:
   void run(uint32_t expected, uint64_t timeout) {
     app_t app;
     init_app(app);
+    target_reset();
     wr(0, 0);
     for (size_t addr = 0 ; addr < app.size() ; addr++) {
       wr(addr, app[addr]);

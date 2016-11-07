@@ -7,7 +7,8 @@ public:
   Stack_t(size_t size_): size(size_) {}
   void run() {
     std::stack<uint32_t> stack;
-    uint32_t nextDataOut = 0; 
+    uint32_t nextDataOut = 0;
+    target_reset();
     for (int i = 0 ; i < 16 ; i++) {
       uint32_t enable = rand_next(2);
       uint32_t push   = rand_next(2);

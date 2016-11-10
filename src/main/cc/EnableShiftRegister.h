@@ -4,6 +4,7 @@ class EnableShiftRegister_t: public virtual simif_t
 {
 public:
   void run() {
+    target_reset();
     std::vector<uint32_t> reg(4, 0);
     for (int i = 0 ; i < 16 ; i++) {
       uint32_t in    = rand_next(2);

@@ -34,6 +34,7 @@ public:
 #else
     write(MEMMODEL_0_LATENCY, latency);
 #endif
+    target_reset();
 
     poke(io_startAddr_bits, address);
     poke(io_startAddr_valid, 1);

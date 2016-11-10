@@ -6,6 +6,7 @@ public:
   void run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
+    target_reset();
     for (int i = 0 ; i < 16 ; i++) {
       uint32_t in    = rand_next(16);
       uint32_t shift = rand_next(2);

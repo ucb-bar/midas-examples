@@ -29,6 +29,7 @@ public:
 #endif
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
+    target_reset();
     do {
       step(trace_len);
       tohost = peek(io_host_tohost);

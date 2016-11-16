@@ -1,6 +1,6 @@
 package StroberExamples
 
-import strober._
+import midas._
 import cde.Parameters.root
 import java.io.File
 
@@ -25,8 +25,8 @@ object StroberExamples extends App {
       implicit val p = root((new ZynqConfigWithMemModel).toInstance)
       // implicit val p = root((new strober.ZynqConfigWithSnapshot).toInstance)
       // implicit val p = root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
-      StroberCompiler(dut, new File(dirPath))
+      MidasCompiler(dut, new File(dirPath))
     case "replay" =>
-      replay.Compiler(dut, new File(dirPath))
+      strober.replay.Compiler(dut, new File(dirPath))
   }
 }

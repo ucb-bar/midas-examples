@@ -25,3 +25,6 @@
 [submodule "strober-fpga/midas-zynq"]
 	path = strober-fpga/midas-zynq
 	url = https://github.com/donggyukim/midas-zynq.git
+[submodule "rocket-chip"]
+	path = rocket-chip
+	url = https://github.com/ucb-bar/rocket-chip.git

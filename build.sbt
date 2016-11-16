@@ -26,8 +26,11 @@ lazy val rootSettings = commonSettings ++ Seq(
   version := "1.0-SANPSHOT"
 )
 
-lazy val tutorial = project settings subModSettings
-lazy val mini     = project in file("riscv-mini") settings subModSettings
-lazy val strober  = project settings commonSettings dependsOn mini
-lazy val midasmem = project in file("midas-memory-model") settings commonSettings dependsOn strober
-lazy val root     = project in file(".") settings rootSettings dependsOn (tutorial, midasmem)
+lazy val tutorial  = project settings subModSettings
+lazy val cde       = project in file("rocket-chip/context-dependent-environments") settings commonSettings
+lazy val hardfloat = project in file("rocket-chip/hardfloat") settings commonSettings
+lazy val rocket    = project in file("rocket-chip") settings commonSettings dependsOn (cde, hardfloat)
+lazy val strober   = project settings commonSettings dependsOn rocket
+lazy val midasmem  = project in file("midas-memory-model") settings commonSettings dependsOn strober
+lazy val mini      = project in file("riscv-mini") settings commonSettings dependsOn rocket
+lazy val root      = project in file(".") settings rootSettings dependsOn (tutorial, mini, midasmem)

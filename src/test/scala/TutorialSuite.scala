@@ -1,6 +1,5 @@
 package StroberExamples
 
-import strober.{StroberCompiler, ZynqShim, EnableSnapshot}
 import examples._
 import chisel3.Module
 import scala.reflect.ClassTag
@@ -16,8 +15,9 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   val replayGenDir = new File(replayDir, "generated-src") ; replayGenDir.mkdirs
   val replayOutDir = new File(replayDir, "outputs"); replayOutDir.mkdirs
 
-  implicit val p = cde.Parameters.root((new ZynqConfigWithMemModel).toInstance)
-  // implicit val p = cde.Parameters.root((new strober.ZynqConfigWithSnapshot).toInstance)
+  // implicit val p = cde.Parameters.root((new midas.ZynqConfig).toInstance)
+  // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModel).toInstance)
+  implicit val p = cde.Parameters.root((new midas.ZynqConfigWithSnapshot).toInstance)
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def compile[T <: Module : ClassTag](dut: => T, b: String, debug: Boolean = false) = {
@@ -27,7 +27,7 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
       if (b == "verilator") "V" else "", if (debug) "-debug" else ""))
     val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath,
                   "DEBUG=%s".format(if (debug) "1" else ""))
-    StroberCompiler(dut, genDir)
+    midas.MidasCompiler(dut, genDir)
     assert(cmd.! == 0)
     target
   }
@@ -51,7 +51,7 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
 
   def compileReplay[T <: Module : ClassTag](dutGen: => T, b: String) = {
     val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-    if (p(EnableSnapshot)) {
+    if (p(midas.EnableSnapshot)) {
       val binary = new File(replayOutDir, s"%s$target-replay".format(if (b == "verilator") "V" else ""))
       val cmd = Seq("make", "-C", replayDir.toString, binary.getAbsolutePath)
       strober.replay.Compiler(dutGen, replayGenDir)
@@ -74,7 +74,7 @@ abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestS
     it should s"pass strober test" in {
       assert(run(target, b, true, args=Seq(s"+sample=${sample.getAbsolutePath}")) == 0)
     }
-    if (p(EnableSnapshot)) {
+    if (p(midas.EnableSnapshot)) {
       it should "replay samples in vcs" in {
         assert(replay(target, "vcs", Some(sample)) == 0)
       }

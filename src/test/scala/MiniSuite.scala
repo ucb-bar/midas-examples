@@ -28,7 +28,7 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     }
     results.flatten foreach { case (name, exitcode) =>
       it should s"pass $name" in { assert(exitcode == 0) } }
-    if (p(strober.EnableSnapshot)) {
+    if (p(midas.EnableSnapshot)) {
       val replays = testType.tests sliding (N, N) map { subtests =>
         val subreplays = subtests map { t =>
           val sample = new File(replayOutDir, s"$t-$backend.sample")
@@ -41,9 +41,10 @@ abstract class MiniTestSuite(latency: Int = 8, N: Int = 10) extends TestSuiteCom
     }
   }
   compileReplay(new mini.Tile(tp), "vcs")
-  runTests("verilator", mini.ISATests)
+  runTests("verilator", mini.SimpleTests, true)
+  /* runTests("verilator", mini.ISATests)
   runTests("verilator", mini.BmarkTests)
   runTests("vcs", mini.ISATests)
-  runTests("vcs", mini.BmarkTests)
+  runTests("vcs", mini.BmarkTests) */
 }
 class MiniTests extends MiniTestSuite()

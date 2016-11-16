@@ -28,5 +28,5 @@ $(replay_verilog): $(gen_dir)/%.v: $(scala_srcs)
 $(out_dir)/dramsim2_ini:
 	$(MAKE) -C $(simif_dir) OUT_DIR=$(out_dir) $@
 
-$(out_dir)/%.chain:
-	$(MAKE) -C $(simif_dir) DESIGN=$* GEN_DIR=$(gen_dir)/$* OUT_DIR=$(out_dir) $@
+$(out_dir)/%.chain: $(gen_dir)/%/ZynqShim.v
+	cp $(gen_dir)/$*/$*.chain $@

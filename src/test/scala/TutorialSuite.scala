@@ -1,4 +1,4 @@
-package StroberExamples
+package strober.examples
 
 import examples._
 import chisel3.Module

@@ -1,4 +1,4 @@
-package StroberExamples
+package strober.examples
 
 import midas._
 import cde.Parameters.root
@@ -8,12 +8,12 @@ object StroberExamples extends App {
   val modName = args(1)
   val dirPath = args(2)
   def dut = modName match {
-    case "PointerChaser" =>
-      new PointerChaser()(root((new PointerChaserConfig).toInstance))
     case "Tile"  =>
       new mini.Tile(root((new mini.MiniConfig).toInstance))
-    case "Stack" =>
-      new examples.Stack(8)
+    case "PointerChaser" =>
+      new PointerChaser()(root((new PointerChaserConfig).toInstance))
+    case "RiscSRAM" => new RiscSRAM
+    case "Stack" => new examples.Stack(8)
     case _ =>
       Class.forName(s"examples.${modName}")
            .getConstructors.head

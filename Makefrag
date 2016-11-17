@@ -1,10 +1,9 @@
-# for VLSI tools
-mem_gen = $(vlsi_dir)/src/vlsi_mem_gen
-CONFIG := VLSI
-$(generated_dir)/$(MODEL).$(CONFIG).v:
-	cd $(base_dir) && sbt "run vlsi $(MODEL) $(generated_dir) strober.$(CONFIG)"
-	if [ -a $(generated_dir)/$(MODEL).$(CONFIG).conf ]; then \
-	  $(mem_gen) $(generated_dir)/$(MODEL).$(CONFIG).conf >> $(generated_dir)/$(MODEL).$(CONFIG).v; \
-	fi
+base_dir = $(abspath .)
 
-$(generated_dir)/$(MODEL).$(CONFIG)-harness.v: $(generated_dir)/$(MODEL).$(CONFIG).v
+# Scala source files
+src_path = src/main/scala
+modules = . strober riscv-mini tutorial $(addprefix riscv-mini/, cde junctions)
+scala_srcs = $(foreach module, $(modules), $(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
+
+SBT ?= sbt
+SBT_FLAGS ?=

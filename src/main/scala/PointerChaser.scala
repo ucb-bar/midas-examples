@@ -1,4 +1,4 @@
-package StroberExamples
+package strober.examples
 
 import Chisel._
 import junctions._
@@ -17,8 +17,8 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
                    (implicit val p: Parameters) extends Module with HasNastiParameters {
   val io = IO(new Bundle {
     val nasti = new NastiIO
-    val result = Decoupled(SInt(width = p(MIFDataBits)))
-    val startAddr = Flipped(Decoupled(UInt(width = p(MIFAddrBits))))
+    val result = Decoupled(SInt(width = nastiXDataBits))
+    val startAddr = Flipped(Decoupled(UInt(width = nastiXAddrBits)))
   })
   
   val memoryIF = io.nasti
@@ -75,7 +75,7 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
   memoryIF.ar.bits := NastiWriteAddressChannel(
     id = UInt(0),
     len = UInt(1),
-    size = bytesToXSize(UInt(p(MIFDataBits)/8)),
+    size = bytesToXSize(UInt(nastiXDataBits/8)),
     addr = arRegAddr)
   memoryIF.ar.valid := arValid
   memoryIF.r.ready := Bool(true)
@@ -93,11 +93,8 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
   memoryIF.b.ready := Bool(true)
 
   //TODO: Figure out how to prevent chisel from optimizing these parameters away
+  println("MemSize " + p(MemSize))
   println("Number of Channels: " + p(NMemoryChannels))
   println("Cache Block Size: " + p(CacheBlockBytes))
   println("Number of Channels: " + p(NMemoryChannels))
-
-  println("MemSize " + p(MemSize))
-  println("MIFDataBits " + p(MIFDataBits))
-  println("MIFDataBeats " + p(MIFDataBeats))
 }

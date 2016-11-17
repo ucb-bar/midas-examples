@@ -22,6 +22,9 @@
 [submodule "chisel3"]
 	path = chisel
 	url = https://github.com/ucb-bar/chisel3.git
-[submodule "strober-fpga/midas-zynq"]
-	path = strober-fpga/midas-zynq
+[submodule "rocket-chip"]
+	path = rocket-chip
+	url = https://github.com/ucb-bar/rocket-chip.git
+[submodule "midas-zynq"]
+	path = midas-zynq
 	url = https://github.com/donggyukim/midas-zynq.git

@@ -6,4 +6,6 @@ project/target
 *.tmp
 *.log
 *.ir
-test-*
+*.hex
+generated-src
+output

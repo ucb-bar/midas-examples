@@ -1,9 +1,0 @@
-*.VLSI*
-*.key
-*.match
-*.vpd
-*.vcd
-*.saif
-sdfAnnotateInfo
-DVEfiles
-logs

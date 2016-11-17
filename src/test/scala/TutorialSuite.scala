@@ -7,79 +7,67 @@ import scala.sys.process.stringSeqToProcess
 import java.io.File
 
 abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
-  val srcDir = new File("strober/src/main/cc")
-  val testDir = new File("strober-test")
-  val testGenDir = new File(testDir, "generated-src") ; testGenDir.mkdirs
-  val testOutDir = new File(testDir, "outputs"); testOutDir.mkdirs
-  val replayDir = new File("strober-replay")
-  val replayGenDir = new File(replayDir, "generated-src") ; replayGenDir.mkdirs
-  val replayOutDir = new File(replayDir, "outputs"); replayOutDir.mkdirs
+  def target: String
+  lazy val genDir = new File(new File("generated-src"), target)
+  lazy val outDir = new File(new File("output"), target)
 
   // implicit val p = cde.Parameters.root((new midas.ZynqConfig).toInstance)
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModel).toInstance)
   implicit val p = cde.Parameters.root((new midas.ZynqConfigWithSnapshot).toInstance)
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
-  def compile[T <: Module : ClassTag](dut: => T, b: String, debug: Boolean = false) = {
-    val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-    val genDir = new File(testGenDir, target)
-    val binary = new File(testOutDir, s"%s${target}%s".format(
-      if (b == "verilator") "V" else "", if (debug) "-debug" else ""))
-    val cmd = Seq("make", "-C", testDir.toString, binary.getAbsolutePath,
-                  "DEBUG=%s".format(if (debug) "1" else ""))
-    midas.MidasCompiler(dut, genDir)
-    assert(cmd.! == 0)
-    target
+  def clean {
+    assert(Seq("make", s"$target-clean").! == 0)
   }
 
-  def run(target: String,
-          backend: String,
+  def compile(b: String, debug: Boolean = false) {
+    assert(Seq("make", s"$target-$b", "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
+  }
+
+  def run(backend: String,
           debug: Boolean = false,
+          sample: Option[File] = None,
           loadmem: Option[File] = None,
           logFile: Option[File] = None,
           waveform: Option[File] = None,
           args: Seq[String] = Nil) = {
-    val cmd = Seq("make", "-C", testDir.toString, s"$target-$backend",
+    val cmd = Seq("make", s"$target-$backend-test",
       "DEBUG=%s".format(if (debug) "1" else ""),
+      "SAMPLE=%s".format(sample map (_.toString) getOrElse ""),
       "LOADMEM=%s".format(loadmem map (_.toString) getOrElse ""),
       "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
       "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
-      "ARGS=%s".format(args mkString " "))
+      "ARGS=\"%s\"".format(args mkString " "))
     println("cmd: %s".format(cmd mkString " "))
     cmd.!
   }
 
-  def compileReplay[T <: Module : ClassTag](dutGen: => T, b: String) = {
-    val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+  def compileReplay(dutGen: => Module, b: String) {
     if (p(midas.EnableSnapshot)) {
-      val binary = new File(replayOutDir, s"%s$target-replay".format(if (b == "verilator") "V" else ""))
-      val cmd = Seq("make", "-C", replayDir.toString, binary.getAbsolutePath)
-      strober.replay.Compiler(dutGen, replayGenDir)
-      assert(cmd.! == 0)
+      strober.replay.Compiler(dutGen, genDir)
+      assert(Seq("make", s"$target-$b-replay-compile").! == 0)
     }
-    target
   }
 
-  def replay(target: String, backend: String, sample: Option[File] = None) = {
-    Seq("make", "-C", replayDir.toString, s"${target}-replay-${backend}",
-      sample match { case None => "" case Some(p) => s"SAMPLE=${p.getAbsolutePath}" }).!
+  def replay(backend: String, sample: Option[File] = None) = {
+    Seq("make", s"${target}-${backend}-replay",
+      "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
   }
 }
 
 abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestSuiteCommon {
+  val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   def runTest(b: String) {
-    val target = compile(dutGen, b, true)
-    val sample = new File(replayOutDir, s"$target-$b.sample")
+    compile(b, true)
+    val sample = Some(new File(outDir, s"$target.$b.sample"))
     behavior of s"$target in $b"
-    it should s"pass strober test" in {
-      assert(run(target, b, true, args=Seq(s"+sample=${sample.getAbsolutePath}")) == 0)
-    }
+    it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
     if (p(midas.EnableSnapshot)) {
-      it should "replay samples in vcs" in {
-        assert(replay(target, "vcs", Some(sample)) == 0)
-      }
+      it should "replay samples in vcs" in { assert(replay("vcs", sample) == 0) }
     }
   }
+  clean
+  midas.MidasCompiler(dutGen, genDir)
   compileReplay(dutGen, "vcs")
   runTest("verilator")
   runTest("vcs")

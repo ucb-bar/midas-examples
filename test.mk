@@ -3,6 +3,7 @@
 ###########################
 
 DESIGN ?= Tile
+PLATFORM ?= zynq
 
 include Makefrag
 include Makefrag-strober
@@ -23,7 +24,7 @@ waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
 
 # Compile Verilator
 $(gen_dir)/V$(DESIGN)$(debug): $(testbench_dir)/$(DESIGN)-emul.cc $(testbench_dir)/$(DESIGN).h \
-	$(gen_dir)/ZynqShim.v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
 	$(MAKE) -C $(simif_dir) verilator$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) TESTBENCH=$<
 verilator: $(gen_dir)/V$(DESIGN)$(debug)
 
@@ -35,7 +36,7 @@ verilator-test: $(gen_dir)/V$(DESIGN)$(debug)
 
 # Compile VCS
 $(gen_dir)/$(DESIGN)$(debug): $(testbench_dir)/$(DESIGN)-emul.cc $(testbench_dir)/$(DESIGN).h \
-	$(gen_dir)/ZynqShim.v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
 	$(MAKE) -C $(simif_dir) vcs$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) TESTBENCH=$<
 vcs: $(gen_dir)/$(DESIGN)$(debug)
 

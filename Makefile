@@ -1,5 +1,7 @@
 include Makefrag
 
+PLATFORM ?= zynq
+# PLATFORM ?= catapult
 DEBUG ?=
 LOADMEM ?=
 LOGFILE ?=
@@ -28,20 +30,20 @@ publishLocal:
 # Tests
 verilator = $(addsuffix -verilator, $(designs))
 $(verilator): %-verilator:
-	$(MAKE) -C $(base_dir) -f test.mk verilator DESIGN=$* $(debug)
+	$(MAKE) -C $(base_dir) -f test.mk verilator PLATFORM=$(PLATFORM) DESIGN=$* $(debug)
 
 verilator_test = $(addsuffix -verilator-test, $(designs))
 $(verilator_test): %-verilator-test:
-	$(MAKE) -C $(base_dir) -f test.mk verilator-test DESIGN=$* \
+	$(MAKE) -C $(base_dir) -f test.mk verilator-test PLATFORM=$(PLATFORM) DESIGN=$* \
 	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args)
 
 vcs = $(addsuffix -vcs, $(designs))
 $(vcs): %-vcs:
-	$(MAKE) -C $(base_dir) -f test.mk vcs DESIGN=$* $(debug)
+	$(MAKE) -C $(base_dir) -f test.mk vcs PLATFORM=$(PLATFORM) DESIGN=$* $(debug)
 
 vcs_test = $(addsuffix -vcs-test, $(designs))
 $(vcs_test): %-vcs-test:
-	$(MAKE) -C $(base_dir) -f test.mk vcs-test DESIGN=$* \
+	$(MAKE) -C $(base_dir) -f test.mk vcs-test PLATFORM=$(PLATFORM) DESIGN=$* \
 	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args)
 
 vcs_replay_compile = $(addsuffix -vcs-replay-compile, $(designs))
@@ -53,13 +55,13 @@ $(vcs_replay): %-vcs-replay:
 	$(MAKE) -C $(base_dir) -f replay.mk vcs-replay DESIGN=$* $(sample) $(logfile) $(waveform)
 
 # FPGA
-zynq = $(addsuffix -zynq, $(designs))
+$(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
 $(zynq): %-zynq:
-	$(MAKE) -C $(base_dir) -f fpga.mk zynq DESIGN=$* $(if $(BOARD),board=$(BOARD),)
+	$(MAKE) -C $(base_dir) -f fpga.mk zynq PLATFORM=$(PLATFORM) DESIGN=$* $(if $(BOARD),board=$(BOARD),)
 
 fpga = $(addsuffix -fpga, $(designs))
 $(fpga): %-fpga:
-	$(MAKE) -C $(base_dir) -f fpga.mk fpga DESIGN=$* $(if $(BOARD),board=$(BOARD),)
+	$(MAKE) -C $(base_dir) -f fpga.mk fpga PLATFORM=$(PLATFORM) DESIGN=$* $(if $(BOARD),board=$(BOARD),)
 
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))

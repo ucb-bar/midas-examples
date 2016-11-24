@@ -5,8 +5,9 @@ import cde.Parameters.root
 import java.io.File
 
 object StroberExamples extends App {
-  val modName = args(1)
-  val dirPath = args(2)
+  lazy val modName = args(1)
+  lazy val dirPath = args(2)
+  lazy val platform = args(3)
   def dut = modName match {
     case "Tile"  =>
       new mini.Tile(root((new mini.MiniConfig).toInstance))
@@ -22,11 +23,17 @@ object StroberExamples extends App {
   }
   args(0) match {
     case "midas" =>
-      implicit val p = root((new midas.ZynqConfig).toInstance)
+      implicit val p = platform match {
+        case "zynq"     => root((new midas.ZynqConfig).toInstance)
+        case "catapult" => root((new midas.CatapultConfig).toInstance)
+      }
       // implicit val p = root((new ZynqConfigWithMemModel).toInstance)
       MidasCompiler(dut, new File(dirPath))
     case "strober" =>
-      implicit val p = root((new midas.ZynqConfigWithSnapshot).toInstance)
+      implicit val p = platform match {
+        case "zynq"     => root((new midas.ZynqConfigWithSnapshot).toInstance)
+        case "catapult" => root((new midas.CatapultConfigWithSnapshot).toInstance)
+      }
       // implicit val p = root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
       MidasCompiler(dut, new File(dirPath))
     case "replay" =>

@@ -20,8 +20,8 @@ args = $(if $(ARGS),ARGS=$(ARGS),)
 # Desings
 tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
 examples := RiscSRAM PointerChaser
-mini := Tile
-designs := $(tutorial) $(examples) $(mini)
+mini     := Tile
+designs  := $(tutorial) $(examples) $(mini)
 
 publishLocal:
 	cd $(base_dir)/firrtl && $(SBT) $(SBT_FLAGS) publishLocal

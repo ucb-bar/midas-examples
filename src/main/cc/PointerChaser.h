@@ -35,7 +35,7 @@ public:
     poke(io_result_ready, 1);
     do {
       step(1, false);
-      while(!done() || mem.target_fire()) mem.tick();
+      while(!done() || !mem.done()) mem.tick();
     } while (!peek(io_result_valid) && cycles() < max_cycles);
     expect(io_result_bits, result);
   }

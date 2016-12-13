@@ -21,21 +21,16 @@ object StroberExamples extends App {
            .newInstance()
            .asInstanceOf[chisel3.Module]
   }
-  args(0) match {
+  def midasParams = root((platform match {
+    case "zynq"     => new midas.ZynqConfig
+    case "catapult" => new midas.CatapultConfig
+  }).toInstance)
+  args.head match {
     case "midas" =>
-      implicit val p = root((platform match {
-        case "zynq"     => new midas.ZynqConfig
-        case "catapult" => new midas.CatapultConfig
-      }).toInstance)
-      // implicit val p = root((new ZynqConfigWithMemModel).toInstance)
-      MidasCompiler(dut, new File(dirPath))
+      MidasCompiler(dut, new File(dirPath))(midasParams)
     case "strober" =>
-      implicit val p = root((platform match {
-        case "zynq"     => new midas.ZynqConfigWithSnapshot
-        case "catapult" => new midas.CatapultConfigWithSnapshot
-      }).toInstance)
-      // implicit val p = root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
-      MidasCompiler(dut, new File(dirPath))
+      MidasCompiler(dut, new File(dirPath))(
+        midasParams alter Map(midas.EnableSnapshot -> true))
     case "replay" =>
       strober.replay.Compiler(dut, new File(dirPath))
   }

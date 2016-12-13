@@ -22,7 +22,7 @@ public:
     target_reset();
     do {
       step(trace_len, false);
-      while(!done() || mem.target_fire()) mem.tick();
+      while(!done() || !mem.done()) mem.tick();
       tohost = peek(io_host_tohost);
     } while(tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 

@@ -26,6 +26,7 @@ $(gen_dir)/$(DESIGN)-replay: $(gen_dir)/$(DESIGN).v
 vcs: $(gen_dir)/$(DESIGN)-replay
 
 vcs-replay: $(gen_dir)/$(DESIGN)-replay $(sample) $(simif_cc) $(simif_h)
+	mkdir -p $(out_dir)
 	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
 	+waveform=$(call waveform,vpd) 2> $(call logfile,vcs)
 

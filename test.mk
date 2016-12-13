@@ -6,7 +6,6 @@ DESIGN ?= Tile
 PLATFORM ?= zynq
 
 include Makefrag
-include Makefrag-strober
 
 DEBUG ?=
 LOADMEM ?=
@@ -14,6 +13,15 @@ SAMPLE ?=
 LOGFILE ?=
 WAVEFORM ?=
 ARGS ?= +fastloadmem
+
+$(gen_dir)/$(shim).v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $(DESIGN) $(dir $@) $(PLATFORM)"
+
+$(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
+	cp $(gen_dir)/$(DESIGN).chain $@
+
+$(gen_dir)/dramsim2_ini: $(gen_dir)/$(shim).v
+	$(MAKE) -C $(simif_dir) GEN_DIR=$(gen_dir) $@
 
 debug = $(if $(DEBUG),-debug,)
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)

@@ -5,7 +5,11 @@ import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import java.io.File
 
-abstract class MiniTestSuite(debug: Boolean = false, latency: Int = 8, N: Int = 10) extends TestSuiteCommon {
+abstract class MiniTestSuite(
+    platform: midas.PlatformType,
+    debug: Boolean = false,
+    latency: Int = 8,
+    N: Int = 10) extends TestSuiteCommon(platform) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
@@ -21,7 +25,7 @@ abstract class MiniTestSuite(debug: Boolean = false, latency: Int = 8, N: Int = 
         val sample = Some(new File(outDir, s"$t.$backend.sample"))
         val loadmem = Some(new File("hex", s"$t.hex"))
         val logFile = Some(new File(outDir, s"$t.$backend.out"))
-        val waveform = Some(new File(outDir, s"$t.$backend.$vcd"))
+        val waveform = Some(new File(outDir, s"$t.$vcd"))
         val args = Seq(s"+latency=$latency")
         Future(t -> run(backend, debug, sample, loadmem, logFile, waveform, args))
       }
@@ -44,9 +48,13 @@ abstract class MiniTestSuite(debug: Boolean = false, latency: Int = 8, N: Int = 
   clean
   midas.MidasCompiler(new mini.Tile(tp), genDir)
   compileReplay(new mini.Tile(tp), "vcs")
+  // runTests("verilator", mini.SimpleTests)
+  // runTests("vcs", mini.SimpleTests)
   runTests("verilator", mini.ISATests)
   runTests("verilator", mini.BmarkTests)
   runTests("vcs", mini.ISATests)
   runTests("vcs", mini.BmarkTests)
 }
-class MiniTests extends MiniTestSuite()
+
+class MiniZynqTests extends MiniTestSuite(midas.Zynq)
+class MiniCatapultTests extends MiniTestSuite(midas.Catapult)

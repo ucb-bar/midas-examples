@@ -1,4 +1,10 @@
 base_dir = $(abspath .)
+gen_dir = $(base_dir)/generated-src/$(PLATFORM)/$(DESIGN)
+out_dir = $(base_dir)/output/$(PLATFORM)/$(DESIGN)
+testbench_dir = $(base_dir)/src/main/cc
+simif_dir = $(base_dir)/strober/src/main/cc
+simif_h = $(wildcard $(simif_dir)/*.h) $(wildcard $(simif_dir)/utils/*.cc)
+simif_cc = $(wildcard $(simif_dir)/*.cc) $(wildcard $(simif_dir)/utils/*.cc)
 
 # Scala source files
 src_path = src/main/scala
@@ -7,3 +13,5 @@ scala_srcs = $(foreach module, $(modules), $(shell find $(base_dir)/$(module)/$(
 
 SBT ?= sbt
 SBT_FLAGS ?=
+
+shim := $(shell echo $(PLATFORM) | cut -c 1 | tr [:lower:] [:upper:])$(shell echo $(PLATFORM) | cut -c 2-)Shim

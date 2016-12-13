@@ -3,9 +3,9 @@
 ##################
 
 DESIGN ?= Tile
+PLATFORM ?= zynq
 
 include Makefrag
-include Makefrag-strober
 
 SAMPLE ?= $(out_dir)/$(DESIGN).sample
 LOGFILE ?=
@@ -15,6 +15,9 @@ sample = $(abspath $(SAMPLE))
 prefix = $(notdir $(basename $(SAMPLE)))
 logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(prefix).$1.replay)
 waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
+
+$(gen_dir)/$(DESIGN).v: $(scala_srcs)
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run replay $(DESIGN) $(dir $@)"
 
 # Replay on VCS
 $(gen_dir)/$(DESIGN)-replay: $(gen_dir)/$(DESIGN).v

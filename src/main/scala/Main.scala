@@ -23,17 +23,17 @@ object StroberExamples extends App {
   }
   args(0) match {
     case "midas" =>
-      implicit val p = platform match {
-        case "zynq"     => root((new midas.ZynqConfig).toInstance)
-        case "catapult" => root((new midas.CatapultConfig).toInstance)
-      }
+      implicit val p = root((platform match {
+        case "zynq"     => new midas.ZynqConfig
+        case "catapult" => new midas.CatapultConfig
+      }).toInstance)
       // implicit val p = root((new ZynqConfigWithMemModel).toInstance)
       MidasCompiler(dut, new File(dirPath))
     case "strober" =>
-      implicit val p = platform match {
-        case "zynq"     => root((new midas.ZynqConfigWithSnapshot).toInstance)
-        case "catapult" => root((new midas.CatapultConfigWithSnapshot).toInstance)
-      }
+      implicit val p = root((platform match {
+        case "zynq"     => new midas.ZynqConfigWithSnapshot
+        case "catapult" => new midas.CatapultConfigWithSnapshot
+      }).toInstance)
       // implicit val p = root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
       MidasCompiler(dut, new File(dirPath))
     case "replay" =>

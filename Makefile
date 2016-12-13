@@ -15,7 +15,7 @@ loadmem = $(if $(LOADMEM),LOADMEM=$(LOADMEM),)
 logfile = $(if $(LOGFILE),LOGFILE=$(LOGFILE),)
 waveform = $(if $(WAVEFORM),WAVEFORM=$(WAVEFORM),)
 sample = $(if $(SAMPLE),SAMPLE=$(SAMPLE),)
-args = $(if $(ARGS),ARGS=$(ARGS),)
+args = $(if $(ARGS),ARGS="$(ARGS)",)
 
 # Desings
 tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
@@ -48,11 +48,12 @@ $(vcs_test): %-vcs-test:
 
 vcs_replay_compile = $(addsuffix -vcs-replay-compile, $(designs))
 $(vcs_replay_compile): %-vcs-replay-compile:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs DESIGN=$*
+	$(MAKE) -C $(base_dir) -f replay.mk vcs PLATFORM=$(PLATFORM) DESIGN=$*
 
 vcs_replay = $(addsuffix -vcs-replay, $(designs))
 $(vcs_replay): %-vcs-replay:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs-replay DESIGN=$* $(sample) $(logfile) $(waveform)
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-replay PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
 
 # FPGA
 $(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
@@ -66,13 +67,13 @@ $(fpga): %-fpga:
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))
 $(design_mostlyclean): %-mostlyclean:
-	$(MAKE) -C $(base_dir) -f test.mk mostlyclean DESIGN=$*
-	$(MAKE) -C $(base_dir) -f replay.mk mostlyclean DESIGN=$*
+	$(MAKE) -C $(base_dir) -f test.mk mostlyclean PLATFORM=$(PLATFORM) DESIGN=$*
+	$(MAKE) -C $(base_dir) -f replay.mk mostlyclean PLATFORM=$(PLATFORM) DESIGN=$*
 
 design_clean = $(addsuffix -clean, $(designs))
 $(design_clean): %-clean:
-	$(MAKE) -C $(base_dir) -f test.mk clean DESIGN=$*
-	$(MAKE) -C $(base_dir) -f replay.mk clean DESIGN=$*
+	$(MAKE) -C $(base_dir) -f test.mk clean PLATFORM=$(PLATFORM) DESIGN=$*
+	$(MAKE) -C $(base_dir) -f replay.mk clean PLATFORM=$(PLATFORM) DESIGN=$*
 
 mostlyclean: $(design_mostlyclean)
 

@@ -7,9 +7,10 @@ import scala.sys.process.stringSeqToProcess
 import java.io.File
 
 abstract class PointerChaserTestSuite(
+    platform: midas.PlatformType,
     debug: Boolean = false,
     seed: Long = System.currentTimeMillis,
-    N: Int = 5) extends TestSuiteCommon {
+    N: Int = 5) extends TestSuiteCommon(platform) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
@@ -51,4 +52,6 @@ abstract class PointerChaserTestSuite(
   runTests("vcs")
   println(s"[SEED] ${seed}")
 }
-class PointerChaserTests extends PointerChaserTestSuite()
+
+class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq)
+class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)

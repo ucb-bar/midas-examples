@@ -5,10 +5,14 @@ class PointerChaser_t: virtual simif_t
 {
 public:
   PointerChaser_t(int argc, char** argv): mem(this, argc, argv) {
+    max_cycles = 20000L;
     address = 64;
     result = 1176;
     std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
+      if (arg.find("+max-cycles=") == 0) {
+        max_cycles = atoi(arg.c_str()+12);
+      }
       if (arg.find("+address=") == 0) {
         address = atoi(arg.c_str() + 9);
       }
@@ -31,12 +35,13 @@ public:
     poke(io_result_ready, 1);
     do {
       step(1, false);
-      while(!done()) mem.tick();
-    } while (!peek(io_result_valid));
+      while(!done() || mem.target_fire()) mem.tick();
+    } while (!peek(io_result_valid) && cycles() < max_cycles);
     expect(io_result_bits, result);
   }
 private:
   sim_mem_t mem;
+  uint64_t max_cycles;
   uint64_t address;
   biguint_t result; // 64 bit
 };

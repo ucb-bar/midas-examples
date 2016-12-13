@@ -5,15 +5,18 @@ import chisel3.Module
 import scala.reflect.ClassTag
 import scala.sys.process.stringSeqToProcess
 import java.io.File
+import midas.{Zynq, Catapult}
 
-abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
+abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalatest.FlatSpec {
   def target: String
-  lazy val genDir = new File(new File("generated-src"), target)
-  lazy val outDir = new File(new File("output"), target)
+  val platformName = platform.toString.toLowerCase
+  lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
+  lazy val outDir = new File(new File(new File("output"), platformName), target)
 
-  // implicit val p = cde.Parameters.root((new midas.ZynqConfig).toInstance)
-  // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModel).toInstance)
-  implicit val p = cde.Parameters.root((new midas.ZynqConfigWithSnapshot).toInstance)
+  implicit val p = cde.Parameters.root((platform match {
+    case Zynq => new midas.ZynqConfigWithSnapshot
+    case Catapult => new midas.CatapultConfigWithSnapshot
+  }).toInstance)
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def clean {
@@ -21,7 +24,9 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   }
 
   def compile(b: String, debug: Boolean = false) {
-    assert(Seq("make", s"$target-$b", "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
+    assert(Seq("make", s"$target-$b",
+              s"PLATFORM=$platformName",
+               "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
   }
 
   def run(backend: String,
@@ -32,12 +37,13 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
           waveform: Option[File] = None,
           args: Seq[String] = Nil) = {
     val cmd = Seq("make", s"$target-$backend-test",
+      s"PLATFORM=$platformName",
       "DEBUG=%s".format(if (debug) "1" else ""),
       "SAMPLE=%s".format(sample map (_.toString) getOrElse ""),
       "LOADMEM=%s".format(loadmem map (_.toString) getOrElse ""),
       "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
       "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
-      "ARGS=\"%s\"".format(args mkString " "))
+      "ARGS=%s".format(args mkString " "))
     println("cmd: %s".format(cmd mkString " "))
     cmd.!
   }
@@ -45,17 +51,19 @@ abstract class TestSuiteCommon extends org.scalatest.FlatSpec {
   def compileReplay(dutGen: => Module, b: String) {
     if (p(midas.EnableSnapshot)) {
       strober.replay.Compiler(dutGen, genDir)
-      assert(Seq("make", s"$target-$b-replay-compile").! == 0)
+      assert(Seq("make", s"$target-$b-replay-compile", s"PLATFORM=$platformName").! == 0)
     }
   }
 
   def replay(backend: String, sample: Option[File] = None) = {
-    Seq("make", s"${target}-${backend}-replay",
+    Seq("make", s"${target}-${backend}-replay", s"PLATFORM=$platformName",
       "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
   }
 }
 
-abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestSuiteCommon {
+abstract class TutorialSuite[T <: Module : ClassTag](
+    dutGen: => T,
+    platform: midas.PlatformType) extends TestSuiteCommon(platform) {
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   def runTest(b: String) {
     compile(b, true)
@@ -73,11 +81,20 @@ abstract class TutorialSuite[T <: Module : ClassTag](dutGen: => T) extends TestS
   runTest("vcs")
 }
 
-class GCDTests extends TutorialSuite(new GCD)
-class ParityTests extends TutorialSuite(new Parity)
-class ShiftRegisterTests extends TutorialSuite(new ShiftRegister)
-class ResetShiftRegisterTests extends TutorialSuite(new ResetShiftRegister)
-class EnableShiftRegisterTests extends TutorialSuite(new EnableShiftRegister)
-class StackTests extends TutorialSuite(new Stack(8))
-class RiscTests extends TutorialSuite(new Risc)
-class RiscSRAMTests extends TutorialSuite(new RiscSRAM)
+class GCDZynqTest extends TutorialSuite(new GCD, Zynq)
+class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
+class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
+class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
+class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
+class StackZynqTest extends TutorialSuite(new Stack(8), Zynq)
+class RiscZynqTest extends TutorialSuite(new Risc, Zynq)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq)
+
+class GCDCatapultTest extends TutorialSuite(new GCD, Catapult)
+class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)
+class ShiftRegisterCatapultTest extends TutorialSuite(new ShiftRegister, Catapult)
+class ResetShiftRegisterCatapultTest extends TutorialSuite(new ResetShiftRegister, Catapult)
+class EnableShiftRegisterCatapultTest extends TutorialSuite(new EnableShiftRegister, Catapult)
+class StackCatapultTest extends TutorialSuite(new Stack(8), Catapult)
+class RiscCatapultTest extends TutorialSuite(new Risc, Catapult)
+class RiscSRAMCatapultTest extends TutorialSuite(new RiscSRAM, Catapult)

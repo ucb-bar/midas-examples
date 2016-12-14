@@ -1,4 +1,5 @@
-package strober.examples
+package strober
+package examples
 
 import midas._
 import cde.Parameters.root
@@ -13,10 +14,8 @@ object StroberExamples extends App {
       new mini.Tile(root((new mini.MiniConfig).toInstance))
     case "PointerChaser" =>
       new PointerChaser()(root((new PointerChaserConfig).toInstance))
-    case "RiscSRAM" => new RiscSRAM
-    case "Stack" => new examples.Stack(8)
     case _ =>
-      Class.forName(s"examples.${modName}")
+      Class.forName(s"strober.examples.${modName}")
            .getConstructors.head
            .newInstance()
            .asInstanceOf[chisel3.Module]

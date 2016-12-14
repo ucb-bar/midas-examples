@@ -1,4 +1,5 @@
-package strober.examples
+package strober
+package examples
 
 import chisel3.Module
 import scala.concurrent.{Future, Await, ExecutionContext}

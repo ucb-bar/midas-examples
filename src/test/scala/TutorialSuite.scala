@@ -1,6 +1,6 @@
-package strober.examples
+package strober
+package examples
 
-import examples._
 import chisel3.Module
 import scala.reflect.ClassTag
 import scala.sys.process.stringSeqToProcess
@@ -14,7 +14,7 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
   lazy val outDir = new File(new File(new File("output"), platformName), target)
 
   implicit val p = cde.Parameters.root((platform match {
-    case Zynq => new midas.ZynqConfigWithSnapshot
+    case Zynq     => new midas.ZynqConfigWithSnapshot
     case Catapult => new midas.CatapultConfigWithSnapshot
   }).toInstance)
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
@@ -86,7 +86,7 @@ class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
 class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
 class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
 class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
-class StackZynqTest extends TutorialSuite(new Stack(8), Zynq)
+class StackZynqTest extends TutorialSuite(new Stack, Zynq)
 class RiscZynqTest extends TutorialSuite(new Risc, Zynq)
 class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq)
 
@@ -95,6 +95,6 @@ class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)
 class ShiftRegisterCatapultTest extends TutorialSuite(new ShiftRegister, Catapult)
 class ResetShiftRegisterCatapultTest extends TutorialSuite(new ResetShiftRegister, Catapult)
 class EnableShiftRegisterCatapultTest extends TutorialSuite(new EnableShiftRegister, Catapult)
-class StackCatapultTest extends TutorialSuite(new Stack(8), Catapult)
+class StackCatapultTest extends TutorialSuite(new Stack, Catapult)
 class RiscCatapultTest extends TutorialSuite(new Risc, Catapult)
 class RiscSRAMCatapultTest extends TutorialSuite(new RiscSRAM, Catapult)

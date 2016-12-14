@@ -1,4 +1,5 @@
-package strober.examples
+package strober
+package examples
 
 import Chisel._
 import junctions._

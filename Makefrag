@@ -8,7 +8,7 @@ simif_cc = $(wildcard $(simif_dir)/*.cc) $(wildcard $(simif_dir)/utils/*.cc)
 
 # Scala source files
 src_path = src/main/scala
-modules = . strober riscv-mini tutorial $(addprefix riscv-mini/, cde junctions)
+modules = . strober riscv-mini $(addprefix riscv-mini/, cde junctions)
 scala_srcs = $(foreach module, $(modules), $(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
 
 SBT ?= sbt

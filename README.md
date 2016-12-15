@@ -1,5 +1,5 @@
 # Strober Examples
-This repository contains [Strober](https://github.com/ucb-bar/strober.git) and its examples including:
+This repository contains [Strober](http://strober.org) and its examples including:
 + [Chisel tutorial](https://github.com/ucb-bar/chisel-tutorial.git)
   + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, Risc
 + More simple examples:

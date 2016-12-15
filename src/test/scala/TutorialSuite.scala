@@ -13,6 +13,8 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
   lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
   lazy val outDir = new File(new File(new File("output"), platformName), target)
 
+  implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
+
   implicit val p = cde.Parameters.root((platform match {
     case Zynq     => new midas.ZynqConfigWithSnapshot
     case Catapult => new midas.CatapultConfigWithSnapshot
@@ -44,10 +46,10 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
     val cmd = Seq("make", s"$target-$backend-test",
       s"PLATFORM=$platformName",
       "DEBUG=%s".format(if (debug) "1" else ""),
-      "SAMPLE=%s".format(sample map (_.toString) getOrElse ""),
-      "LOADMEM=%s".format(loadmem map (_.toString) getOrElse ""),
-      "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
-      "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
+      "SAMPLE=%s".format(sample map toStr getOrElse ""),
+      "LOADMEM=%s".format(loadmem map toStr getOrElse ""),
+      "LOGFILE=%s".format(logFile map toStr getOrElse ""),
+      "WAVEFORM=%s".format(waveform map toStr getOrElse ""),
       "ARGS=%s".format(args mkString " "))
     if (isCmdAvailable(backend)) {
       println("cmd: %s".format(cmd mkString " "))

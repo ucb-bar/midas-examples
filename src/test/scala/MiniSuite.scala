@@ -33,7 +33,12 @@ abstract class MiniTestSuite(
       Await.result(Future.sequence(subresults), Duration.Inf)
     }
     results.flatten foreach { case (name, exitcode) =>
-      it should s"pass $name" in { assert(exitcode == 0) } }
+      if (isCmdAvailable(backend)) {
+        it should s"pass $name" in { assert(exitcode == 0) }
+      } else {
+        ignore should s"pass $name" in { }
+      }
+    }
     if (p(midas.EnableSnapshot)) {
       val replays = testType.tests sliding (N, N) map { subtests =>
         val subreplays = subtests map { t =>
@@ -43,7 +48,12 @@ abstract class MiniTestSuite(
         Await.result(Future.sequence(subreplays), Duration.Inf)
       }
       replays.flatten foreach { case (name, exitcode) =>
-        it should s"replay $name in vcs" in { assert(exitcode == 0) } }
+        if (isCmdAvailable("vcs")) {
+          it should s"replay $name in vcs" in { assert(exitcode == 0) }
+        } else {
+          ignore should s"replay $name in vcs" in { }
+        }
+      }
     }
   }
   clean

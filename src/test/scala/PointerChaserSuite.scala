@@ -34,7 +34,11 @@ abstract class PointerChaserTestSuite(
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }
     Await.result(Future.sequence(results), Duration.Inf) foreach { case (latency, exitcode) =>
-      it should s"pass latency: $latency" in { assert(exitcode == 0) }
+      if (isCmdAvailable(backend)) {
+        it should s"pass latency: $latency" in { assert(exitcode == 0) }
+      } else {
+        ignore should s"pass latency: $latency" in { }
+      }
     }
     if (p(midas.EnableSnapshot)) {
       val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
@@ -42,7 +46,11 @@ abstract class PointerChaserTestSuite(
         Future(latency -> replay("vcs", Some(sample)))
       }
       Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
-        it should s"replay latency: $latency in vcs" in { assert(exitcode == 0) }
+        if (isCmdAvailable("vcs")) {
+          it should s"replay latency: $latency in vcs" in { assert(exitcode == 0) }
+        } else {
+          ignore should s"replay latency: $latency in vcs" in { }
+        }
       }
     }
   }

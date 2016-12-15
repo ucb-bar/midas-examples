@@ -3,7 +3,7 @@ package examples
 
 import chisel3.Module
 import scala.reflect.ClassTag
-import scala.sys.process.stringSeqToProcess
+import scala.sys.process.{stringSeqToProcess, ProcessLogger}
 import java.io.File
 import midas.{Zynq, Catapult}
 
@@ -20,13 +20,18 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def clean {
-    assert(Seq("make", s"$target-clean").! == 0)
+    assert(Seq("make", s"$target-clean", "PLATFORM=$platformName").! == 0)
   }
 
+  def isCmdAvailable(cmd: String) =
+    Seq("which", cmd) ! ProcessLogger(_ => {}) == 0
+
   def compile(b: String, debug: Boolean = false) {
-    assert(Seq("make", s"$target-$b",
-              s"PLATFORM=$platformName",
-               "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
+    if (isCmdAvailable(b)) {
+      assert(Seq("make", s"$target-$b",
+                s"PLATFORM=$platformName",
+                 "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
+    }
   }
 
   def run(backend: String,
@@ -44,20 +49,24 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
       "LOGFILE=%s".format(logFile map (_.toString) getOrElse ""),
       "WAVEFORM=%s".format(waveform map (_.toString) getOrElse ""),
       "ARGS=%s".format(args mkString " "))
-    println("cmd: %s".format(cmd mkString " "))
-    cmd.!
+    if (isCmdAvailable(backend)) {
+      println("cmd: %s".format(cmd mkString " "))
+      cmd.!
+    } else 0
   }
 
   def compileReplay(dutGen: => Module, b: String) {
-    if (p(midas.EnableSnapshot)) {
+    if (p(midas.EnableSnapshot) && isCmdAvailable(b)) {
       strober.replay.Compiler(dutGen, genDir)
       assert(Seq("make", s"$target-$b-replay-compile", s"PLATFORM=$platformName").! == 0)
     }
   }
 
   def replay(backend: String, sample: Option[File] = None) = {
-    Seq("make", s"${target}-${backend}-replay", s"PLATFORM=$platformName",
-      "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
+    if (isCmdAvailable(backend)) {
+      Seq("make", s"${target}-${backend}-replay", s"PLATFORM=$platformName",
+        "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
+    } else 0
   }
 }
 
@@ -69,9 +78,17 @@ abstract class TutorialSuite[T <: Module : ClassTag](
     compile(b, true)
     val sample = Some(new File(outDir, s"$target.$b.sample"))
     behavior of s"$target in $b"
-    it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
+    if (isCmdAvailable(b)) {
+      it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
+    } else {
+      ignore should s"pass strober test" in { }
+    }
     if (p(midas.EnableSnapshot)) {
-      it should "replay samples in vcs" in { assert(replay("vcs", sample) == 0) }
+      if (isCmdAvailable("vcs")) {
+        it should "replay samples in vcs" in { assert(replay("vcs", sample) == 0) }
+      } else {
+        ignore should "replay samples in vcs" in { }
+      }
     }
   }
   clean

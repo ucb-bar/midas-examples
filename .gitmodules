@@ -1,9 +1,6 @@
 [submodule "strober"]
 	path = strober
 	url = https://github.com/ucb-bar/strober.git
-[submodule "vlsi"]
-	path = vlsi
-	url = https://github.com/ucb-bar/vlsi.git
 [submodule "riscv-mini"]
 	path = riscv-mini
 	url = https://github.com/ucb-bar/riscv-mini.git

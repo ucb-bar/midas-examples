@@ -4,11 +4,16 @@
 
 DESIGN ?= Tile
 PLATFORM ?= zynq
+STROBER ?= 1
 
 include Makefrag
 
+strober = $(if $(STORBER),strober,midas)
+
 $(gen_dir)/$(shim).v: $(scala_srcs)
-	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $(DESIGN) $(dir $@) $(PLATFORM)"
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run $(strober) $(DESIGN) $(dir $@) $(PLATFORM)"
+
+verilog: $(gen_dir)/$(shim).v
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@

@@ -9,6 +9,7 @@ WAVEFORM ?=
 BOARD ?=
 SAMPLE ?=
 ARGS ?=
+DRIVER ?=
 
 debug = $(if $(DEBUG),DEBUG=$(DEBUG),)
 loadmem = $(if $(LOADMEM),LOADMEM=$(LOADMEM),)
@@ -57,8 +58,8 @@ $(vcs_replay): %-vcs-replay:
 
 # FPGA
 $(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
-$(zynq): %-zynq:
-	$(MAKE) -C $(base_dir) -f fpga.mk zynq PLATFORM=$(PLATFORM) DESIGN=$* $(if $(BOARD),board=$(BOARD),)
+$($(PLATFORM)): %-$(PLATFORM):
+	$(MAKE) -C $(base_dir) -f fpga.mk $(PLATFORM) PLATFORM=$(PLATFORM) DESIGN=$* DRIVER=$(DRIVER) $(if $(BOARD),board=$(BOARD),)
 
 fpga = $(addsuffix -fpga, $(designs))
 $(fpga): %-fpga:

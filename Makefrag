@@ -1,7 +1,7 @@
 base_dir = $(abspath .)
 gen_dir ?= $(base_dir)/generated-src/$(PLATFORM)/$(DESIGN)
 out_dir ?= $(base_dir)/output/$(PLATFORM)/$(DESIGN)
-testbench_dir = $(base_dir)/src/main/cc
+driver_dir = $(base_dir)/src/main/cc
 simif_dir = $(base_dir)/midas/src/main/cc
 simif_h = $(wildcard $(simif_dir)/*.h) $(wildcard $(simif_dir)/utils/*.cc)
 simif_cc = $(wildcard $(simif_dir)/*.cc) $(wildcard $(simif_dir)/utils/*.cc)

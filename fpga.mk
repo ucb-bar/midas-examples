@@ -5,6 +5,8 @@
 DESIGN ?= Tile
 PLATFORM ?= zynq
 STROBER ?= 1
+# STROBER ?= 1
+DRIVER ?=
 
 include Makefrag
 
@@ -19,19 +21,24 @@ $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@
 
 # Compile driver
+ifeq ($(PLATFORM),zynq)
 export AR := arm-xilinx-linux-gnueabi-ar
 export CXX := arm-xilinx-linux-gnueabi-g++
 #export CXXFLAGS := $(CXXFLAGS) -static -O2
+endif
+ifeq ($(PLATFORM),catapult)
+export AR := lib
+export CXX := cl
+endif
 
-$(out_dir)/$(DESIGN)-$(PLATFORM): $(testbench_dir)/$(DESIGN)-$(PLATFORM).cc \
-	$(testbench_dir)/$(DESIGN).h $(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
-	mkdir -p $(gen_dir)/$(PLATFORM)
-	cp $(gen_dir)/$(DESIGN)-const.h $(gen_dir)/$(PLATFORM)
+$(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
+	$(driver_dir)/$(DESIGN).h $(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
 	$(MAKE) -C $(simif_dir) $(PLATFORM) DESIGN=$(DESIGN) \
-	GEN_DIR=$(gen_dir)/$(PLATFORM) OUT_DIR=$(out_dir) TESTBENCH=$<
+	GEN_DIR=$(gen_dir) OUT_DIR=$(out_dir) DRIVER="$< $(DRIVER)"
 
 $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 
+ifdef ($(PLATFORM),zynq)
 # Generate bitstream
 board     ?= zedboard
 board_dir := $(base_dir)/midas-$(PLATFORM)/$(board)
@@ -46,6 +53,7 @@ fpga: $(board_dir)/src/verilog/$(DESIGN)/$(shim).v
 	mkdir -p $(out_dir)
 	$(MAKE) -C $(board_dir) $(bitstream) DESIGN=$(DESIGN)
 	cp $(board_dir)/$(bitstream) $(out_dir)
+endif
 
 clean:
 	rm -rf $(gen_dir) $(out_dir)

@@ -22,7 +22,7 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
   // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def clean {
-    assert(Seq("make", s"$target-clean", "PLATFORM=$platformName").! == 0)
+    assert(Seq("make", s"$target-clean", s"PLATFORM=$platformName").! == 0)
   }
 
   def isCmdAvailable(cmd: String) =

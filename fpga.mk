@@ -13,12 +13,13 @@ include Makefrag
 strober = $(if $(STORBER),strober,midas)
 
 $(gen_dir)/$(shim).v: $(scala_srcs)
-	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run $(strober) $(DESIGN) $(dir $@) $(PLATFORM)"
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
+	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM)"
 
 verilog: $(gen_dir)/$(shim).v
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
-	cp $(gen_dir)/$(DESIGN).chain $@
+	$(if (wildcard $(gen_dir)/$(shim).v),cp $(gen_dir)/$(DESIGN).chain $@,)
 
 # Compile driver
 ifeq ($(PLATFORM),zynq)
@@ -34,7 +35,8 @@ endif
 $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
 	$(driver_dir)/$(DESIGN).h $(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
 	$(MAKE) -C $(simif_dir) $(PLATFORM) DESIGN=$(DESIGN) \
-	GEN_DIR=$(gen_dir) OUT_DIR=$(out_dir) DRIVER="$< $(DRIVER)"
+	GEN_DIR=$(gen_dir) OUT_DIR=$(out_dir) \
+	DRIVER=$(if $(filter-out sh.exe,$(SHELL)),"$< $(DRIVER)",$<\ $(DRIVER))
 
 $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 

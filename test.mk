@@ -15,7 +15,8 @@ WAVEFORM ?=
 ARGS ?= +fastloadmem
 
 $(gen_dir)/$(shim).v: $(scala_srcs)
-	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run strober $(DESIGN) $(dir $@) $(PLATFORM)"
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
+	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM)"
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@

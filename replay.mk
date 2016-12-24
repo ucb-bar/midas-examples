@@ -17,7 +17,8 @@ logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(prefix).$1.replay)
 waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
 
 $(gen_dir)/$(DESIGN).v: $(scala_srcs)
-	cd $(base_dir) && $(SBT) $(SBT_FLAGS) "run replay $(DESIGN) $(dir $@)"
+	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
+	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@))"
 
 # Replay on VCS
 $(gen_dir)/$(DESIGN)-replay: $(gen_dir)/$(DESIGN).v
@@ -25,7 +26,7 @@ $(gen_dir)/$(DESIGN)-replay: $(gen_dir)/$(DESIGN).v
 
 vcs: $(gen_dir)/$(DESIGN)-replay
 
-vcs-replay: $(gen_dir)/$(DESIGN)-replay $(sample) $(simif_cc) $(simif_h)
+vcs-replay: $(gen_dir)/$(DESIGN)-replay $(simif_cc) $(simif_h)
 	mkdir -p $(out_dir)
 	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
 	+waveform=$(call waveform,vpd) 2> $(call logfile,vcs)

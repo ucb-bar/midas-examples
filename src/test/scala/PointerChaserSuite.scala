@@ -9,7 +9,7 @@ import java.io.File
 
 abstract class PointerChaserTestSuite(
     platform: midas.PlatformType,
-    debug: Boolean = false,
+    debug: Boolean = true,
     seed: Long = System.currentTimeMillis,
     N: Int = 5) extends TestSuiteCommon(platform) {
   import scala.concurrent.duration._
@@ -29,7 +29,7 @@ abstract class PointerChaserTestSuite(
     val results = (1 to N) map (math.pow(2, _).toInt) map { latency =>
       val sample = Some(new File(outDir, s"$target.$latency.$backend.sample"))
       val logFile = Some(new File(outDir, s"$target.$latency.$backend.out"))
-      val waveform = Some(new File(outDir, s"$target.$latency.$backend.$vcd"))
+      val waveform = Some(new File(outDir, s"$target.$latency.$vcd"))
       val args = Seq(s"+latency=$latency", "+fastloadmem")
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }

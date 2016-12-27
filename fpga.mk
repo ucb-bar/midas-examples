@@ -5,12 +5,11 @@
 DESIGN ?= Tile
 PLATFORM ?= zynq
 STROBER ?= 1
-# STROBER ?= 1
 DRIVER ?=
 
 include Makefrag
 
-strober = $(if $(STORBER),strober,midas)
+strober = $(if $(STROBER),strober,midas)
 
 $(gen_dir)/$(shim).v: $(scala_srcs)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
@@ -40,7 +39,7 @@ $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
 
 $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 
-ifdef ($(PLATFORM),zynq)
+ifeq ($(PLATFORM),zynq)
 # Generate bitstream
 board     ?= zedboard
 board_dir := $(base_dir)/midas-$(PLATFORM)/$(board)
@@ -54,7 +53,7 @@ $(board_dir)/src/verilog/$(DESIGN)/$(shim).v: $(gen_dir)/$(shim).v
 fpga: $(board_dir)/src/verilog/$(DESIGN)/$(shim).v
 	mkdir -p $(out_dir)
 	$(MAKE) -C $(board_dir) $(bitstream) DESIGN=$(DESIGN)
-	cp $(board_dir)/$(bitstream) $(out_dir)
+	cp $(board_dir)/$(bitstream) $(out_dir)/
 endif
 
 clean:

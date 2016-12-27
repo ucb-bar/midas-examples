@@ -9,7 +9,7 @@ simif_cc = $(wildcard $(simif_dir)/*.cc) $(wildcard $(simif_dir)/utils/*.cc)
 # Scala source files
 ifneq ($(SHELL),sh.exe)
 src_path = src/main/scala
-modules = . midas riscv-mini rocketchip chisel firrtl
+modules = . midas riscv-mini rocket-chip chisel firrtl
 scala_srcs = $(foreach module, $(modules), \
 	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
 else

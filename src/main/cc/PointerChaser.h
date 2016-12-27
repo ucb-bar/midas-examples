@@ -42,6 +42,6 @@ public:
 private:
   sim_mem_t mem;
   uint64_t max_cycles;
-  uint64_t address;
+  biguint_t address;
   biguint_t result; // 64 bit
 };

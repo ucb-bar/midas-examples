@@ -1,4 +1,5 @@
-package strober.examples
+package strober
+package examples
 
 import midas._
 import midas.widgets._

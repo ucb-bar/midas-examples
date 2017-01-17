@@ -2,7 +2,7 @@
 
 typedef std::vector< uint32_t > app_t;
 
-class Risc_t: virtual simif_t
+class Risc_t: public virtual simif_t
 {
 public:
   void run(uint32_t expected, uint64_t timeout) {

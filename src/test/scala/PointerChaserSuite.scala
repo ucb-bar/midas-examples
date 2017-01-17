@@ -1,4 +1,5 @@
-package strober.examples
+package strober
+package examples
 
 import chisel3.Module
 import scala.concurrent.{Future, Await, ExecutionContext}
@@ -7,9 +8,10 @@ import scala.sys.process.stringSeqToProcess
 import java.io.File
 
 abstract class PointerChaserTestSuite(
-    debug: Boolean = false,
+    platform: midas.PlatformType,
+    debug: Boolean = true,
     seed: Long = System.currentTimeMillis,
-    N: Int = 5) extends TestSuiteCommon {
+    N: Int = 5) extends TestSuiteCommon(platform) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
@@ -27,12 +29,16 @@ abstract class PointerChaserTestSuite(
     val results = (1 to N) map (math.pow(2, _).toInt) map { latency =>
       val sample = Some(new File(outDir, s"$target.$latency.$backend.sample"))
       val logFile = Some(new File(outDir, s"$target.$latency.$backend.out"))
-      val waveform = Some(new File(outDir, s"$target.$latency.$backend.$vcd"))
+      val waveform = Some(new File(outDir, s"$target.$latency.$vcd"))
       val args = Seq(s"+latency=$latency", "+fastloadmem")
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }
     Await.result(Future.sequence(results), Duration.Inf) foreach { case (latency, exitcode) =>
-      it should s"pass latency: $latency" in { assert(exitcode == 0) }
+      if (isCmdAvailable(backend)) {
+        it should s"pass latency: $latency" in { assert(exitcode == 0) }
+      } else {
+        ignore should s"pass latency: $latency" in { }
+      }
     }
     if (p(midas.EnableSnapshot)) {
       val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
@@ -40,7 +46,11 @@ abstract class PointerChaserTestSuite(
         Future(latency -> replay("vcs", Some(sample)))
       }
       Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
-        it should s"replay latency: $latency in vcs" in { assert(exitcode == 0) }
+        if (isCmdAvailable("vcs")) {
+          it should s"replay latency: $latency in vcs" in { assert(exitcode == 0) }
+        } else {
+          ignore should s"replay latency: $latency in vcs" in { }
+        }
       }
     }
   }
@@ -51,4 +61,6 @@ abstract class PointerChaserTestSuite(
   runTests("vcs")
   println(s"[SEED] ${seed}")
 }
-class PointerChaserTests extends PointerChaserTestSuite()
+
+class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq)
+class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)

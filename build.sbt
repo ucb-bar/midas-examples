@@ -4,7 +4,10 @@ val defaultVersions = Map(
 
 lazy val commonSettings = Seq(
   scalaVersion := "2.11.7",
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  libraryDependencies ++= Seq(
+    "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+    "org.scalatest" %% "scalatest" % "2.2.4"
+  ),
   libraryDependencies ++= (Seq("chisel3", "firrtl") map { dep: String =>
     "edu.berkeley.cs" %% dep % sys.props.getOrElse(s"${dep}Version", defaultVersions(dep))
   }),
@@ -26,11 +29,10 @@ lazy val rootSettings = commonSettings ++ Seq(
   version := "1.0-SANPSHOT"
 )
 
-lazy val tutorial  = project settings subModSettings
 lazy val cde       = project in file("rocket-chip/context-dependent-environments") settings commonSettings
 lazy val hardfloat = project in file("rocket-chip/hardfloat") settings commonSettings
 lazy val rocket    = project in file("rocket-chip") settings commonSettings dependsOn (cde, hardfloat)
-lazy val strober   = project settings commonSettings dependsOn rocket
-lazy val midasmem  = project in file("midas-memory-model") settings commonSettings dependsOn strober
+lazy val midas     = project settings commonSettings dependsOn rocket
+lazy val midasmem  = project in file("midas-memory-model") settings commonSettings dependsOn midas
 lazy val mini      = project in file("riscv-mini") settings commonSettings dependsOn rocket
-lazy val root      = project in file(".") settings rootSettings dependsOn (tutorial, mini, midasmem)
+lazy val root      = project in file(".") settings rootSettings dependsOn (mini, midasmem)

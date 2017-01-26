@@ -1,5 +1,5 @@
 #include "simif.h"
-#include "sim_mem.h"
+#include "endpoints/sim_mem.h"
 
 class Tile_t: virtual simif_t
 {

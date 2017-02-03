@@ -1,27 +1,27 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
-	url = https://github.com/ucb-bar/riscv-mini.git
+	url = git@github.com:ucb-bar/riscv-mini.git
 [submodule "fpga-zynq"]
 	path = fpga-zynq
-	url = https://github.com/donggyukim/fpga-zynq.git
+	url = git@github.com:donggyukim/fpga-zynq.git
 [submodule "midas-memory-model"]
 	path = midas-memory-model
 	url = git@github.com:ucb-bar/midas-memory-model.git
 [submodule "firrtl"]
 	path = firrtl
-	url = https://github.com/ucb-bar/firrtl.git
+	url = git@github.com:ucb-bar/firrtl.git
 [submodule "chisel3"]
 	path = chisel
-	url = https://github.com/ucb-bar/chisel3.git
+	url = git@github.com:ucb-bar/chisel3.git
 [submodule "rocket-chip"]
 	path = rocket-chip
-	url = https://github.com/ucb-bar/rocket-chip.git
+	url = git@github.com:ucb-bar/rocket-chip.git
 [submodule "midas-zynq"]
 	path = midas-zynq
-	url = https://github.com/donggyukim/midas-zynq.git
+	url = git@github.com:donggyukim/midas-zynq.git
 [submodule "midas"]
 	path = midas
-	url = https://github.com/ucb-bar/midas.git
+	url = git@github.com:ucb-bar/midas.git
 [submodule "plsi"]
 	path = plsi
 	url = git@github.com:ucb-bar/plsi.git

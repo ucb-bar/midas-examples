@@ -57,16 +57,15 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
     } else 0
   }
 
-  def compileReplay(dutGen: => Module, b: String) {
-    if (p(midas.EnableSnapshot) && isCmdAvailable(b)) {
-      strober.replay.Compiler(dutGen, genDir)
-      assert(Seq("make", s"$target-$b-replay-compile", s"PLATFORM=$platformName").! == 0)
+  def compileReplay(bs: Seq[String]) {
+    if (p(midas.EnableSnapshot) && isCmdAvailable("vcs")) {
+      bs foreach (b => assert(Seq("make", s"$target-vcs-$b", s"PLATFORM=$platformName").! == 0))
     }
   }
 
-  def replay(backend: String, sample: Option[File] = None) = {
-    if (isCmdAvailable(backend)) {
-      Seq("make", s"${target}-${backend}-replay", s"PLATFORM=$platformName",
+  def runReplay(b: String, sample: Option[File] = None) = {
+    if (isCmdAvailable("vcs")) {
+      Seq("make", s"$target-replay-$b", s"PLATFORM=$platformName",
         "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
     } else 0
   }
@@ -74,7 +73,8 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
 
 abstract class TutorialSuite[T <: Module : ClassTag](
     dutGen: => T,
-    platform: midas.PlatformType) extends TestSuiteCommon(platform) {
+    platform: midas.PlatformType,
+    plsi: Boolean = false) extends TestSuiteCommon(platform) {
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   def runTest(b: String) {
     compile(b, true)
@@ -87,27 +87,35 @@ abstract class TutorialSuite[T <: Module : ClassTag](
     }
     if (p(midas.EnableSnapshot)) {
       if (isCmdAvailable("vcs")) {
-        it should "replay samples in vcs" in { assert(replay("vcs", sample) == 0) }
+        it should "replay samples with rtl" in { assert(runReplay("rtl", sample) == 0) }
       } else {
-        ignore should "replay samples in vcs" in { }
+        ignore should "replay samples with rtl" in { }
+      }
+    }
+    if (p(midas.EnableSnapshot) && plsi) {
+      if (isCmdAvailable("vcs")) {
+        it should "replay samples with syn" in { assert(runReplay("syn", sample) == 0) }
+      } else {
+        ignore should "replay samples with syn" in { }
       }
     }
   }
   clean
   midas.MidasCompiler(dutGen, genDir)
-  compileReplay(dutGen, "vcs")
+  strober.replay.Compiler(dutGen, genDir)
+  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
   runTest("verilator")
   runTest("vcs")
 }
 
-class GCDZynqTest extends TutorialSuite(new GCD, Zynq)
-class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
-class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
-class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
-class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
-class StackZynqTest extends TutorialSuite(new Stack, Zynq)
-class RiscZynqTest extends TutorialSuite(new Risc, Zynq)
-class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq)
+class GCDZynqTest extends TutorialSuite(new GCD, Zynq, true)
+class ParityZynqTest extends TutorialSuite(new Parity, Zynq, true)
+class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq, true)
+class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq, true)
+class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq, true)
+class StackZynqTest extends TutorialSuite(new Stack, Zynq, true)
+class RiscZynqTest extends TutorialSuite(new Risc, Zynq, true)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq, false)
 
 class GCDCatapultTest extends TutorialSuite(new GCD, Catapult)
 class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)

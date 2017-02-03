@@ -6,8 +6,9 @@ public:
   void run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
+    set_tracelen(8);
     target_reset();
-    for (int i = 0 ; i < 16 ; i++) {
+    for (int i = 0 ; i < 64 ; i++) {
       uint32_t in    = rand_next(16);
       uint32_t shift = rand_next(2);
       if (shift == 1) ins[k % 5] = in;

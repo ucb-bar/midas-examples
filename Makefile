@@ -47,15 +47,6 @@ $(vcs_test): %-vcs-test:
 	$(MAKE) -C $(base_dir) -f test.mk vcs-test PLATFORM=$(PLATFORM) DESIGN=$* \
 	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args)
 
-vcs_replay_compile = $(addsuffix -vcs-replay-compile, $(designs))
-$(vcs_replay_compile): %-vcs-replay-compile:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs PLATFORM=$(PLATFORM) DESIGN=$*
-
-vcs_replay = $(addsuffix -vcs-replay, $(designs))
-$(vcs_replay): %-vcs-replay:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs-replay PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(sample) $(logfile) $(waveform)
-
 # FPGA
 $(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
 $($(PLATFORM)): %-$(PLATFORM):
@@ -64,6 +55,25 @@ $($(PLATFORM)): %-$(PLATFORM):
 fpga = $(addsuffix -fpga, $(designs))
 $(fpga): %-fpga:
 	$(MAKE) -C $(base_dir) -f fpga.mk fpga PLATFORM=$(PLATFORM) DESIGN=$* $(if $(BOARD),board=$(BOARD),)
+
+# Replays
+vcs_rtl = $(addsuffix -vcs-rtl, $(designs))
+$(vcs_rtl): %-vcs-rtl:
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-rtl PLATFORM=$(PLATFORM) DESIGN=$*
+
+replay_rtl = $(addsuffix -replay-rtl, $(designs))
+$(replay_rtl): %-replay-rtl:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-rtl PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
+
+vcs_syn = $(addsuffix -vcs-syn, $(designs))
+$(vcs_syn): %-vcs-syn:
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-syn PLATFORM=$(PLATFORM) DESIGN=$*
+
+replay_syn = $(addsuffix -replay-syn, $(designs))
+$(replay_syn): %-replay-syn:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-syn PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
 
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))

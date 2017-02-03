@@ -21,9 +21,6 @@ $(gen_dir)/$(shim).v: $(scala_srcs)
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@
 
-$(gen_dir)/dramsim2_ini: $(gen_dir)/$(shim).v
-	$(MAKE) -C $(simif_dir) GEN_DIR=$(gen_dir) $@
-
 debug = $(if $(DEBUG),-debug,)
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 prefix = $(notdir $(basename $(if $(LOADMEM),$(notdir $(LOADMEM)),$(DESIGN))))
@@ -33,7 +30,7 @@ waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
 
 # Compile Verilator
 $(gen_dir)/V$(DESIGN)$(debug): $(driver_dir)/$(DESIGN)-emul.cc $(driver_dir)/$(DESIGN).h \
-	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
 	$(MAKE) -C $(simif_dir) verilator$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) DRIVER=$<
 verilator: $(gen_dir)/V$(DESIGN)$(debug)
 
@@ -45,7 +42,7 @@ verilator-test: $(gen_dir)/V$(DESIGN)$(debug)
 
 # Compile VCS
 $(gen_dir)/$(DESIGN)$(debug): $(driver_dir)/$(DESIGN)-emul.cc $(driver_dir)/$(DESIGN).h \
-	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) $(gen_dir)/dramsim2_ini
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
 	$(MAKE) -C $(simif_dir) vcs$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) DRIVER=$<
 vcs: $(gen_dir)/$(DESIGN)$(debug)
 

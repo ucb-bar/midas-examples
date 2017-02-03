@@ -8,6 +8,7 @@ import java.io.File
 
 abstract class MiniTestSuite(
     platform: midas.PlatformType,
+    plsi: Boolean = false,
     debug: Boolean = false,
     latency: Int = 8,
     N: Int = 10) extends TestSuiteCommon(platform) {
@@ -43,24 +44,41 @@ abstract class MiniTestSuite(
       val replays = testType.tests sliding (N, N) map { subtests =>
         val subreplays = subtests map { t =>
           val sample = new File(outDir, s"$t.$backend.sample")
-          Future(t -> replay("vcs", Some(sample)))
+          Future(t -> runReplay("rtl", Some(sample)))
         }
         Await.result(Future.sequence(subreplays), Duration.Inf)
       }
       replays.flatten foreach { case (name, exitcode) =>
         if (isCmdAvailable("vcs")) {
-          it should s"replay $name in vcs" in { assert(exitcode == 0) }
+          it should s"replay $name with rtl" in { assert(exitcode == 0) }
         } else {
-          ignore should s"replay $name in vcs" in { }
+          ignore should s"replay $name with rtl" in { }
+        }
+      }
+    }
+    if (p(midas.EnableSnapshot) && plsi) {
+      val replays = testType.tests sliding (N, N) map { subtests =>
+        val subreplays = subtests map { t =>
+          val sample = new File(outDir, s"$t.$backend.sample")
+          Future(t -> runReplay("syn", Some(sample)))
+        }
+        Await.result(Future.sequence(subreplays), Duration.Inf)
+      }
+      replays.flatten foreach { case (name, exitcode) =>
+        if (isCmdAvailable("vcs")) {
+          it should s"replay $name with syn" in { assert(exitcode == 0) }
+        } else {
+          ignore should s"replay $name with syn" in { }
         }
       }
     }
   }
   clean
   midas.MidasCompiler(new mini.Tile(tp), genDir)
-  compileReplay(new mini.Tile(tp), "vcs")
-  // runTests("verilator", mini.SimpleTests)
-  // runTests("vcs", mini.SimpleTests)
+  strober.replay.Compiler(new mini.Tile(tp), genDir)
+  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
+  runTests("verilator", mini.SimpleTests)
+  runTests("vcs", mini.SimpleTests)
   runTests("verilator", mini.ISATests)
   runTests("verilator", mini.BmarkTests)
   runTests("vcs", mini.ISATests)

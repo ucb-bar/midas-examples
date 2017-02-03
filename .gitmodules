@@ -22,3 +22,6 @@
 [submodule "midas"]
 	path = midas
 	url = https://github.com/ucb-bar/midas.git
+[submodule "plsi"]
+	path = plsi
+	url = git@github.com:ucb-bar/plsi.git

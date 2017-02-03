@@ -9,6 +9,7 @@ import java.io.File
 
 abstract class PointerChaserTestSuite(
     platform: midas.PlatformType,
+    plsi: Boolean = false,
     debug: Boolean = true,
     seed: Long = System.currentTimeMillis,
     N: Int = 5) extends TestSuiteCommon(platform) {
@@ -43,24 +44,38 @@ abstract class PointerChaserTestSuite(
     if (p(midas.EnableSnapshot)) {
       val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
         val sample = new File(outDir, s"$target.$latency.$backend.sample")
-        Future(latency -> replay("vcs", Some(sample)))
+        Future(latency -> runReplay("rtl", Some(sample)))
       }
       Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
         if (isCmdAvailable("vcs")) {
-          it should s"replay latency: $latency in vcs" in { assert(exitcode == 0) }
+          it should s"replay latency: $latency with rtl" in { assert(exitcode == 0) }
         } else {
-          ignore should s"replay latency: $latency in vcs" in { }
+          ignore should s"replay latency: $latency with rtl" in { }
+        }
+      }
+    }
+    if (p(midas.EnableSnapshot) && plsi) {
+      val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
+        val sample = new File(outDir, s"$target.$latency.$backend.sample")
+        Future(latency -> runReplay("syn", Some(sample)))
+      }
+      Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
+        if (isCmdAvailable("vcs")) {
+          it should s"replay latency: $latency with syn" in { assert(exitcode == 0) }
+        } else {
+          ignore should s"replay latency: $latency with syn" in { }
         }
       }
     }
   }
   clean
   midas.MidasCompiler(new PointerChaser(seed)(tp), genDir)
-  compileReplay(new PointerChaser(seed)(tp), "vcs")
+  strober.replay.Compiler(new PointerChaser(seed)(tp), genDir)
+  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
   runTests("verilator")
   runTests("vcs")
   println(s"[SEED] ${seed}")
 }
 
-class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq)
+class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq, true)
 class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)

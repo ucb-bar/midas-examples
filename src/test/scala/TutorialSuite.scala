@@ -76,7 +76,7 @@ abstract class TutorialSuite[T <: Module : ClassTag](
     platform: midas.PlatformType,
     plsi: Boolean = false) extends TestSuiteCommon(platform) {
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
-  def runTest(b: String) {
+  def runTest(b: String, replayBackends: Seq[String]) {
     compile(b, true)
     val sample = Some(new File(outDir, s"$target.$b.sample"))
     behavior of s"$target in $b"
@@ -86,26 +86,24 @@ abstract class TutorialSuite[T <: Module : ClassTag](
       ignore should s"pass strober test" in { }
     }
     if (p(midas.EnableSnapshot)) {
-      if (isCmdAvailable("vcs")) {
-        it should "replay samples with rtl" in { assert(runReplay("rtl", sample) == 0) }
-      } else {
-        ignore should "replay samples with rtl" in { }
-      }
-    }
-    if (p(midas.EnableSnapshot) && plsi) {
-      if (isCmdAvailable("vcs")) {
-        it should "replay samples with syn" in { assert(runReplay("syn", sample) == 0) }
-      } else {
-        ignore should "replay samples with syn" in { }
+      replayBackends foreach { replayBackend =>
+        if (isCmdAvailable("vcs")) {
+          it should "replay samples with $replayBackend" in {
+            assert(runReplay(replayBackend, sample) == 0)
+          }
+        } else {
+          ignore should "replay samples with $replayBackend" in { }
+        }
       }
     }
   }
   clean
   midas.MidasCompiler(dutGen, genDir)
   strober.replay.Compiler(dutGen, genDir)
-  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
-  runTest("verilator")
-  runTest("vcs")
+  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
+  compileReplay(replayBackends)
+  runTest("verilator", replayBackends)
+  runTest("vcs", replayBackends)
 }
 
 class GCDZynqTest extends TutorialSuite(new GCD, Zynq, true)

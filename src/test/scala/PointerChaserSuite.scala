@@ -23,14 +23,14 @@ abstract class PointerChaserTestSuite(
   val loadmem = new File("init.hex")
   if (!loadmem.exists) assert(Seq(script.toString, "--output_file", loadmem.getAbsolutePath).! == 0)
 
-  def runTests(backend: String) {
+  def runTests(backend: String, replayBackends: Seq[String]) {
     compile(backend, debug)
-    val vcd = if (backend == "vcs") "vpd" else "vcd"
     behavior of s"$target in $backend"
+    val dump = if (backend == "vcs") "vpd" else "vcd"
     val results = (1 to N) map (math.pow(2, _).toInt) map { latency =>
-      val sample = Some(new File(outDir, s"$target.$latency.$backend.sample"))
-      val logFile = Some(new File(outDir, s"$target.$latency.$backend.out"))
-      val waveform = Some(new File(outDir, s"$target.$latency.$vcd"))
+      val sample = Some(new File(outDir, s"$target-$backend-$latency.sample"))
+      val logFile = Some(new File(outDir, s"$target-$backend-$latency.out"))
+      val waveform = Some(new File(outDir, s"$target-$backend-$latency.$dump"))
       val args = Seq(s"+latency=$latency", "+fastloadmem")
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }
@@ -42,28 +42,17 @@ abstract class PointerChaserTestSuite(
       }
     }
     if (p(midas.EnableSnapshot)) {
-      val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
-        val sample = new File(outDir, s"$target.$latency.$backend.sample")
-        Future(latency -> runReplay("rtl", Some(sample)))
-      }
-      Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay latency: $latency with rtl" in { assert(exitcode == 0) }
-        } else {
-          ignore should s"replay latency: $latency with rtl" in { }
+      replayBackends foreach { replayBackend =>
+        val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
+          val sample = new File(outDir, s"$target-$backend-$latency.sample")
+          Future(latency -> runReplay(replayBackend, Some(sample)))
         }
-      }
-    }
-    if (p(midas.EnableSnapshot) && plsi) {
-      val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
-        val sample = new File(outDir, s"$target.$latency.$backend.sample")
-        Future(latency -> runReplay("syn", Some(sample)))
-      }
-      Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay latency: $latency with syn" in { assert(exitcode == 0) }
-        } else {
-          ignore should s"replay latency: $latency with syn" in { }
+        Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
+          if (isCmdAvailable("vcs")) {
+            it should s"replay latency: $latency with $replayBackend" in { assert(exitcode == 0) }
+          } else {
+            ignore should s"replay latency: $latency with $replayBackend" in { }
+          }
         }
       }
     }
@@ -71,9 +60,10 @@ abstract class PointerChaserTestSuite(
   clean
   midas.MidasCompiler(new PointerChaser(seed)(tp), genDir)
   strober.replay.Compiler(new PointerChaser(seed)(tp), genDir)
-  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
-  runTests("verilator")
-  runTests("vcs")
+  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
+  compileReplay(replayBackends)
+  runTests("verilator", replayBackends)
+  runTests("vcs", replayBackends)
   println(s"[SEED] ${seed}")
 }
 

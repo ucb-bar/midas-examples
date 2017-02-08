@@ -15,19 +15,16 @@ class RiscSRAM extends Module {
   val fileMem = SeqMem(128, UInt(width = 32))
   val codeMem = SeqMem(128, UInt(width = 32))
 
-  val idle :: decode :: ra_read :: rb_read :: rc_write :: Nil = Enum(UInt(), 5)
-  val code_read :: code_write :: Nil = Enum(UInt(), 2)
-  val fileState = RegInit(idle)
-  val codeState = RegInit(code_write)
+  val idle :: fetch :: decode :: ra_read :: rb_read :: rc_write :: Nil = Enum(UInt(), 6)
+  val state = RegInit(idle)
 
   val add_op :: imm_op :: Nil = Enum(UInt(), 2)
   val pc       = RegInit(UInt(0, 8))
   val raData   = Reg(UInt(width=32))
   val rbData   = Reg(UInt(width=32))
 
-  val code_wen = codeState === code_write && io.isWr
-  val code = codeMem.read(pc, !code_wen)
-  when(code_wen) {
+  val code = codeMem.read(pc, !io.isWr)
+  when(io.isWr) {
     codeMem.write(io.wrAddr, io.wrData)
   }
 
@@ -40,49 +37,40 @@ class RiscSRAM extends Module {
   val rb   = Mux(rbi === UInt(0), UInt(0), rbData)
 
   io.out   := Mux(op === add_op, ra + rb, Cat(rai, rbi))
-  io.valid := fileState === rc_write && rci === UInt(255)
+  io.valid := state === rc_write && rci === UInt(255)
 
-  val file_wen = fileState === rc_write && rci =/= UInt(255)
-  val file_addr = Mux(fileState === decode, rai, rbi)
+  val file_wen = state === rc_write && rci =/= UInt(255)
+  val file_addr = Mux(state === decode, rai, rbi)
   val file = fileMem.read(file_addr, !file_wen)
   when(file_wen) {
     fileMem.write(rci, io.out)
   }
 
-  switch(codeState) {
-    is(code_write) {
-      when(io.boot) {
-        inst := code
-        codeState := code_read
-      }
-    }
-    is(code_read) {
-      // execute
-    }
-  }
-  
-  switch(fileState) {
+  switch(state) {
     is(idle) {
       when(io.boot) {
-        fileState := decode
+        state := fetch
       }
     }
+    is(fetch) {
+      pc    := pc + UInt(1)
+      inst  := code
+      state := decode
+    }
     is(decode) {
-      fileState := Mux(op === add_op, ra_read, rc_write)
+      state := Mux(op === add_op, ra_read, rc_write)
     }
     is(ra_read) {
-      raData    := file
-      fileState := rb_read
+      raData := file
+      state  := rb_read
     }
     is(rb_read) {
-      rbData    := file
-      fileState := rc_write
+      rbData := file
+      state  := rc_write
     }
     is(rc_write) {
       when(!io.valid) {
-        fileState := decode
-        pc := pc + UInt(1)
-        inst := code
+        state := fetch
       }
     }
   }

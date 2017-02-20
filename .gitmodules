@@ -18,7 +18,7 @@
 	url = git@github.com:ucb-bar/rocket-chip.git
 [submodule "midas-zynq"]
 	path = midas-zynq
-	url = git@github.com:donggyukim/midas-zynq.git
+	url = git@github.com:ucb-bar/midas-zynq.git
 [submodule "midas"]
 	path = midas
 	url = git@github.com:ucb-bar/midas.git

@@ -30,7 +30,8 @@ waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
 
 # Compile Verilator
 $(gen_dir)/V$(DESIGN)$(debug): $(driver_dir)/$(DESIGN)-emul.cc $(driver_dir)/$(DESIGN).h \
-	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) \
+	$(wildcard $(simif_dir)/emul/*.cc) $(wildcard $(simif_dir)/emul/*.h)
 	$(MAKE) -C $(simif_dir) verilator$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) DRIVER=$<
 verilator: $(gen_dir)/V$(DESIGN)$(debug)
 
@@ -42,7 +43,8 @@ verilator-test: $(gen_dir)/V$(DESIGN)$(debug)
 
 # Compile VCS
 $(gen_dir)/$(DESIGN)$(debug): $(driver_dir)/$(DESIGN)-emul.cc $(driver_dir)/$(DESIGN).h \
-	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
+	$(gen_dir)/$(shim).v $(simif_cc) $(simif_h) \
+	$(wildcard $(simif_dir)/emul/*.cc) $(wildcard $(simif_dir)/emul/*.h)
 	$(MAKE) -C $(simif_dir) vcs$(debug) DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) DRIVER=$<
 vcs: $(gen_dir)/$(DESIGN)$(debug)
 

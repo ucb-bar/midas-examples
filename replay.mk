@@ -23,8 +23,8 @@ $(verilog) $(macros): $(scala_srcs) publish
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
 	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@))"
 
-replay_h = $(simif_dir)/sample.h $(wildcard $(simif_dir)/replay/*.h)
-replay_cc = $(simif_dir)/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
+replay_h = $(simif_dir)/sample/sample.h $(wildcard $(simif_dir)/replay/*.h)
+replay_cc = $(simif_dir)/sample/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
 
 # Replay with RTL
 $(gen_dir)/$(DESIGN)-rtl: $(verilog) $(macro) $(testbench) $(replay_cc) $(replay_h)

@@ -1,0 +1,38 @@
+# The base for the Synopsys tools and the tarballs from RMgen
+SYNOPSYS_HOME := $(SYNOPSYS_ROOT)
+SYNOPSYS_RM_DIR := $(SYNOPSYS_RM_GEN_DIR)
+
+# We use VCS to simulate everything
+VCS_VERSION := $(VCS_VERSION)
+SIMULATOR = vcs
+
+# Use a new-ish Synopsys DC for synthesis
+DC_VERSION := $(DC_VERSION)
+DC_COMPILE_ARGS := -gate_clock -no_autoungroup -exact_map
+SYNTHESIS_TOOL = dc
+
+# Use a new-ish Synopsys ICC for place-and-route
+ICC_VERSION := $(ICC_VERSION)
+PAR_TOOL = icc
+
+# Use Synopsys Formality for verification
+FORMALITY_VERSION := $(FORMALITY_VERSION)
+FORMAL_TOOL=formality
+
+# Various other Synopsys tools are used as part of the process
+ICV_VERSION := $(ICV_VERSION)
+CDESIGNER_VERSION := $(CDESINGER_VERSION)
+CCOMPILER_VERSION := $(CCOMPILER_VERSION)
+
+# Target the 32nm educational process, also from Synopsys
+TECHNOLOGY = saed32
+SAED32_TARBALL_DIR := $(SAED32_TARBALL_DIR)
+#TSMC_INSTALL_DIR := $(TSMC_INSTALL_DIR)
+
+# Configurations
+CORE_CONFIG = replay
+CORE_SIM_CONFIG = default
+SOC_CONFIG = default
+MAP_CONFIG = default
+SYN_CONFIG = default
+PAR_CONFIG = default

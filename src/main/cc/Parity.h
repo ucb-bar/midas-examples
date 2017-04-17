@@ -5,8 +5,9 @@ class Parity_t: virtual simif_t
 public:
   void run() {
     uint32_t is_odd = 0;
+    set_tracelen(8);
     target_reset();
-    for (int i = 0 ; i < 10 ; i++) {
+    for (int i = 0 ; i < 64 ; i++) {
       uint32_t bit = rand_next(2);
       poke(io_in, bit);
       step(1);

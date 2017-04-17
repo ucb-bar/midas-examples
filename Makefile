@@ -19,14 +19,8 @@ sample = $(if $(SAMPLE),SAMPLE=$(SAMPLE),)
 args = $(if $(ARGS),ARGS="$(ARGS)",)
 
 # Desings
-tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
-examples := RiscSRAM PointerChaser
-mini     := Tile
-designs  := $(tutorial) $(examples) $(mini)
-
-publishLocal:
-	cd $(base_dir)/firrtl && $(SBT) $(SBT_FLAGS) publishLocal
-	cd $(base_dir)/chisel && $(SBT) $(SBT_FLAGS) publishLocal
+designs := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister \
+	Stack Risc RiscSRAM PointerChaser Tile
 
 # Tests
 verilator = $(addsuffix -verilator, $(designs))
@@ -47,15 +41,6 @@ $(vcs_test): %-vcs-test:
 	$(MAKE) -C $(base_dir) -f test.mk vcs-test PLATFORM=$(PLATFORM) DESIGN=$* \
 	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args)
 
-vcs_replay_compile = $(addsuffix -vcs-replay-compile, $(designs))
-$(vcs_replay_compile): %-vcs-replay-compile:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs PLATFORM=$(PLATFORM) DESIGN=$*
-
-vcs_replay = $(addsuffix -vcs-replay, $(designs))
-$(vcs_replay): %-vcs-replay:
-	$(MAKE) -C $(base_dir) -f replay.mk vcs-replay PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(sample) $(logfile) $(waveform)
-
 # FPGA
 $(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
 $($(PLATFORM)): %-$(PLATFORM):
@@ -64,6 +49,25 @@ $($(PLATFORM)): %-$(PLATFORM):
 fpga = $(addsuffix -fpga, $(designs))
 $(fpga): %-fpga:
 	$(MAKE) -C $(base_dir) -f fpga.mk fpga PLATFORM=$(PLATFORM) DESIGN=$* $(if $(BOARD),board=$(BOARD),)
+
+# Replays
+vcs_rtl = $(addsuffix -vcs-rtl, $(designs))
+$(vcs_rtl): %-vcs-rtl:
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-rtl PLATFORM=$(PLATFORM) DESIGN=$*
+
+replay_rtl = $(addsuffix -replay-rtl, $(designs))
+$(replay_rtl): %-replay-rtl:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-rtl PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
+
+vcs_syn = $(addsuffix -vcs-syn, $(designs))
+$(vcs_syn): %-vcs-syn:
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-syn PLATFORM=$(PLATFORM) DESIGN=$*
+
+replay_syn = $(addsuffix -replay-syn, $(designs))
+$(replay_syn): %-replay-syn:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-syn PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
 
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))
@@ -80,8 +84,6 @@ mostlyclean: $(design_mostlyclean)
 
 clean: $(design_clean)
 
-.PHONY: publishLocal
-.PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test)
-.PHONY: $(zynq) $(fpga)
-.PHONY: $(vcs_replay)
+.PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test) $($(PLATFORM)) $(fpga)
+.PHONY: $(vcs_rtl) $(replay_rtl) $(vcs_syn) $(replay_syn)
 .PHONY: $(design_mostlyclean) $(design_clean) mostlyclean clean

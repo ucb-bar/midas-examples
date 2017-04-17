@@ -7,19 +7,21 @@ import scala.sys.process.{stringSeqToProcess, ProcessLogger}
 import java.io.File
 import midas.{Zynq, Catapult}
 
-abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalatest.FlatSpec {
+abstract class TestSuiteCommon(
+    platform: midas.PlatformType,
+    plsi: Boolean) extends org.scalatest.FlatSpec {
   def target: String
   val platformName = platform.toString.toLowerCase
+  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
   lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
   lazy val outDir = new File(new File(new File("output"), platformName), target)
 
   implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
 
-  implicit val p = cde.Parameters.root((platform match {
+  implicit val p = config.Parameters.root((platform match {
     case Zynq     => new midas.ZynqConfigWithSnapshot
     case Catapult => new midas.CatapultConfigWithSnapshot
   }).toInstance)
-  // implicit val p = cde.Parameters.root((new ZynqConfigWithMemModelAndSnapshot).toInstance)
 
   def clean {
     assert(Seq("make", s"$target-clean", s"PLATFORM=$platformName").! == 0)
@@ -57,16 +59,16 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
     } else 0
   }
 
-  def compileReplay(dutGen: => Module, b: String) {
-    if (p(midas.EnableSnapshot) && isCmdAvailable(b)) {
-      strober.replay.Compiler(dutGen, genDir)
-      assert(Seq("make", s"$target-$b-replay-compile", s"PLATFORM=$platformName").! == 0)
+  def compileReplay {
+    if (p(midas.EnableSnapshot) && isCmdAvailable("vcs")) {
+      replayBackends foreach (b =>
+        assert(Seq("make", s"$target-vcs-$b", s"PLATFORM=$platformName").! == 0))
     }
   }
 
-  def replay(backend: String, sample: Option[File] = None) = {
-    if (isCmdAvailable(backend)) {
-      Seq("make", s"${target}-${backend}-replay", s"PLATFORM=$platformName",
+  def runReplay(b: String, sample: Option[File] = None) = {
+    if (isCmdAvailable("vcs")) {
+      Seq("make", s"$target-replay-$b", s"PLATFORM=$platformName",
         "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
     } else 0
   }
@@ -74,40 +76,46 @@ abstract class TestSuiteCommon(platform: midas.PlatformType) extends org.scalate
 
 abstract class TutorialSuite[T <: Module : ClassTag](
     dutGen: => T,
-    platform: midas.PlatformType) extends TestSuiteCommon(platform) {
+    platform: midas.PlatformType,
+    plsi: Boolean = false) extends TestSuiteCommon(platform, plsi) {
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
   def runTest(b: String) {
+    behavior of s"$target in $b"
     compile(b, true)
     val sample = Some(new File(outDir, s"$target.$b.sample"))
-    behavior of s"$target in $b"
     if (isCmdAvailable(b)) {
       it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
     } else {
       ignore should s"pass strober test" in { }
     }
     if (p(midas.EnableSnapshot)) {
-      if (isCmdAvailable("vcs")) {
-        it should "replay samples in vcs" in { assert(replay("vcs", sample) == 0) }
-      } else {
-        ignore should "replay samples in vcs" in { }
+      replayBackends foreach { replayBackend =>
+        if (isCmdAvailable("vcs")) {
+          it should s"replay samples with $replayBackend" in {
+            assert(runReplay(replayBackend, sample) == 0)
+          }
+        } else {
+          ignore should s"replay samples with $replayBackend" in { }
+        }
       }
     }
   }
   clean
   midas.MidasCompiler(dutGen, genDir)
-  compileReplay(dutGen, "vcs")
+  strober.replay.Compiler(dutGen, genDir)
+  compileReplay
   runTest("verilator")
   runTest("vcs")
 }
 
-class GCDZynqTest extends TutorialSuite(new GCD, Zynq)
+class GCDZynqTest extends TutorialSuite(new GCD, Zynq, true)
 class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
 class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
 class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
 class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
-class StackZynqTest extends TutorialSuite(new Stack, Zynq)
+class StackZynqTest extends TutorialSuite(new Stack, Zynq, true)
 class RiscZynqTest extends TutorialSuite(new Risc, Zynq)
-class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq, true)
 
 class GCDCatapultTest extends TutorialSuite(new GCD, Catapult)
 class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)

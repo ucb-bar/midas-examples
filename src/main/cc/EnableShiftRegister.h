@@ -4,10 +4,11 @@ class EnableShiftRegister_t: public virtual simif_t
 {
 public:
   void run() {
+    set_tracelen(8);
     target_reset();
     std::vector<uint32_t> reg(4, 0);
-    for (int i = 0 ; i < 16 ; i++) {
-      uint32_t in    = rand_next(2);
+    for (int i = 0 ; i < 64 ; i++) {
+      uint32_t in    = rand_next(16);
       uint32_t shift = rand_next(2);
       poke(io_in,    in);
       poke(io_shift, shift);

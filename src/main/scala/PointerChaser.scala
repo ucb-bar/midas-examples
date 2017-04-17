@@ -3,7 +3,7 @@ package examples
 
 import Chisel._
 import junctions._
-import cde.{Parameters, Field}
+import config.{Parameters, Field}
 
 case object MemSize extends Field[Int]
 case object NMemoryChannels extends Field[Int]
@@ -18,14 +18,14 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
                    (implicit val p: Parameters) extends Module with HasNastiParameters {
   val io = IO(new Bundle {
     val nasti = new NastiIO
-    val result = Decoupled(SInt(width = nastiXDataBits))
-    val startAddr = Flipped(Decoupled(UInt(width = nastiXAddrBits)))
+    val result = Decoupled(SInt(nastiXDataBits.W))
+    val startAddr = Flipped(Decoupled(UInt(nastiXAddrBits.W)))
   })
   
   val memoryIF = io.nasti
-  val busy = Reg(init = Bool(false))
-  val resultReg = Reg(init = SInt(0))
-  val resultValid = Reg(init = Bool(false))
+  val busy = RegInit(false.B)
+  val resultReg = RegInit(0.S)
+  val resultValid = RegInit(false.B)
   
   val startFire = io.startAddr.valid && ~busy
   val doneFire =  io.result.valid && io.result.ready
@@ -33,7 +33,7 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
   when (!resultValid && !busy) {
     busy := startFire
   }.elsewhen(doneFire) {
-    busy := Bool(false)
+    busy := false.B
   }
 
   io.startAddr.ready := !busy && !reset
@@ -47,51 +47,50 @@ class PointerChaser(seed: Long = System.currentTimeMillis)
   // Need to add an extra cycle of delay between when we learn we are on
   // the last node and when the final sum is computed. Since the address beat
   // is returned first
-  val isFinalNode = Reg(init = Bool(false))
+  val isFinalNode = RegInit(false.B)
   // next node addr == 0 -> terminal node
   when (nextAddrAvailable) {
-    isFinalNode := memoryIF.r.bits.data === UInt(0)
+    isFinalNode := memoryIF.r.bits.data === 0.U
   }
 
   when (rFire && memoryIF.r.bits.last){
     resultValid := isFinalNode
     resultReg := resultReg + memoryIF.r.bits.data.asSInt()
   }.elsewhen (doneFire) {
-    resultValid := Bool(false)
-    resultReg := SInt(0)
+    resultValid := false.B
+    resultReg := 0.S
   }
   
   val arFire = memoryIF.ar.ready && memoryIF.ar.valid
 
-  val arRegAddr = Reg(init = UInt(0))
-  val arValid = Reg(init = Bool(false))
+  val arRegAddr = RegInit(0.U)
+  val arValid = RegInit(false.B)
 
-  when (startFire | (nextAddrAvailable && memoryIF.r.bits.data != UInt(0))) {
-    arValid := Bool(true)
+  when (startFire | (nextAddrAvailable && memoryIF.r.bits.data != 0.U)) {
+    arValid := true.B
     arRegAddr := Mux(startFire, io.startAddr.bits, memoryIF.r.bits.data)
   }.elsewhen(arFire) {
-    arValid := Bool(false)
+    arValid := false.B
   }
 
   memoryIF.ar.bits := NastiWriteAddressChannel(
-    id = UInt(0),
-    len = UInt(1),
-    size = bytesToXSize(UInt(nastiXDataBits/8)),
+    id = 0.U,
+    len = 1.U,
+    size = bytesToXSize((nastiXDataBits/8).U),
     addr = arRegAddr)
   memoryIF.ar.valid := arValid
-  memoryIF.r.ready := Bool(true)
+  memoryIF.r.ready := true.B
 
   val rnd = new scala.util.Random(seed)
   memoryIF.aw.bits := NastiWriteAddressChannel(
-    id = UInt(rnd.nextInt(1 << nastiWIdBits)),
-    len = UInt(rnd.nextInt(1 << nastiXLenBits)),
-    size = UInt(rnd.nextInt(1 << nastiXSizeBits)),
-    addr = SInt(rnd.nextInt).asUInt)
-  memoryIF.aw.valid := Bool(false)
-  memoryIF.w.bits := NastiWriteDataChannel(
-    SInt(rnd.nextLong).asUInt)
-  memoryIF.w.valid := Bool(false)
-  memoryIF.b.ready := Bool(true)
+    id = rnd.nextInt(1 << nastiWIdBits).U,
+    len = rnd.nextInt(1 << nastiXLenBits).U,
+    size = rnd.nextInt(1 << nastiXSizeBits).U,
+    addr = rnd.nextInt.S.asUInt)
+  memoryIF.aw.valid := false.B
+  memoryIF.w.bits := NastiWriteDataChannel(rnd.nextLong.S.asUInt)
+  memoryIF.w.valid := false.B
+  memoryIF.b.ready := true.B
 
   //TODO: Figure out how to prevent chisel from optimizing these parameters away
   println("MemSize " + p(MemSize))

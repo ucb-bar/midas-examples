@@ -19,14 +19,8 @@ sample = $(if $(SAMPLE),SAMPLE=$(SAMPLE),)
 args = $(if $(ARGS),ARGS="$(ARGS)",)
 
 # Desings
-tutorial := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister Stack Risc
-examples := RiscSRAM PointerChaser
-mini     := Tile
-designs  := $(tutorial) $(examples) $(mini)
-
-publishLocal:
-	cd $(base_dir)/firrtl && $(SBT) $(SBT_FLAGS) publishLocal
-	cd $(base_dir)/chisel && $(SBT) $(SBT_FLAGS) publishLocal
+designs := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister \
+	Stack Risc RiscSRAM PointerChaser Tile
 
 # Tests
 verilator = $(addsuffix -verilator, $(designs))
@@ -90,8 +84,6 @@ mostlyclean: $(design_mostlyclean)
 
 clean: $(design_clean)
 
-.PHONY: publishLocal
-.PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test)
-.PHONY: $(zynq) $(fpga)
-.PHONY: $(vcs_replay)
+.PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test) $($(PLATFORM)) $(fpga)
+.PHONY: $(vcs_rtl) $(replay_rtl) $(vcs_syn) $(replay_syn)
 .PHONY: $(design_mostlyclean) $(design_clean) mostlyclean clean

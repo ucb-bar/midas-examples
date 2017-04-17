@@ -8,7 +8,7 @@ public:
   void run(uint32_t expected, uint64_t timeout) {
     app_t app;
     init_app(app);
-    set_tracelen(3);
+    set_tracelen(64);
     target_reset();
     wr(0, 0);
     for (size_t addr = 0 ; addr < app.size() ; addr++) {

@@ -2,7 +2,7 @@ package strober
 package examples
 
 import midas._
-import cde.Parameters.root
+import config.Parameters.root
 import java.io.File
 
 object StroberExamples extends App {
@@ -29,7 +29,7 @@ object StroberExamples extends App {
       MidasCompiler(dut, new File(dirPath))(midasParams)
     case "strober" =>
       MidasCompiler(dut, new File(dirPath))(
-        midasParams alter Map(midas.EnableSnapshot -> true))
+        midasParams alterPartial { case midas.EnableSnapshot => true })
     case "replay" =>
       strober.replay.Compiler(dut, new File(dirPath))
   }

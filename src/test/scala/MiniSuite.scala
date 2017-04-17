@@ -11,23 +11,23 @@ abstract class MiniTestSuite(
     plsi: Boolean = false,
     debug: Boolean = false,
     latency: Int = 8,
-    N: Int = 10) extends TestSuiteCommon(platform) {
+    N: Int = 10) extends TestSuiteCommon(platform, plsi) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
   val target = "Tile"
-  val tp = cde.Parameters.root((new mini.MiniConfig).toInstance)
+  val tp = config.Parameters.root((new mini.MiniConfig).toInstance)
 
   def runTests(backend: String, testType: mini.TestType) {
     compile(backend, debug)
-    val vcd = if (backend == "verilator") "vcd" else "vpd"
     behavior of s"${testType.toString} in $backend"
+    val dump = if (backend == "verilator") "vcd" else "vpd"
     val results = testType.tests sliding (N, N) map { subtests =>
       val subresults = subtests map { t =>
-        val sample = Some(new File(outDir, s"$t.$backend.sample"))
         val loadmem = Some(new File("hex", s"$t.hex"))
+        val sample = Some(new File(outDir, s"$t.$backend.sample"))
         val logFile = Some(new File(outDir, s"$t.$backend.out"))
-        val waveform = Some(new File(outDir, s"$t.$vcd"))
+        val waveform = Some(new File(outDir, s"$t.$backend.$dump"))
         val args = Seq(s"+latency=$latency")
         Future(t -> run(backend, debug, sample, loadmem, logFile, waveform, args))
       }
@@ -41,34 +41,20 @@ abstract class MiniTestSuite(
       }
     }
     if (p(midas.EnableSnapshot)) {
-      val replays = testType.tests sliding (N, N) map { subtests =>
-        val subreplays = subtests map { t =>
-          val sample = new File(outDir, s"$t.$backend.sample")
-          Future(t -> runReplay("rtl", Some(sample)))
+      replayBackends foreach { replayBackend =>
+        val replays = testType.tests sliding (N, N) map { subtests =>
+          val subreplays = subtests map { t =>
+            val sample = new File(outDir, s"$t.$backend.sample")
+            Future(t -> runReplay(replayBackend, Some(sample)))
+          }
+          Await.result(Future.sequence(subreplays), Duration.Inf)
         }
-        Await.result(Future.sequence(subreplays), Duration.Inf)
-      }
-      replays.flatten foreach { case (name, exitcode) =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay $name with rtl" in { assert(exitcode == 0) }
-        } else {
-          ignore should s"replay $name with rtl" in { }
-        }
-      }
-    }
-    if (p(midas.EnableSnapshot) && plsi) {
-      val replays = testType.tests sliding (N, N) map { subtests =>
-        val subreplays = subtests map { t =>
-          val sample = new File(outDir, s"$t.$backend.sample")
-          Future(t -> runReplay("syn", Some(sample)))
-        }
-        Await.result(Future.sequence(subreplays), Duration.Inf)
-      }
-      replays.flatten foreach { case (name, exitcode) =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay $name with syn" in { assert(exitcode == 0) }
-        } else {
-          ignore should s"replay $name with syn" in { }
+        replays.flatten foreach { case (name, exitcode) =>
+          if (isCmdAvailable("vcs")) {
+            it should s"replay $name with $replayBackend" in { assert(exitcode == 0) }
+          } else {
+            ignore should s"replay $name with $replayBackend" in { }
+          }
         }
       }
     }
@@ -76,7 +62,7 @@ abstract class MiniTestSuite(
   clean
   midas.MidasCompiler(new mini.Tile(tp), genDir)
   strober.replay.Compiler(new mini.Tile(tp), genDir)
-  compileReplay("rtl" +: (if (plsi) Seq("syn") else Seq()))
+  compileReplay
   runTests("verilator", mini.SimpleTests)
   runTests("vcs", mini.SimpleTests)
   runTests("verilator", mini.ISATests)
@@ -85,5 +71,5 @@ abstract class MiniTestSuite(
   runTests("vcs", mini.BmarkTests)
 }
 
-class MiniZynqTests extends MiniTestSuite(midas.Zynq)
+class MiniZynqTests extends MiniTestSuite(midas.Zynq, true)
 class MiniCatapultTests extends MiniTestSuite(midas.Catapult)

@@ -8,6 +8,7 @@ SIMULATOR = vcs
 
 # Use a new-ish Synopsys DC for synthesis
 DC_VERSION := $(DC_VERSION)
+DC_COMPILE_ARGS := -gate_clock -no_autoungroup -exact_map
 SYNTHESIS_TOOL = dc
 
 # Use a new-ish Synopsys ICC for place-and-route

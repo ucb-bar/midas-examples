@@ -4,9 +4,6 @@
 [submodule "fpga-zynq"]
 	path = fpga-zynq
 	url = git@github.com:donggyukim/fpga-zynq.git
-[submodule "midas-memory-model"]
-	path = midas-memory-model
-	url = git@github.com:ucb-bar/midas-memory-model.git
 [submodule "firrtl"]
 	path = firrtl
 	url = git@github.com:ucb-bar/firrtl.git

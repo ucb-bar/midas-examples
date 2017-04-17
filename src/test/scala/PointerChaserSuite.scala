@@ -12,18 +12,18 @@ abstract class PointerChaserTestSuite(
     plsi: Boolean = false,
     debug: Boolean = true,
     seed: Long = System.currentTimeMillis,
-    N: Int = 5) extends TestSuiteCommon(platform) {
+    N: Int = 5) extends TestSuiteCommon(platform, plsi) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
   val target = "PointerChaser"
-  val tp = cde.Parameters.root((new PointerChaserConfig).toInstance)
+  val tp = config.Parameters.root((new PointerChaserConfig).toInstance)
 
   val script = new File("scripts", "generate_memory_init.py")
   val loadmem = new File("init.hex")
   if (!loadmem.exists) assert(Seq(script.toString, "--output_file", loadmem.getAbsolutePath).! == 0)
 
-  def runTests(backend: String, replayBackends: Seq[String]) {
+  def runTests(backend: String) {
     compile(backend, debug)
     behavior of s"$target in $backend"
     val dump = if (backend == "vcs") "vpd" else "vcd"
@@ -60,12 +60,11 @@ abstract class PointerChaserTestSuite(
   clean
   midas.MidasCompiler(new PointerChaser(seed)(tp), genDir)
   strober.replay.Compiler(new PointerChaser(seed)(tp), genDir)
-  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
-  compileReplay(replayBackends)
-  runTests("verilator", replayBackends)
-  runTests("vcs", replayBackends)
+  compileReplay
+  runTests("verilator")
+  runTests("vcs")
   println(s"[SEED] ${seed}")
 }
 
-class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq, true)
+class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq)
 class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)

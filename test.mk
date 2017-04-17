@@ -14,7 +14,7 @@ LOGFILE ?=
 WAVEFORM ?=
 ARGS ?= +fastloadmem
 
-$(gen_dir)/$(shim).v: $(scala_srcs)
+$(gen_dir)/$(shim).v: $(scala_srcs) publish
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
 	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM)"
 

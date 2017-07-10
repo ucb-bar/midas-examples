@@ -5,7 +5,9 @@ class GCD_t: virtual simif_t
 public:
   void run() {
     uint32_t a = 64, b = 48, z = 16; //test vectors
+#ifdef ENABLE_SNAPSHOT
     set_tracelen(3);
+#endif
     target_reset();
     do {
       poke(io_a, a);

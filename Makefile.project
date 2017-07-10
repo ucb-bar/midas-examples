@@ -1,6 +1,6 @@
 # The base for the Synopsys tools and the tarballs from RMgen
 SYNOPSYS_HOME := $(SYNOPSYS_ROOT)
-SYNOPSYS_RM_DIR := $(SYNOPSYS_RM_GEN_DIR)
+SYNOPSYS_RM_DIR := $(SYNOPSYS_RM_DIR)
 
 # We use VCS to simulate everything
 VCS_VERSION := $(VCS_VERSION)
@@ -16,8 +16,14 @@ ICC_VERSION := $(ICC_VERSION)
 PAR_TOOL = icc
 
 # Use Synopsys Formality for verification
+FORMAL_TOOL = formality
 FORMALITY_VERSION := $(FORMALITY_VERSION)
-FORMAL_TOOL=formality
+FORMALITY_NO_VERIFY := 1
+
+# Use PrimeTime PX for power estimation
+POWER_SIGNOFF_TOOL = primetime
+PRIMETIME_POWER_VERSION := $(PRIMETIME_VERSION)
+PRIMETIME_PATH_TO_TESTBENCH := none
 
 # Various other Synopsys tools are used as part of the process
 ICV_VERSION := $(ICV_VERSION)

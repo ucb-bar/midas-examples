@@ -85,19 +85,19 @@ abstract class TutorialSuite[T <: Module : ClassTag](
     val sample = Some(new File(outDir, s"$target.$b.sample"))
     if (isCmdAvailable(b)) {
       it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
-    } else {
-      ignore should s"pass strober test" in { }
-    }
-    if (p(midas.EnableSnapshot)) {
-      replayBackends foreach { replayBackend =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay samples with $replayBackend" in {
-            assert(runReplay(replayBackend, sample) == 0)
+      if (p(midas.EnableSnapshot)) {
+        replayBackends foreach { replayBackend =>
+          if (isCmdAvailable("vcs")) {
+            it should s"replay samples with $replayBackend" in {
+              assert(runReplay(replayBackend, sample) == 0)
+            }
+          } else {
+            ignore should s"replay samples with $replayBackend" in { }
           }
-        } else {
-          ignore should s"replay samples with $replayBackend" in { }
         }
       }
+    } else {
+      ignore should s"pass strober test" in { }
     }
   }
   clean

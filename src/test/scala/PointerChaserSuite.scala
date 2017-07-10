@@ -31,7 +31,7 @@ abstract class PointerChaserTestSuite(
       val sample = Some(new File(outDir, s"$target-$backend-$latency.sample"))
       val logFile = Some(new File(outDir, s"$target-$backend-$latency.out"))
       val waveform = Some(new File(outDir, s"$target-$backend-$latency.$dump"))
-      val args = Seq(s"+latency=$latency", "+fastloadmem")
+      val args = Seq(s"+mm_MEM_LATENCY=$latency", "+fastloadmem")
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }
     Await.result(Future.sequence(results), Duration.Inf) foreach { case (latency, exitcode) =>
@@ -41,7 +41,7 @@ abstract class PointerChaserTestSuite(
         ignore should s"pass latency: $latency" in { }
       }
     }
-    if (p(midas.EnableSnapshot)) {
+    if (isCmdAvailable(backend) && p(midas.EnableSnapshot)) {
       replayBackends foreach { replayBackend =>
         val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
           val sample = new File(outDir, s"$target-$backend-$latency.sample")

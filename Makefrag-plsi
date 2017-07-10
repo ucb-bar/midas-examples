@@ -1,0 +1,47 @@
+# PLSI
+include Makefile.project
+
+CORE_GENERATOR_ADDON = $(plsi_dir)/src/addons/core-generator/$(DESIGN)
+SYN_FORMAL_ADDON = $(plsi_dir)/src/addons/formal/formality
+OBJ_TECH_DIR = $(plsi_dir)/obj/technology/$(TECHNOLOGY)
+OBJ_MAP_DIR = $(plsi_dir)/obj/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)
+OBJ_SYN_DIR = $(plsi_dir)/obj/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
+OBJ_PAR_DIR = $(plsi_dir)/obj/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)-$(PAR_CONFIG)
+TRACE_MAP_DIR = $(plsi_dir)/trace/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)
+TRACE_SYN_DIR = $(plsi_dir)/trace/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
+TRACE_PAR_DIR = $(plsi_dir)/trace/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)-$(PAR_CONFIG)
+
+-include $(OBJ_TECH_DIR)/makefrags/vars.mk
+
+plsi_files = $(addprefix $(CORE_GENERATOR_ADDON)/, vars.mk rules.mk src/tests.v)
+$(plsi_files): $(CORE_GENERATOR_ADDON)/%: $(base_dir)/src/main/plsi/%
+	mkdir -p $(dir $@)
+	cp $< $@
+
+design_files = $(addprefix $(CORE_GENERATOR_ADDON)/src/, $(DESIGN).v $(DESIGN).conf)
+$(design_files): $(CORE_GENERATOR_ADDON)/src/%: $(gen_dir)/%
+	mkdir -p $(dir $@)
+	cp $< $@
+
+technology = $(patsubst $(plsi_dir)/%,%,$(OBJ_TECH_DIR)/makefrags/vars.mk)
+signoff_syn_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_SYN_DIR))/pt-power/$(benchmark)/stamp
+signoff_par_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_PAR_DIR))/pt-power/$(benchmark)/stamp
+plsi_rules = map-verilog syn-verilog check-syn par-verilog check-par \
+	$(signoff_syn_power) $(signoff_par_power) $(technology)
+$(plsi_rules): $(plsi_files) $(design_files)
+	cd $(plsi_dir) && ./makeplsi $@ CORE_GENERATOR=$(DESIGN) CORE_DIR="$(base_dir)" \
+	PRIMETIME_PATH_TO_TESTBENCH="tests/tester/dut"
+
+map_macros = $(OBJ_MAP_DIR)/plsi-generated/$(DESIGN).macros_for_synthesis.v
+syn_verilog = $(OBJ_SYN_DIR)/synopsys-dc-workdir/results/$(DESIGN).mapped.v
+syn_match_points = $(OBJ_SYN_DIR)/synopsys-dc-workdir/reports/$(DESIGN).fmv_matched_points.rpt
+syn_svf_txt = $(OBJ_SYN_DIR)/synopsys-dc-workdir/formality_svf/svf.txt
+syn_pwr = $(OBJ_SYN_DIR)/pt-power/$(benchmark)/synopsys-pt-workdir/reports/$(DESIGN)_report_power.report
+par_pwr = $(OBJ_PAR_DIR)/pt-power/$(benchmark)/synopsys-pt-workdir/reports/$(DESIGN)_report_power.report
+
+$(map_macros): map-verilog
+$(syn_verilog): syn-verilog
+$(par_verilog): par-verilog
+$(syn_match_points) $(syn_svf_txt): check-syn
+$(syn_pwr): $(signoff_syn_power)
+$(par_pwr): $(signoff_par_power)

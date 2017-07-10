@@ -9,7 +9,7 @@ import java.io.File
 abstract class MiniTestSuite(
     platform: midas.PlatformType,
     plsi: Boolean = false,
-    debug: Boolean = false,
+    debug: Boolean = true, //false,
     latency: Int = 8,
     N: Int = 10) extends TestSuiteCommon(platform, plsi) {
   import scala.concurrent.duration._
@@ -28,7 +28,7 @@ abstract class MiniTestSuite(
         val sample = Some(new File(outDir, s"$t.$backend.sample"))
         val logFile = Some(new File(outDir, s"$t.$backend.out"))
         val waveform = Some(new File(outDir, s"$t.$backend.$dump"))
-        val args = Seq(s"+latency=$latency")
+        val args = Seq(s"+mm_MEM_LATENCY=$latency")
         Future(t -> run(backend, debug, sample, loadmem, logFile, waveform, args))
       }
       Await.result(Future.sequence(subresults), Duration.Inf)
@@ -40,7 +40,7 @@ abstract class MiniTestSuite(
         ignore should s"pass $name" in { }
       }
     }
-    if (p(midas.EnableSnapshot)) {
+    if (isCmdAvailable(backend) && p(midas.EnableSnapshot)) {
       replayBackends foreach { replayBackend =>
         val replays = testType.tests sliding (N, N) map { subtests =>
           val subreplays = subtests map { t =>

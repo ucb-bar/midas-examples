@@ -12,7 +12,7 @@ LOADMEM ?=
 SAMPLE ?=
 LOGFILE ?=
 WAVEFORM ?=
-ARGS ?= +fastloadmem
+ARGS ?= +fastloadmem +mm_MEM_LATENCY=10
 
 $(gen_dir)/$(shim).v: $(scala_srcs) publish
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
@@ -23,10 +23,10 @@ $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 
 debug = $(if $(DEBUG),-debug,)
 loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
-prefix = $(notdir $(basename $(if $(LOADMEM),$(notdir $(LOADMEM)),$(DESIGN))))
-sample = $(if $(SAMPLE),$(abspath $(SAMPLE)),$(out_dir)/$(prefix).sample)
-logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(prefix).$1.out)
-waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(prefix).$1)
+benchmark = $(notdir $(basename $(if $(LOADMEM),$(notdir $(LOADMEM)),$(DESIGN))))
+sample = $(if $(SAMPLE),$(abspath $(SAMPLE)),$(out_dir)/$(benchmark).sample)
+logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark).$1.out)
+waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1)
 
 # Compile Verilator
 $(gen_dir)/V$(DESIGN)$(debug): $(driver_dir)/$(DESIGN)-emul.cc $(driver_dir)/$(DESIGN).h \

@@ -1,10 +1,11 @@
 #include "simif.h"
 #include "endpoints/sim_mem.h"
+#include "endpoints/fpga_memory_model.h"
 
 class Tile_t: virtual simif_t
 {
 public:
-  Tile_t(int argc, char** argv): mem(this, argc, argv) {
+  Tile_t(int argc, char** argv) {
     max_cycles = 10000000L;
     std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
@@ -12,17 +13,45 @@ public:
         max_cycles = atoi(arg.c_str()+12);
       }
     }
+#ifdef NASTIWIDGET_0
+    endpoints.push_back(new sim_mem_t(this, argc, argv));
+#endif
+
+#ifdef MEMMODEL_0
+    fpga_models.push_back(new FpgaMemoryModel(
+        this,
+        // Casts are required for now since the emitted type can change...
+        AddressMap(MEMMODEL_0_R_num_registers,
+                   (const unsigned int*) MEMMODEL_0_R_addrs,
+                   (const char* const*) MEMMODEL_0_R_names,
+                   MEMMODEL_0_W_num_registers,
+                   (const unsigned int*) MEMMODEL_0_W_addrs,
+                   (const char* const*) MEMMODEL_0_W_names),
+        argc, argv, "memory_stats.csv"));
+#endif
   }
 
   void run(size_t trace_len) {
+#ifdef ENABLE_SNAPSHOT
     set_tracelen(trace_len);
-    mem.init();
+#endif
+    for (auto e: fpga_models) {
+      e->init();
+    }
+
     uint32_t tohost = 0;
     uint64_t start_time = timestamp(); 
     target_reset();
     do {
       step(trace_len, false);
-      while(!done() || !mem.done()) mem.tick();
+      bool _done;
+      do {
+        _done = done();
+        for (auto e: endpoints) {
+          _done &= e->done();
+          e->tick();
+        }
+      } while(!_done);
       tohost = peek(io_host_tohost);
     } while(tohost == 0 && cycles() <= max_cycles);
     uint64_t end_time = timestamp(); 
@@ -35,16 +64,17 @@ public:
     }
     int code = tohost >> 1;
     if (code) {
-      fprintf(stderr, "*** FAILED *** (code = %d) after %" PRIu64 " cycles\n", code, cycles());
+      fprintf(stderr, "*** FAILED *** (code = %d) after %llu cycles\n", code, (long long)cycles());
     } else if (cycles() > max_cycles) {
-      fprintf(stderr, "*** FAILED *** (timeout) after %" PRIu64 " cycles\n", cycles());
+      fprintf(stderr, "*** FAILED *** (timeout) after %llu cycles\n", (long long)cycles());
     } else {
-      fprintf(stderr, "*** PASSED *** after %" PRIu64 " cycles\n", cycles());
+      fprintf(stderr, "*** PASSED *** after %llu cycles\n", (long long)cycles());
     }
     expect(!code, NULL);
   }
 
 private:
-  sim_mem_t mem;
+  std::vector<endpoint_t*> endpoints;
+  std::vector<FpgaModel*> fpga_models;
   uint64_t max_cycles;
 };

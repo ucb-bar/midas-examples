@@ -35,7 +35,7 @@ $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
 	$(driver_dir)/$(DESIGN).h $(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
 	$(MAKE) -C $(simif_dir) $(PLATFORM) DESIGN=$(DESIGN) \
 	GEN_DIR=$(out_dir)/build OUT_DIR=$(out_dir) \
-	DRIVER=$(if $(filter-out sh.exe,$(SHELL)),"$< $(DRIVER)",$<\ $(DRIVER))
+	DRIVER="$< $(DRIVER)"
 
 $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 

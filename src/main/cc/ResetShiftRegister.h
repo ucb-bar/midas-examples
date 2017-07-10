@@ -6,7 +6,9 @@ public:
   void run() {
     std::vector<uint32_t> ins(5, 0);
     int k = 0;
+#ifdef ENABLE_SNAPSHOT
     set_tracelen(8);
+#endif
     target_reset();
     for (int i = 0 ; i < 64 ; i++) {
       uint32_t in    = rand_next(16);

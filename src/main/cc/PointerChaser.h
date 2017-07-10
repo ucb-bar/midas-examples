@@ -1,10 +1,11 @@
 #include "simif.h"
 #include "endpoints/sim_mem.h"
+#include "endpoints/fpga_memory_model.h"
 
 class PointerChaser_t: virtual simif_t
 {
 public:
-  PointerChaser_t(int argc, char** argv): mem(this, argc, argv) {
+  PointerChaser_t(int argc, char** argv) {
     max_cycles = 20000L;
     address = 64;
     result = 1176;
@@ -20,10 +21,28 @@ public:
         result = atoi(arg.c_str() + 9);
       }
     }
+#ifdef NASTIWIDGET_0
+    endpoints.push_back(new sim_mem_t(this, argc, argv));
+#endif
+
+#ifdef MEMMODEL_0
+    fpga_models.push_back(new FpgaMemoryModel(
+        this,
+        // Casts are required for now since the emitted type can change...
+        AddressMap(MEMMODEL_0_R_num_registers,
+                   (const unsigned int*) MEMMODEL_0_R_addrs,
+                   (const char* const*) MEMMODEL_0_R_names,
+                   MEMMODEL_0_W_num_registers,
+                   (const unsigned int*) MEMMODEL_0_W_addrs,
+                   (const char* const*) MEMMODEL_0_W_names),
+        argc, argv, "memory_stats.csv"));
+#endif
   }
 
   void run() {
-    mem.init();
+    for (auto e: fpga_models) {
+      e->init();
+    }
     target_reset(0);
 
     poke(io_startAddr_bits, address);
@@ -35,12 +54,20 @@ public:
     poke(io_result_ready, 1);
     do {
       step(1, false);
-      while(!done() || !mem.done()) mem.tick();
+      bool _done;
+      do {
+        _done = done();
+        for (auto e: endpoints) {
+          _done &= e->done();
+          e->tick();
+        }
+      } while(!_done);
     } while (!peek(io_result_valid) && cycles() < max_cycles);
     expect(io_result_bits, result);
   }
 private:
-  sim_mem_t mem;
+  std::vector<endpoint_t*> endpoints;
+  std::vector<FpgaModel*> fpga_models;
   uint64_t max_cycles;
   biguint_t address;
   biguint_t result; // 64 bit

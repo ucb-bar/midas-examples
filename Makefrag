@@ -12,24 +12,19 @@ vsrc_dir = $(base_dir)/midas/src/main/verilog
 plsi_dir = $(base_dir)/plsi
 
 # Scala source files
-ifneq ($(SHELL),sh.exe)
 src_path = src/main/scala
 modules = . midas riscv-mini rocket-chip chisel firrtl
 scala_srcs = $(foreach module, $(modules), \
 	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
-else
-scala_srcs = $(wildcard $(base_dir)/src/main/scala/*.scala)
-endif
 
 SBT ?= sbt
 SBT_FLAGS ?=
 
-shim := $(shell echo $(PLATFORM) | cut -c 1 | tr [:lower:] [:upper:])$(shell echo $(PLATFORM) | cut -c 2-)Shim
-
-ifneq ($(SHELL),sh.exe)
-mkdir = mkdir -p $(1)
-else
-mkdir = mkdir.exe -p $(patsubst C:/%,%,$(1))
+ifeq ($(PLATFORM),zynq)
+shim := ZynqShim
+endif
+ifeq ($(PLATFORM),catapult)
+shim := CatapultShim
 endif
 
 # Due to sbt's sad reaility

@@ -63,6 +63,19 @@ replay-syn: $(gen_dir)/$(DESIGN)-syn $(match_file)
 	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
 	+match=$(match_file) +waveform=$(call waveform,$@) 2> $(call logfile,$@)
 
+# Replay with Post-Place-and-Route (PAR)
+$(gen_dir)/$(DESIGN)-par: $(par_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk $(par_sdf)
+	$(MAKE) -C $(simif_dir) $@ DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) \
+	TARGET_VERILOG="$< $(TECHNOLOGY_VERILOG_SIMULATION_FILES)" REPLAY_BINARY=$@ \
+	VCS_FLAGS="+neg_tchk +sdfverbose -negdelay -sdf max:$(DESIGN):$(par_sdf)"
+
+vcs-par: $(gen_dir)/$(DESIGN)-par
+
+replay-par: $(gen_dir)/$(DESIGN)-par $(match_file)
+	mkdir -p $(out_dir)
+	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
+	+match=$(match_file) +waveform=$(call waveform,$@) 2> $(call logfile,$@)
+
 mostlyclean:
 	rm -rf $(gen_dir)/$(DESIGN)-rtl $(gen_dir)/$(DESIGN)-syn
 	rm -rf $(out_dir)
@@ -70,6 +83,8 @@ mostlyclean:
 clean:
 	rm -rf $(gen_dir) $(out_dir)
 
-.PHONY: vcs-rtl replay-rtl vcs-syn replay-syn
+.PHONY: vcs-rtl replay-rtl
+.PHONY: vcs-syn replay-syn
+.PHONY: vcs-par replay-par
 .PHONY: $(plsi_rules)
 .PHONY: mostlyclean clean

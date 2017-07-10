@@ -69,6 +69,15 @@ $(replay_syn): %-replay-syn:
 	$(MAKE) -C $(base_dir) -f replay.mk replay-syn PLATFORM=$(PLATFORM) DESIGN=$* \
 	$(sample) $(logfile) $(waveform)
 
+vcs_par = $(addsuffix -vcs-par, $(designs))
+$(vcs_par): %-vcs-par:
+	$(MAKE) -C $(base_dir) -f replay.mk vcs-par PLATFORM=$(PLATFORM) DESIGN=$*
+
+replay_par = $(addsuffix -replay-par, $(designs))
+$(replay_par): %-replay-par:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-par PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform)
+
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))
 $(design_mostlyclean): %-mostlyclean:
@@ -85,5 +94,5 @@ mostlyclean: $(design_mostlyclean)
 clean: $(design_clean)
 
 .PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test) $($(PLATFORM)) $(fpga)
-.PHONY: $(vcs_rtl) $(replay_rtl) $(vcs_syn) $(replay_syn)
+.PHONY: $(vcs_rtl) $(replay_rtl) $(vcs_syn) $(replay_syn) $(vcs_par) $(replay_par)
 .PHONY: $(design_mostlyclean) $(design_clean) mostlyclean clean

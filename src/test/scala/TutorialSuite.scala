@@ -12,7 +12,7 @@ abstract class TestSuiteCommon(
     plsi: Boolean) extends org.scalatest.FlatSpec {
   def target: String
   val platformName = platform.toString.toLowerCase
-  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
+  val replayBackends = "rtl" +: (if (plsi) Seq("syn"/*, TODO: "par"*/) else Seq())
   lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
   lazy val outDir = new File(new File(new File("output"), platformName), target)
 

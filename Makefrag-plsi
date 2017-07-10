@@ -34,8 +34,10 @@ $(plsi_rules): $(plsi_files) $(design_files)
 
 map_macros = $(OBJ_MAP_DIR)/plsi-generated/$(DESIGN).macros_for_synthesis.v
 syn_verilog = $(OBJ_SYN_DIR)/synopsys-dc-workdir/results/$(DESIGN).mapped.v
+par_verilog = $(OBJ_PAR_DIR)/synopsys-icc-workdir/results/$(DESIGN).output.v
 syn_match_points = $(OBJ_SYN_DIR)/synopsys-dc-workdir/reports/$(DESIGN).fmv_matched_points.rpt
 syn_svf_txt = $(OBJ_SYN_DIR)/synopsys-dc-workdir/formality_svf/svf.txt
+par_sdf = $(OBJ_PAR_DIR)/synopsys-icc-workdir/results/$(DESIGN).output.sdf
 syn_pwr = $(OBJ_SYN_DIR)/pt-power/$(benchmark)/synopsys-pt-workdir/reports/$(DESIGN)_report_power.report
 par_pwr = $(OBJ_PAR_DIR)/pt-power/$(benchmark)/synopsys-pt-workdir/reports/$(DESIGN)_report_power.report
 
@@ -43,5 +45,7 @@ $(map_macros): map-verilog
 $(syn_verilog): syn-verilog
 $(par_verilog): par-verilog
 $(syn_match_points) $(syn_svf_txt): check-syn
+$(par_sdf): $(par_verilog)
+	cd $(OBJ_PAR_DIR)/synopsys-icc-workdir && generated-scripts/write_sdf
 $(syn_pwr): $(signoff_syn_power)
 $(par_pwr): $(signoff_par_power)

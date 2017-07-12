@@ -13,8 +13,6 @@ WAVEFORM ?=
 
 sample = $(abspath $(SAMPLE))
 benchmark = $(notdir $(basename $(SAMPLE)))
-logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark)-$1.out)
-waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark)-$1.vpd)
 
 verilog = $(gen_dir)/$(DESIGN).v
 macros = $(gen_dir)/$(DESIGN).macros.v
@@ -26,6 +24,8 @@ $(verilog) $(macros): $(scala_srcs) publish
 replay_h = $(simif_dir)/sample/sample.h $(wildcard $(simif_dir)/replay/*.h)
 replay_cc = $(simif_dir)/sample/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
 
+replay_sample = $(rsrc_dir)/replay/replay-samples.py
+
 # Replay with RTL
 $(gen_dir)/$(DESIGN)-rtl: $(verilog) $(macro) $(testbench) $(replay_cc) $(replay_h)
 	$(MAKE) -C $(simif_dir) $@ DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) REPLAY_BINARY=$@
@@ -34,8 +34,7 @@ vcs-rtl: $(gen_dir)/$(DESIGN)-rtl
 
 replay-rtl: $(gen_dir)/$(DESIGN)-rtl
 	mkdir -p $(out_dir)
-	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
-	+waveform=$(call waveform,$@) 2> $(call logfile,$@)
+	$(replay_sample) --sim $< --sample $(sample) --dir $(out_dir)/$@
 
 # PLSI
 include Makefrag-plsi
@@ -60,8 +59,7 @@ vcs-syn: $(gen_dir)/$(DESIGN)-syn
 
 replay-syn: $(gen_dir)/$(DESIGN)-syn $(match_file)
 	mkdir -p $(out_dir)
-	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
-	+match=$(match_file) +waveform=$(call waveform,$@) 2> $(call logfile,$@)
+	$(replay_sample) --sim $< --match $(word 2, $^) --sample $(sample) --dir $(out_dir)/$@
 
 # Replay with Post-Place-and-Route (PAR)
 $(gen_dir)/$(DESIGN)-par: $(par_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk $(par_sdf)
@@ -73,11 +71,10 @@ vcs-par: $(gen_dir)/$(DESIGN)-par
 
 replay-par: $(gen_dir)/$(DESIGN)-par $(match_file)
 	mkdir -p $(out_dir)
-	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
-	+match=$(match_file) +waveform=$(call waveform,$@) 2> $(call logfile,$@)
+	$(replay_sample) --sim $< --match $(word 2, $^) --sample $(sample) --dir $(out_dir)/$@
 
 mostlyclean:
-	rm -rf $(gen_dir)/$(DESIGN)-rtl $(gen_dir)/$(DESIGN)-syn
+	rm -rf $(gen_dir)/$(DESIGN)-rtl $(gen_dir)/$(DESIGN)-syn $(gen_dir)/$(DESIGN)-par
 	rm -rf $(out_dir)
 
 clean:

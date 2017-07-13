@@ -2,9 +2,8 @@
 SYNOPSYS_HOME := $(SYNOPSYS_ROOT)
 SYNOPSYS_RM_DIR := $(SYNOPSYS_RM_DIR)
 
-# We use VCS to simulate everything
-VCS_VERSION := $(VCS_VERSION)
-SIMULATOR = vcs
+# No simulator for PLSI
+SIMULATOR = none
 
 # Use a new-ish Synopsys DC for synthesis
 DC_VERSION := $(DC_VERSION)
@@ -23,7 +22,6 @@ FORMALITY_NO_VERIFY := 1
 # Use PrimeTime PX for power estimation
 POWER_SIGNOFF_TOOL = primetime
 PRIMETIME_POWER_VERSION := $(PRIMETIME_VERSION)
-PRIMETIME_PATH_TO_TESTBENCH := none
 
 # Various other Synopsys tools are used as part of the process
 ICV_VERSION :=

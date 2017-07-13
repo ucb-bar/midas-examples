@@ -30,7 +30,7 @@ plsi_rules = map-verilog syn-verilog check-syn par-verilog check-par \
 	$(signoff_syn_power) $(signoff_par_power) $(technology)
 $(plsi_rules): $(plsi_files) $(design_files)
 	cd $(plsi_dir) && ./makeplsi $@ CORE_GENERATOR=$(DESIGN) CORE_DIR="$(base_dir)" \
-	PRIMETIME_PATH_TO_TESTBENCH="tests/tester/dut"
+	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)"
 
 map_macros = $(OBJ_MAP_DIR)/plsi-generated/$(DESIGN).macros_for_synthesis.v
 syn_verilog = $(OBJ_SYN_DIR)/synopsys-dc-workdir/results/$(DESIGN).mapped.v
@@ -49,3 +49,5 @@ $(par_sdf): $(par_verilog)
 	cd $(OBJ_PAR_DIR)/synopsys-icc-workdir && generated-scripts/write_sdf
 $(syn_pwr): $(signoff_syn_power)
 $(par_pwr): $(signoff_par_power)
+syn-pwr: $(syn_pwr)
+par-pwr: $(par_pwr)

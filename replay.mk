@@ -17,6 +17,7 @@ benchmark = $(notdir $(basename $(SAMPLE)))
 verilog = $(gen_dir)/$(DESIGN).v
 macros = $(gen_dir)/$(DESIGN).macros.v
 testbench = $(vsrc_dir)/replay.v
+testbench_path = replay/$(DESIGN)
 $(verilog) $(macros): $(scala_srcs) publish
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
 	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@))"
@@ -25,6 +26,7 @@ replay_h = $(simif_dir)/sample/sample.h $(wildcard $(simif_dir)/replay/*.h)
 replay_cc = $(simif_dir)/sample/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
 
 replay_sample = $(rsrc_dir)/replay/replay-samples.py
+estimate_power = scripts/estimate-power.py
 
 # Replay with RTL
 $(gen_dir)/$(DESIGN)-rtl: $(verilog) $(macro) $(testbench) $(replay_cc) $(replay_h)
@@ -60,6 +62,8 @@ vcs-syn: $(gen_dir)/$(DESIGN)-syn
 replay-syn: $(gen_dir)/$(DESIGN)-syn $(match_file)
 	mkdir -p $(out_dir)
 	$(replay_sample) --sim $< --match $(word 2, $^) --sample $(sample) --dir $(out_dir)/$@
+	$(estimate_power) --design $(DESIGN) --sample $(sample) --make syn-pwr \
+	--output-dir $(out_dir)/$@ --obj-dir $(OBJ_SYN_DIR) --trace-dir $(TRACE_SYN_DIR)
 
 # Replay with Post-Place-and-Route (PAR)
 $(gen_dir)/$(DESIGN)-par: $(par_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk $(par_sdf)
@@ -72,6 +76,8 @@ vcs-par: $(gen_dir)/$(DESIGN)-par
 replay-par: $(gen_dir)/$(DESIGN)-par $(match_file)
 	mkdir -p $(out_dir)
 	$(replay_sample) --sim $< --match $(word 2, $^) --sample $(sample) --dir $(out_dir)/$@
+	$(estimate_power) --design $(DESIGN) --sample $(sample) --make par-pwr \
+	--output-dir $(out_dir)/$@ --obj-dir $(OBJ_PAR_DIR) --trace-dir $(TRACE_PAR_DIR)
 
 mostlyclean:
 	rm -rf $(gen_dir)/$(DESIGN)-rtl $(gen_dir)/$(DESIGN)-syn $(gen_dir)/$(DESIGN)-par

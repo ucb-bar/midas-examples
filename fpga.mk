@@ -10,12 +10,14 @@ DRIVER ?=
 include Makefrag
 
 strober = $(if $(STROBER),strober,midas)
+verilog = $(gen_dir)/$(shim).v
+header = $(gen_dir)/$(DESIGN)-const.h
 
-$(gen_dir)/$(shim).v: $(scala_srcs) publish
+$(verilog) $(header): $(scala_srcs) publish
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
 	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM)"
 
-verilog: $(gen_dir)/$(shim).v
+verilog: $(verilog)
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	$(if (wildcard $(gen_dir)/$(shim).v),cp $(gen_dir)/$(DESIGN).chain $@,)
@@ -24,7 +26,7 @@ $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 ifeq ($(PLATFORM),zynq)
 export AR := arm-xilinx-linux-gnueabi-ar
 export CXX := arm-xilinx-linux-gnueabi-g++
-#export CXXFLAGS := $(CXXFLAGS) -static -O2
+# export CXXFLAGS := $(CXXFLAGS) -static -O2
 endif
 ifeq ($(PLATFORM),catapult)
 export AR := lib
@@ -32,10 +34,11 @@ export CXX := cl
 endif
 
 $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
-	$(driver_dir)/$(DESIGN).h $(gen_dir)/$(shim).v $(simif_cc) $(simif_h)
+	$(simif_cc) $(simif_h) $(header)
+	mkdir -p $(out_dir)/build
+	cp $(header) $(out_dir)/build/
 	$(MAKE) -C $(simif_dir) $(PLATFORM) DESIGN=$(DESIGN) \
-	GEN_DIR=$(out_dir)/build OUT_DIR=$(out_dir) \
-	DRIVER="$< $(DRIVER)"
+	GEN_DIR=$(out_dir)/build OUT_DIR=$(out_dir) DRIVER="$< $(DRIVER)"
 
 $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 
@@ -45,7 +48,7 @@ board     ?= zedboard
 board_dir := $(base_dir)/midas-$(PLATFORM)/$(board)
 bitstream := fpga-images-$(board)/boot.bin
 
-$(board_dir)/src/verilog/$(DESIGN)/$(shim).v: $(gen_dir)/$(shim).v
+$(board_dir)/src/verilog/$(DESIGN)/$(shim).v: $(verilog)
 	$(MAKE) -C $(board_dir) clean DESIGN=$(DESIGN)
 	mkdir -p $(dir $@)
 	cp $< $@

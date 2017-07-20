@@ -13,12 +13,12 @@
 [submodule "rocket-chip"]
 	path = rocket-chip
 	url = git@github.com:ucb-bar/rocket-chip.git
-[submodule "midas-zynq"]
-	path = midas-zynq
-	url = git@github.com:ucb-bar/midas-zynq.git
 [submodule "midas"]
 	path = midas
 	url = git@github.com:ucb-bar/midas.git
 [submodule "plsi"]
 	path = plsi
 	url = git@github.com:ucb-bar/plsi.git
+[submodule "strober-zynq"]
+	path = strober-zynq
+	url = https://github.com/strober-sim/strober-zynq.git

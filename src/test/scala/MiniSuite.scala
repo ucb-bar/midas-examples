@@ -11,6 +11,7 @@ abstract class MiniTestSuite(
     plsi: Boolean = false,
     debug: Boolean = true, //false,
     latency: Int = 8,
+    tracelen: Int = 128,
     N: Int = 10) extends TestSuiteCommon(platform, plsi) {
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
@@ -28,7 +29,7 @@ abstract class MiniTestSuite(
         val sample = Some(new File(outDir, s"$t.$backend.sample"))
         val logFile = Some(new File(outDir, s"$t.$backend.out"))
         val waveform = Some(new File(outDir, s"$t.$backend.$dump"))
-        val args = Seq(s"+mm_MEM_LATENCY=$latency")
+        val args = Seq(s"+mm_MEM_LATENCY=$latency", s"+tracelen=$tracelen")
         Future(t -> run(backend, debug, sample, loadmem, logFile, waveform, args))
       }
       Await.result(Future.sequence(subresults), Duration.Inf)
@@ -42,15 +43,10 @@ abstract class MiniTestSuite(
     }
     if (isCmdAvailable(backend) && p(midas.EnableSnapshot)) {
       replayBackends foreach { replayBackend =>
-        val replays = testType.tests sliding (N, N) map { subtests =>
-          val subreplays = subtests map { t =>
-            val sample = new File(outDir, s"$t.$backend.sample")
-            Future(t -> runReplay(replayBackend, Some(sample)))
-          }
-          Await.result(Future.sequence(subreplays), Duration.Inf)
-        }
-        replays.flatten foreach { case (name, exitcode) =>
+        testType.tests foreach { name =>
           if (isCmdAvailable("vcs")) {
+            val sample = new File(outDir, s"$name.$backend.sample")
+            val exitcode = runReplay(replayBackend, Some(sample))
             it should s"replay $name with $replayBackend" in { assert(exitcode == 0) }
           } else {
             ignore should s"replay $name with $replayBackend" in { }
@@ -60,8 +56,8 @@ abstract class MiniTestSuite(
     }
   }
   clean
-  midas.MidasCompiler(new mini.Tile(tp), genDir)
-  strober.replay.Compiler(new mini.Tile(tp), genDir)
+  midas.MidasCompiler(new mini.Tile(tp), genDir, if (plsi) Some(lib) else None)
+  strober.replay.Compiler(new mini.Tile(tp), genDir, if (plsi) Some(lib) else None)
   compileReplay
   runTests("verilator", mini.SimpleTests)
   runTests("vcs", mini.SimpleTests)

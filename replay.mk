@@ -14,13 +14,15 @@ WAVEFORM ?=
 sample = $(abspath $(SAMPLE))
 benchmark = $(notdir $(basename $(SAMPLE)))
 
+include Makefrag-plsi
+MACROLIB ?= $(technology_macro_lib)
+
 verilog = $(gen_dir)/$(DESIGN).v
 macros = $(gen_dir)/$(DESIGN).macros.v
 testbench = $(vsrc_dir)/replay.v
-testbench_path = replay/$(DESIGN)
-$(verilog) $(macros): $(scala_srcs) publish
+$(verilog) $(macros): $(scala_srcs) publish $(MACROLIB)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@))"
+	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(MACROLIB)"
 
 replay_h = $(simif_dir)/sample/sample.h $(wildcard $(simif_dir)/replay/*.h)
 replay_cc = $(simif_dir)/sample/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
@@ -38,18 +40,17 @@ replay-rtl: $(gen_dir)/$(DESIGN)-rtl
 	mkdir -p $(out_dir)
 	$(replay_sample) --sim $< --sample $(sample) --dir $(out_dir)/$@
 
-# PLSI
-include Makefrag-plsi
-
+# Find match points
 fm_match = $(rsrc_dir)/replay/fm-match.py
 fm_macro = $(rsrc_dir)/replay/fm-macro.py
 match_file = $(gen_dir)/$(DESIGN).match
 $(match_file): $(syn_match_points) $(syn_svf_txt) $(fm_match) $(fm_macro)
 	cd $(gen_dir) && \
 	$(fm_match) --match $@ --report $< --svf $(word 2, $^) && \
-	$(fm_macro) --match $@ --conf $(gen_dir)/$(DESIGN).conf \
-	--paths $(gen_dir)/$(DESIGN).macros.path \
+	$(fm_macro) --match $@ --paths $(gen_dir)/$(DESIGN).macros.path \
 	--ref $(macros) --impl $(map_macros) $(TECHNOLOGY_VERILOG_SIMULATION_FILES)
+
+match: $(match_file)
 
 # Replay with Post-Synthesis
 $(gen_dir)/$(DESIGN)-syn: $(syn_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk

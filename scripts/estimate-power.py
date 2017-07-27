@@ -49,7 +49,7 @@ for i in xrange(num):
               "%s/%s-replay-%d.vpd" % (args.trace_dir, prefix, i))
 
   """ Run PrimeTime PX """
-  cmd = ["make", "-f", "replay.mk", args.make,
+  cmd = ["make", "-f", "replay.mk", args.make, "DESIGN=%s" % args.design,
          "SAMPLE=%s/%s-replay-%d.sample" % (args.output_dir, prefix, i)]
   ps.append(Popen(cmd, stdout=open(os.devnull, 'wb')))
 

@@ -28,9 +28,11 @@ object StroberExamples extends App {
     case "midas" =>
       MidasCompiler(dut, new File(dirPath))(midasParams)
     case "strober" =>
-      MidasCompiler(dut, new File(dirPath))(
+      val lib = if (args.size > 4) Some(new File(args(4))) else None
+      MidasCompiler(dut, new File(dirPath), lib)(
         midasParams alterPartial { case midas.EnableSnapshot => true })
     case "replay" =>
-      strober.replay.Compiler(dut, new File(dirPath))
+      val lib = if (args.size > 3) Some(new File(args(3))) else None
+      strober.replay.Compiler(dut, new File(dirPath), lib)
   }
 }

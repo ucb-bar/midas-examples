@@ -5,9 +5,6 @@ class ShiftRegister_t: virtual simif_t
 public:
   void run() {
     std::vector<uint32_t> reg(4);
-#ifdef ENABLE_SNAPSHOT
-    set_tracelen(8);
-#endif
     target_reset();
     for (int i = 0 ; i < 64 ; i++) {
       uint32_t in = rand_next(2);

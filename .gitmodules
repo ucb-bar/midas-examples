@@ -22,3 +22,6 @@
 [submodule "strober-zynq"]
 	path = strober-zynq
 	url = https://github.com/strober-sim/strober-zynq.git
+[submodule "barstools"]
+	path = barstools
+	url = https://github.com/ucb-bar/barstools.git

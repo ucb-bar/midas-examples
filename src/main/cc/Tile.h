@@ -31,10 +31,7 @@ public:
 #endif
   }
 
-  void run(size_t trace_len) {
-#ifdef ENABLE_SNAPSHOT
-    set_tracelen(trace_len);
-#endif
+  void run(size_t step_size) {
     for (auto e: fpga_models) {
       e->init();
     }
@@ -43,7 +40,7 @@ public:
     uint64_t start_time = timestamp(); 
     target_reset();
     do {
-      step(trace_len, false);
+      step(step_size, false);
       bool _done;
       do {
         _done = done();

@@ -20,12 +20,7 @@ scala_srcs = $(foreach module, $(modules), \
 SBT ?= sbt
 SBT_FLAGS ?=
 
-ifeq ($(PLATFORM),zynq)
-shim := ZynqShim
-endif
-ifeq ($(PLATFORM),catapult)
-shim := CatapultShim
-endif
+shim := FPGATop
 
 # Due to sbt's sad reaility
 publish: $(shell find $(base_dir)/firrtl/src/main/scala -iname "*.scala")

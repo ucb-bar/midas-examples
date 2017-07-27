@@ -31,7 +31,7 @@ replay_sample = $(rsrc_dir)/replay/replay-samples.py
 estimate_power = scripts/estimate-power.py
 
 # Replay with RTL
-$(gen_dir)/$(DESIGN)-rtl: $(verilog) $(macro) $(testbench) $(replay_cc) $(replay_h)
+$(gen_dir)/$(DESIGN)-rtl: $(verilog) $(macros) $(testbench) $(replay_cc) $(replay_h)
 	$(MAKE) -C $(simif_dir) $@ DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) REPLAY_BINARY=$@
 
 vcs-rtl: $(gen_dir)/$(DESIGN)-rtl
@@ -53,7 +53,7 @@ $(match_file): $(syn_match_points) $(syn_svf_txt) $(fm_match) $(fm_macro)
 match: $(match_file)
 
 # Replay with Post-Synthesis
-$(gen_dir)/$(DESIGN)-syn: $(syn_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk
+$(gen_dir)/$(DESIGN)-syn: $(syn_verilog) $(test_bench) $(replay_cc) $(replay_h)
 	$(MAKE) -C $(simif_dir) $@ DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) \
 	TARGET_VERILOG="$< $(TECHNOLOGY_VERILOG_SIMULATION_FILES)" REPLAY_BINARY=$@ \
 	VCS_FLAGS="+nospecify +evalorder"
@@ -67,7 +67,7 @@ replay-syn: $(gen_dir)/$(DESIGN)-syn $(match_file)
 	--output-dir $(out_dir)/$@ --obj-dir $(OBJ_SYN_DIR) --trace-dir $(TRACE_SYN_DIR)
 
 # Replay with Post-Place-and-Route (PAR)
-$(gen_dir)/$(DESIGN)-par: $(par_verilog) $(test_bench) $(replay_cc) $(replay_h) $(OBJ_TECH_DIR)/makefrags/vars.mk $(par_sdf)
+$(gen_dir)/$(DESIGN)-par: $(par_verilog) $(test_bench) $(replay_cc) $(replay_h) $(par_sdf)
 	$(MAKE) -C $(simif_dir) $@ DESIGN=$(DESIGN) GEN_DIR=$(gen_dir) \
 	TARGET_VERILOG="$< $(TECHNOLOGY_VERILOG_SIMULATION_FILES)" REPLAY_BINARY=$@ \
 	VCS_FLAGS="+neg_tchk +sdfverbose -negdelay -sdf max:$(DESIGN):$(par_sdf)"

@@ -4,6 +4,7 @@ include Makefile.project
 CORE_GENERATOR_ADDON = $(plsi_dir)/src/addons/core-generator/$(DESIGN)
 SYN_FORMAL_ADDON = $(plsi_dir)/src/addons/formal/formality
 OBJ_TECH_DIR = $(plsi_dir)/obj/technology/$(TECHNOLOGY)
+OBJ_TOOLS_BIN_DIR = $(plsi_dir)/obj/tools/install
 OBJ_MAP_DIR = $(plsi_dir)/obj/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)
 OBJ_SYN_DIR = $(plsi_dir)/obj/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
 OBJ_PAR_DIR = $(plsi_dir)/obj/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)-$(PAR_CONFIG)
@@ -11,7 +12,15 @@ TRACE_MAP_DIR = $(plsi_dir)/trace/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(T
 TRACE_SYN_DIR = $(plsi_dir)/trace/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
 TRACE_PAR_DIR = $(plsi_dir)/trace/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)-$(PAR_CONFIG)
 
--include $(OBJ_TECH_DIR)/makefrags/vars.mk
+
+
+tool_files = $(OBJ_TOOLS_BIN_DIR)/barstools/bin/macros.MacroCompiler
+technology_make_vars = $(OBJ_TECH_DIR)/makefrags/vars.mk
+technology_macro_lib = $(OBJ_TECH_DIR)/plsi-generated/all.macro_library.json
+-include $(technology_make_vars)
+$(tool_files) $(technology_make_vars) $(technology_macro_lib): $(plsi_dir)/%:
+	cd $(plsi_dir) && ./makeplsi $* CORE_GENERATOR=counter \
+	PRIMETIME_PATH_TO_TESTBENCH="counter"
 
 design_files = $(addprefix $(CORE_GENERATOR_ADDON)/src/, $(DESIGN).v $(DESIGN).conf $(DESIGN).macros.json)
 $(design_files): $(CORE_GENERATOR_ADDON)/src/%: $(gen_dir)/%
@@ -25,7 +34,7 @@ $(core_files): $(CORE_GENERATOR_ADDON)/%: $(base_dir)/src/main/plsi/%
 
 # Skip macro compiler in plsi
 map_files = $(addprefix $(OBJ_MAP_DIR)/plsi-generated/$(DESIGN).macros_for_synthesis.,v mk)
-$(map_files): $(design_files) $(core_files)
+$(map_files): $(design_files) $(core_files) $(tool_files) $(technology_make_vars) $(technology_macro_lib)
 	mkdir -p $(dir $@)
 	rm -rf $@
 	touch $@
@@ -34,14 +43,8 @@ testbench_path = replay/$(DESIGN)
 signoff_syn_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_SYN_DIR))/pt-power/$(benchmark)/stamp
 signoff_par_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_PAR_DIR))/pt-power/$(benchmark)/stamp
 plsi_rules = map-verilog syn-verilog check-syn par-verilog check-par $(signoff_syn_power) $(signoff_par_power)
-$(plsi_rules): $(design_files) $(core_files) $(map_files)
+$(plsi_rules): $(design_files) $(core_files) $(map_files) $(tool_files)
 	cd $(plsi_dir) && ./makeplsi $@ CORE_GENERATOR=$(DESIGN) \
-	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)"
-
-technology = $(OBJ_TECH_DIR)/makefrags/vars.mk
-technology_macro_lib = $(OBJ_TECH_DIR)/plsi-generated/all.macro_library.json
-$(technology) $(technology_macro_lib): $(plsi_dir)/%:
-	cd $(plsi_dir) && ./makeplsi $* CORE_GENERATOR=counter \
 	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)"
 
 syn_verilog = $(OBJ_SYN_DIR)/synopsys-dc-workdir/results/$(DESIGN).mapped.v

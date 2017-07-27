@@ -12,9 +12,11 @@ abstract class TestSuiteCommon(
     plsi: Boolean) extends org.scalatest.FlatSpec {
   def target: String
   val platformName = platform.toString.toLowerCase
-  val replayBackends = "rtl" +: (if (plsi) Seq("syn") else Seq())
+  val replayBackends = "rtl" +: (if (plsi) Seq("syn"/*, TODO: "par"*/) else Seq())
   lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
   lazy val outDir = new File(new File(new File("output"), platformName), target)
+  val lib = new File("plsi/obj/technology/saed32/plsi-generated/all.macro_library.json")
+  if (plsi) assert(Seq("make", "-f", "replay.mk", lib.getAbsolutePath).! == 0)
 
   implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
 
@@ -69,7 +71,7 @@ abstract class TestSuiteCommon(
   def runReplay(b: String, sample: Option[File] = None) = {
     if (isCmdAvailable("vcs")) {
       Seq("make", s"$target-replay-$b", s"PLATFORM=$platformName",
-        "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
+          "SAMPLE=%s".format(sample map (_.toString) getOrElse "")).!
     } else 0
   }
 }
@@ -77,51 +79,55 @@ abstract class TestSuiteCommon(
 abstract class TutorialSuite[T <: Module : ClassTag](
     dutGen: => T,
     platform: midas.PlatformType,
+    tracelen: Int = 8,
     plsi: Boolean = false) extends TestSuiteCommon(platform, plsi) {
   val target = implicitly[ClassTag[T]].runtimeClass.getSimpleName
+  val args = Seq(s"+tracelen=$tracelen")
   def runTest(b: String) {
     behavior of s"$target in $b"
     compile(b, true)
     val sample = Some(new File(outDir, s"$target.$b.sample"))
     if (isCmdAvailable(b)) {
-      it should s"pass strober test" in { assert(run(b, true, sample) == 0) }
+      it should s"pass strober test" in {
+        assert(run(b, true, sample, args=args) == 0)
+      }
+      if (p(midas.EnableSnapshot)) {
+        replayBackends foreach { replayBackend =>
+          if (isCmdAvailable("vcs")) {
+            it should s"replay samples with $replayBackend" in {
+              assert(runReplay(replayBackend, sample) == 0)
+            }
+          } else {
+            ignore should s"replay samples with $replayBackend" in { }
+          }
+        }
+      }
     } else {
       ignore should s"pass strober test" in { }
     }
-    if (p(midas.EnableSnapshot)) {
-      replayBackends foreach { replayBackend =>
-        if (isCmdAvailable("vcs")) {
-          it should s"replay samples with $replayBackend" in {
-            assert(runReplay(replayBackend, sample) == 0)
-          }
-        } else {
-          ignore should s"replay samples with $replayBackend" in { }
-        }
-      }
-    }
   }
   clean
-  midas.MidasCompiler(dutGen, genDir)
-  strober.replay.Compiler(dutGen, genDir)
+  midas.MidasCompiler(dutGen, genDir, if (plsi) Some(lib) else None)
+  strober.replay.Compiler(dutGen, genDir, if (plsi) Some(lib) else None)
   compileReplay
   runTest("verilator")
   runTest("vcs")
 }
 
-class GCDZynqTest extends TutorialSuite(new GCD, Zynq, true)
+class GCDZynqTest extends TutorialSuite(new GCD, Zynq, 3, true)
 class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
 class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
 class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
 class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
-class StackZynqTest extends TutorialSuite(new Stack, Zynq, true)
-class RiscZynqTest extends TutorialSuite(new Risc, Zynq)
-class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq, true)
+class StackZynqTest extends TutorialSuite(new Stack, Zynq, 8, true)
+class RiscZynqTest extends TutorialSuite(new Risc, Zynq, 64)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq, 64, true)
 
-class GCDCatapultTest extends TutorialSuite(new GCD, Catapult)
+class GCDCatapultTest extends TutorialSuite(new GCD, Catapult, 3)
 class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)
 class ShiftRegisterCatapultTest extends TutorialSuite(new ShiftRegister, Catapult)
 class ResetShiftRegisterCatapultTest extends TutorialSuite(new ResetShiftRegister, Catapult)
 class EnableShiftRegisterCatapultTest extends TutorialSuite(new EnableShiftRegister, Catapult)
 class StackCatapultTest extends TutorialSuite(new Stack, Catapult)
-class RiscCatapultTest extends TutorialSuite(new Risc, Catapult)
-class RiscSRAMCatapultTest extends TutorialSuite(new RiscSRAM, Catapult)
+class RiscCatapultTest extends TutorialSuite(new Risc, Catapult, 64)
+class RiscSRAMCatapultTest extends TutorialSuite(new RiscSRAM, Catapult, 64)

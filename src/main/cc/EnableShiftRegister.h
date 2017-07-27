@@ -4,7 +4,6 @@ class EnableShiftRegister_t: public virtual simif_t
 {
 public:
   void run() {
-    set_tracelen(8);
     target_reset();
     std::vector<uint32_t> reg(4, 0);
     for (int i = 0 ; i < 64 ; i++) {

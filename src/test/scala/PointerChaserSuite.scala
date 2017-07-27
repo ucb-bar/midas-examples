@@ -11,6 +11,7 @@ abstract class PointerChaserTestSuite(
     platform: midas.PlatformType,
     plsi: Boolean = false,
     debug: Boolean = true,
+    tracelen: Int = 128,
     seed: Long = System.currentTimeMillis,
     N: Int = 5) extends TestSuiteCommon(platform, plsi) {
   import scala.concurrent.duration._
@@ -31,7 +32,7 @@ abstract class PointerChaserTestSuite(
       val sample = Some(new File(outDir, s"$target-$backend-$latency.sample"))
       val logFile = Some(new File(outDir, s"$target-$backend-$latency.out"))
       val waveform = Some(new File(outDir, s"$target-$backend-$latency.$dump"))
-      val args = Seq(s"+latency=$latency", "+fastloadmem")
+      val args = Seq(s"+mm_MEM_LATENCY=$latency", "+fastloadmem", s"+tracelen=$tracelen")
       Future(latency -> run(backend, debug, sample, Some(loadmem), logFile, waveform, args))
     }
     Await.result(Future.sequence(results), Duration.Inf) foreach { case (latency, exitcode) =>
@@ -41,14 +42,12 @@ abstract class PointerChaserTestSuite(
         ignore should s"pass latency: $latency" in { }
       }
     }
-    if (p(midas.EnableSnapshot)) {
+    if (isCmdAvailable(backend) && p(midas.EnableSnapshot)) {
       replayBackends foreach { replayBackend =>
-        val replays = (1 to N) map (math.pow(2, _).toInt) map { latency =>
-          val sample = new File(outDir, s"$target-$backend-$latency.sample")
-          Future(latency -> runReplay(replayBackend, Some(sample)))
-        }
-        Await.result(Future.sequence(replays), Duration.Inf) foreach { case (latency, exitcode) =>
+        (1 to N) map (math.pow(2, _).toInt) foreach { latency =>
           if (isCmdAvailable("vcs")) {
+            val sample = new File(outDir, s"$target-$backend-$latency.sample")
+            val exitcode = runReplay(replayBackend, Some(sample))
             it should s"replay latency: $latency with $replayBackend" in { assert(exitcode == 0) }
           } else {
             ignore should s"replay latency: $latency with $replayBackend" in { }
@@ -58,8 +57,8 @@ abstract class PointerChaserTestSuite(
     }
   }
   clean
-  midas.MidasCompiler(new PointerChaser(seed)(tp), genDir)
-  strober.replay.Compiler(new PointerChaser(seed)(tp), genDir)
+  midas.MidasCompiler(new PointerChaser(seed)(tp), genDir, if (plsi) Some(lib) else None)
+  strober.replay.Compiler(new PointerChaser(seed)(tp), genDir, if (plsi) Some(lib) else None)
   compileReplay
   runTests("verilator")
   runTests("vcs")

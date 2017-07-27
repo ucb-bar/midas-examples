@@ -8,7 +8,6 @@ public:
   void run() {
     std::stack<uint32_t> stack;
     uint32_t nextDataOut = 0;
-    set_tracelen(8);
     target_reset();
     for (int i = 0 ; i < 64 ; i++) {
       uint32_t enable = rand_next(2);

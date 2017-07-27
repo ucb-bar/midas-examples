@@ -15,14 +15,14 @@ sample = $(abspath $(SAMPLE))
 benchmark = $(notdir $(basename $(SAMPLE)))
 
 include Makefrag-plsi
-MACROLIB ?= $(technology_macro_lib)
+MACRO_LIB ?= $(technology_macro_lib)
 
 verilog = $(gen_dir)/$(DESIGN).v
 macros = $(gen_dir)/$(DESIGN).macros.v
 testbench = $(vsrc_dir)/replay.v
-$(verilog) $(macros): $(scala_srcs) publish $(MACROLIB)
+$(verilog) $(macros): $(scala_srcs) publish $(MACRO_LIB)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(MACROLIB)"
+	"run replay $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(MACRO_LIB)"
 
 replay_h = $(simif_dir)/sample/sample.h $(wildcard $(simif_dir)/replay/*.h)
 replay_cc = $(simif_dir)/sample/sample.cc $(wildcard $(simif_dir)/replay/*.cc)
@@ -48,7 +48,7 @@ $(match_file): $(syn_match_points) $(syn_svf_txt) $(fm_match) $(fm_macro)
 	cd $(gen_dir) && \
 	$(fm_match) --match $@ --report $< --svf $(word 2, $^) && \
 	$(fm_macro) --match $@ --paths $(gen_dir)/$(DESIGN).macros.path \
-	--ref $(macros) --impl $(map_macros) $(TECHNOLOGY_VERILOG_SIMULATION_FILES)
+	--ref $(macros) --impl $(TECHNOLOGY_VERILOG_SIMULATION_FILES)
 
 match: $(match_file)
 

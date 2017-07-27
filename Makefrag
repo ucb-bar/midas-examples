@@ -13,7 +13,7 @@ plsi_dir = $(base_dir)/plsi
 
 # Scala source files
 src_path = src/main/scala
-modules = . midas riscv-mini rocket-chip chisel firrtl
+modules = . midas barstools/macros riscv-mini rocket-chip chisel firrtl
 scala_srcs = $(foreach module, $(modules), \
 	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
 
@@ -23,6 +23,6 @@ SBT_FLAGS ?=
 shim := FPGATop
 
 # Due to sbt's sad reaility
-publish: $(shell find $(base_dir)/firrtl/src/main/scala -iname "*.scala")
+publish: $(shell find $(base_dir)/firrtl/src/main/scala -name "*.scala")
 	cd firrtl && $(SBT) $(SBT_FLAGS) publishLocal
 	touch $@

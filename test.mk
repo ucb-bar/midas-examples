@@ -22,11 +22,11 @@ logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark).$1.out)
 waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1)
 
 include Makefrag-plsi
-MACROLIB ?= $(technology_macro_lib)
+MACRO_LIB ?= $(technology_macro_lib)
 
-$(gen_dir)/$(shim).v: $(scala_srcs) publish $(MACROLIB)
+$(gen_dir)/$(shim).v: $(scala_srcs) publish $(MACRO_LIB)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACROLIB)"
+	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACRO_LIB)"
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@

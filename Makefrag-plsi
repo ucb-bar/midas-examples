@@ -12,8 +12,6 @@ TRACE_MAP_DIR = $(plsi_dir)/trace/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(T
 TRACE_SYN_DIR = $(plsi_dir)/trace/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
 TRACE_PAR_DIR = $(plsi_dir)/trace/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)-$(PAR_CONFIG)
 
-
-
 tool_files = $(OBJ_TOOLS_BIN_DIR)/barstools/bin/macros.MacroCompiler
 technology_make_vars = $(OBJ_TECH_DIR)/makefrags/vars.mk
 technology_macro_lib = $(OBJ_TECH_DIR)/plsi-generated/all.macro_library.json
@@ -27,7 +25,7 @@ $(design_files): $(CORE_GENERATOR_ADDON)/src/%: $(gen_dir)/%
 	mkdir -p $(dir $@)
 	cp $< $@
 
-core_files = $(addprefix $(CORE_GENERATOR_ADDON)/, vars.mk rules.mk src/tests.v)
+core_files = $(addprefix $(CORE_GENERATOR_ADDON)/, vars.mk rules.mk src/replay.v)
 $(core_files): $(CORE_GENERATOR_ADDON)/%: $(base_dir)/src/main/plsi/%
 	mkdir -p $(dir $@)
 	cp $< $@

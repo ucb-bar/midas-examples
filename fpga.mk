@@ -9,15 +9,15 @@ DRIVER ?=
 
 include Makefrag
 include Makefrag-plsi
-MACROLIB ?= $(technology_macro_lib)
+MACRO_LIB ?= $(technology_macro_lib)
 
 strober = $(if $(STROBER),strober,midas)
 verilog = $(gen_dir)/$(shim).v
 header = $(gen_dir)/$(DESIGN)-const.h
 
-$(verilog) $(header): $(scala_srcs) publish $(MACROLIB)
+$(verilog) $(header): $(scala_srcs) publish $(MACRO_LIB)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACROLIB)"
+	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACRO_LIB)"
 
 verilog: $(verilog)
 

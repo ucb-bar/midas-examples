@@ -8,7 +8,7 @@ LOGFILE ?=
 WAVEFORM ?=
 BOARD ?=
 SAMPLE ?=
-MACROLIB ?=
+MACRO_LIB ?=
 ARGS ?=
 DRIVER ?=
 
@@ -18,7 +18,7 @@ logfile = $(if $(LOGFILE),LOGFILE=$(LOGFILE),)
 waveform = $(if $(WAVEFORM),WAVEFORM=$(WAVEFORM),)
 sample = $(if $(SAMPLE),SAMPLE=$(SAMPLE),)
 args = $(if $(ARGS),ARGS="$(ARGS)",)
-macrolib = $(if $(MACROLIB),MACROLIB=$(MACROLIB),)
+macrolib = $(if $(MACRO_LIB),MACRO_LIB=$(MACRO_LIB),)
 board = $(if $(BOARD),BOARD=$(BOARD),)
 
 # Desings

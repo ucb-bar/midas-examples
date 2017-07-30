@@ -42,31 +42,26 @@ if not os.path.exists(args.output_dir):
 if not os.path.exists(args.trace_dir):
   os.makedirs(args.trace_dir)
 
-ps = list()
-for i in xrange(num):
-  """ Copy vpd """
-  shutil.copy("%s/%s-replay-%d.vpd" % (args.output_dir, prefix, i),
-              "%s/%s-replay-%d.vpd" % (args.trace_dir, prefix, i))
+ids = range(num)
+for k in xrange(0, num, 10):
+  ps = list()
 
-  """ Run PrimeTime PX """
-  cmd = ["make", "-f", "replay.mk", args.make, "DESIGN=%s" % args.design,
-         "SAMPLE=%s/%s-replay-%d.sample" % (args.output_dir, prefix, i)]
-  ps.append(Popen(cmd, stdout=open(os.devnull, 'wb')))
+  for i in ids[k:k+10]:
+    """ Copy vpd """
+    shutil.copy("%s/%s-replay-%d.vpd" % (args.output_dir, prefix, i),
+               "%s/%s-replay-%d.vpd" % (args.trace_dir, prefix, i))
 
-while any(p.poll() == None for p in ps):
-  pass
+    """ Run PrimeTime PX """
+    cmd = ["make", "-f", "replay.mk", args.make, "DESIGN=%s" % args.design,
+           "SAMPLE=%s/%s-replay-%d.sample" % (args.output_dir, prefix, i)]
+    ps.append(Popen(cmd, stdout=open(os.devnull, 'wb')))
 
-assert all(p.poll() == 0 for p in ps)
+  while any(p.poll() == None for p in ps):
+    pass
+
+  assert all(p.poll() == 0 for p in ps)
 
 """ Read report file """
-pwr_regex = re.compile(r"""
-  \s*([\w_]*(?:\s*\([\w_]*\))?)\s*                       # Module name
-  (([-\+]?[0-9]*\.?[0-9]+(?:[eE][-\+]?[0-9]+)?)|N/A)\s+  # Int Power
-  (([-\+]?[0-9]*\.?[0-9]+(?:[eE][-\+]?[0-9]+)?)|N/A)\s+  # Switch Power
-  (([-\+]?[0-9]*\.?[0-9]+(?:[eE][-\+]?[0-9]+)?)|N/A)\s+  # Leakage Power
-  (([-\+]?[0-9]*\.?[0-9]+(?:[eE][-\+]?[0-9]+)?)|N/A)\s+  # Total Power
-  (([0-9]+\.[0-9]+)|N/A)                                 # Percent
-  """, re.VERBOSE)
 modules = list()
 sample_pwr = dict()
 
@@ -76,24 +71,21 @@ for i in xrange(num):
   with open(report_filename) as f:
     found = False
     for line in f:
+      tokens = line.split()
       if not found:
-        tokens = line.split(" ")
         found = len(tokens) > 0 and tokens[0] == 'Hierarchy'
-      else:
-        pwr_matched = pwr_regex.search(line)
-        if pwr_matched:
-          module     = pwr_matched.group(1)
-          int_pwr    = pwr_matched.group(2)
-          switch_pwr = pwr_matched.group(3)
-          leak_pwr   = pwr_matched.group(4)
-          total_pwr  = pwr_matched.group(5)
-          percent    = pwr_matched.group(6)
-          # print module, int_pwr, switch_pwr, leak_pwr, total_pwr, percent
-          if not 'clk_gate' in module:
-            if not module in sample_pwr:
-              modules.append(module)
-              sample_pwr[module] = list()
-            sample_pwr[module].append('0.0' if total_pwr == 'N/A' else total_pwr)
+      elif found and len(tokens) >= 6:
+        module = ' '.join(tokens[:2]) if len(tokens) > 6 else tokens[0]
+        int_pwr = tokens[-5]
+        switch_pwr = tokens[-4]
+        leak_pwr = tokens[-3]
+        total_pwr = tokens[-2]
+        percent = tokens[-1]
+        if not 'clk_gate' in module:
+          if not module in sample_pwr:
+            modules.append(module)
+            sample_pwr[module] = list()
+          sample_pwr[module].append('0.0' if total_pwr == 'N/A' else total_pwr)
 
 """ Dump power """
 csv_filename = "%s/%s-pwr.csv" % (args.output_dir, prefix)
@@ -105,7 +97,7 @@ with open(csv_filename, "w") as f:
    for m in modules:
      arr = np.array([1000.0 * float(x) for x in sample_pwr[m]])
      avg = np.mean(arr)
-     var = np.sum(np.power(arr - avg, 2)) / (num - 1) # sample variance
-     _95 = 1.96 * var / math.sqrt(num)
-     _99 = 2.576 * var / math.sqrt(num)
+     var = np.sum(np.power(arr - avg, 2)) / (num - 1) if num > 1 else 0 # sample variance
+     _95 = 1.96 * math.sqrt(var / num)
+     _99 = 2.576 * math.sqrt(var / num)
      writer.writerow([m] + arr.tolist() + [avg, _95, _99])

@@ -3,7 +3,9 @@ SYNOPSYS_HOME := $(SYNOPSYS_ROOT)
 SYNOPSYS_RM_DIR := $(SYNOPSYS_RM_DIR)
 
 # No simulator for PLSI
-SIMULATOR = none
+SIMULATOR := none
+# No mapping tool for PLSI
+MAP_TOOL := none
 
 # Use a new-ish Synopsys DC for synthesis
 DC_VERSION := $(DC_VERSION)

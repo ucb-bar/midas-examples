@@ -14,7 +14,7 @@ include Makefrag-plsi
 strober = $(if $(STROBER),strober,midas)
 verilog = $(gen_dir)/$(shim).v
 header = $(gen_dir)/$(DESIGN)-const.h
-macro_lib = $(if $(macro_lib),$(technology_macro_lib),)
+macro_lib = $(if $(MACRO_LIB),$(technology_macro_lib),)
 
 $(verilog) $(header): $(scala_srcs) publish $(macro_lib)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
@@ -48,7 +48,7 @@ $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 ifeq ($(PLATFORM),zynq)
 # Generate bitstream
 board     ?= zedboard
-board_dir := $(base_dir)/strober-$(PLATFORM)/$(board)
+board_dir := $(base_dir)/midas-$(PLATFORM)/$(board)
 bitstream := fpga-images-$(board)/boot.bin
 
 $(board_dir)/src/verilog/$(DESIGN)/$(shim).v: $(verilog)

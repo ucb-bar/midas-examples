@@ -5,19 +5,20 @@
 DESIGN ?= Tile
 PLATFORM ?= zynq
 STROBER ?= 1
+MACRO_LIB ?=
 DRIVER ?=
 
 include Makefrag
 include Makefrag-plsi
-MACRO_LIB ?= $(technology_macro_lib)
 
 strober = $(if $(STROBER),strober,midas)
 verilog = $(gen_dir)/$(shim).v
 header = $(gen_dir)/$(DESIGN)-const.h
+macro_lib = $(if $(macro_lib),$(technology_macro_lib),)
 
-$(verilog) $(header): $(scala_srcs) publish $(MACRO_LIB)
+$(verilog) $(header): $(scala_srcs) publish $(macro_lib)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACRO_LIB)"
+	"run $(strober) $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(macro_lib)"
 
 verilog: $(verilog)
 

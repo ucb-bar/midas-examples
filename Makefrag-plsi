@@ -33,7 +33,7 @@ signoff_par_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_PAR_DIR))/pt-power/$(benchm
 plsi_rules = map-verilog syn-verilog check-syn par-verilog check-par $(signoff_syn_power) $(signoff_par_power)
 $(plsi_rules): $(design_files) $(core_files)
 	cd $(plsi_dir) && ./makeplsi $@ CORE_GENERATOR=$(DESIGN) \
-	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)"
+	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)" PRIMETIME_RTL_TRACE=$(PRIMETIME_RTL_TRACE)
 
 syn_verilog = $(OBJ_SYN_DIR)/synopsys-dc-workdir/results/$(DESIGN).mapped.v
 par_verilog = $(OBJ_PAR_DIR)/synopsys-icc-workdir/results/$(DESIGN).output.v

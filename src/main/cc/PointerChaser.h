@@ -7,18 +7,32 @@ class PointerChaser_t: virtual simif_t
 public:
   PointerChaser_t(int argc, char** argv) {
     max_cycles = 20000L;
-    address = 64;
-    result = 1176;
+#ifndef _WIN32
+    mpz_inits(address, result, NULL);
+    mpz_set_ui(address, 64L);
+    mpz_set_ui(result, 1176L);
+#else
+    address = 64L;
+    result = 1176L;
+#endif
     std::vector<std::string> args(argv + 1, argv + argc);
     for (auto &arg: args) {
       if (arg.find("+max-cycles=") == 0) {
         max_cycles = atoi(arg.c_str()+12);
       }
       if (arg.find("+address=") == 0) {
-        address = atoi(arg.c_str() + 9);
+#ifndef _WIN32
+        mpz_set_ui(address, atoll(arg.c_str() + 9));
+#else
+        address = atoll(arg.c_str() + 9);
+#endif
       }
       if (arg.find("+result=") == 0) {
+#ifndef _WIN32
+        mpz_set_ui(result, atoll(arg.c_str() + 9));
+#else
         result = atoi(arg.c_str() + 9);
+#endif
       }
     }
 #ifdef NASTIWIDGET_0

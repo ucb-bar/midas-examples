@@ -8,9 +8,9 @@ LOGFILE ?=
 WAVEFORM ?=
 BOARD ?=
 SAMPLE ?=
-MACRO_LIB ?=
 ARGS ?=
 DRIVER ?=
+MACRO_LIB ?= 1
 
 debug = $(if $(DEBUG),DEBUG=$(DEBUG),)
 loadmem = $(if $(LOADMEM),LOADMEM=$(LOADMEM),)
@@ -18,7 +18,6 @@ logfile = $(if $(LOGFILE),LOGFILE=$(LOGFILE),)
 waveform = $(if $(WAVEFORM),WAVEFORM=$(WAVEFORM),)
 sample = $(if $(SAMPLE),SAMPLE=$(SAMPLE),)
 args = $(if $(ARGS),ARGS="$(ARGS)",)
-macrolib = $(if $(MACRO_LIB),MACRO_LIB=$(MACRO_LIB),)
 board = $(if $(BOARD),BOARD=$(BOARD),)
 
 # Desings
@@ -29,54 +28,59 @@ designs := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister \
 verilator = $(addsuffix -verilator, $(designs))
 $(verilator): %-verilator:
 	$(MAKE) -C $(base_dir) -f test.mk verilator PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(debug) $(macrolib)
+	$(debug) MACRO_LIB=$(MACRO_LIB)
 
 verilator_test = $(addsuffix -verilator-test, $(designs))
 $(verilator_test): %-verilator-test:
 	$(MAKE) -C $(base_dir) -f test.mk verilator-test PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args) $(macrolib)
+	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args) MACRO_LIB=$(MACRO_LIB)
 
 vcs = $(addsuffix -vcs, $(designs))
 $(vcs): %-vcs:
 	$(MAKE) -C $(base_dir) -f test.mk vcs PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(debug) $(macrolib)
+	$(debug) MACRO_LIB=$(MACRO_LIB)
 
 vcs_test = $(addsuffix -vcs-test, $(designs))
 $(vcs_test): %-vcs-test:
 	$(MAKE) -C $(base_dir) -f test.mk vcs-test PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args) $(macrolib)
+	$(debug) $(loadmem) $(logfile) $(waveform) $(sample) $(args) MACRO_LIB=$(MACRO_LIB)
 
 # FPGA
 $(PLATFORM) = $(addsuffix -$(PLATFORM), $(designs))
 $($(PLATFORM)): %-$(PLATFORM):
 	$(MAKE) -C $(base_dir) -f fpga.mk $(PLATFORM) PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(board) $(macrolib) DRIVER=$(DRIVER) 
+	$(board) MACRO_LIB=$(MACRO_LIB) DRIVER=$(DRIVER) 
 
 fpga = $(addsuffix -fpga, $(designs))
 $(fpga): %-fpga:
 	$(MAKE) -C $(base_dir) -f fpga.mk fpga PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(board) $(macrolib)
+	$(board) MACRO_LIB=$(MACRO_LIB)
 
 # Replays
 vcs_rtl = $(addsuffix -vcs-rtl, $(designs))
 $(vcs_rtl): %-vcs-rtl:
 	$(MAKE) -C $(base_dir) -f replay.mk vcs-rtl PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(macrolib)
+	MACRO_LIB=$(MACRO_LIB)
 
 replay_rtl = $(addsuffix -replay-rtl, $(designs))
 $(replay_rtl): %-replay-rtl:
 	$(MAKE) -C $(base_dir) -f replay.mk replay-rtl PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(sample) $(logfile) $(waveform) $(macrolib)
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB)
+
+replay_rtl_pwr = $(addsuffix -replay-rtl-pwr, $(designs))
+$(replay_rtl_pwr): %-replay-rtl-pwr:
+	$(MAKE) -C $(base_dir) -f replay.mk replay-rtl-pwr PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB)
 
 vcs_syn = $(addsuffix -vcs-syn, $(designs))
 $(vcs_syn): %-vcs-syn:
 	$(MAKE) -C $(base_dir) -f replay.mk vcs-syn PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(macrolib)
+	MACRO_LIB=$(MACRO_LIB)
 
 replay_syn = $(addsuffix -replay-syn, $(designs))
 $(replay_syn): %-replay-syn:
 	$(MAKE) -C $(base_dir) -f replay.mk replay-syn PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(sample) $(logfile) $(waveform) $(macrolib)
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB)
 
 vcs_par = $(addsuffix -vcs-par, $(designs))
 $(vcs_par): %-vcs-par:
@@ -85,7 +89,17 @@ $(vcs_par): %-vcs-par:
 replay_par = $(addsuffix -replay-par, $(designs))
 $(replay_par): %-replay-par:
 	$(MAKE) -C $(base_dir) -f replay.mk replay-par PLATFORM=$(PLATFORM) DESIGN=$* \
-	$(sample) $(logfile) $(waveform) $(macrolib)
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB)
+
+syn_pwr = $(addsuffix -syn-pwr, $(designs))
+$(syn_pwr): %-syn-pwr:
+	$(MAKE) -C $(base_dir) -f replay.mk syn-pwr PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB) PRIMETIME_RTL_TRACE=$(PRIMETIME_RTL_TRACE)
+
+par_pwr = $(addsuffix -par-pwr, $(designs))
+$(par_pwr): %-par-pwr:
+	$(MAKE) -C $(base_dir) -f replay.mk par-pwr PLATFORM=$(PLATFORM) DESIGN=$* \
+	$(sample) $(logfile) $(waveform) MACRO_LIB=$(MACRO_LIB) PRIMETIME_RTL_TRACE=$(PRIMETIME_RTL_TRACE)
 
 # Clean
 design_mostlyclean = $(addsuffix -mostlyclean, $(designs))

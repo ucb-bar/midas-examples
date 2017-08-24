@@ -12,6 +12,7 @@ LOADMEM ?=
 SAMPLE ?=
 LOGFILE ?=
 WAVEFORM ?=
+MACRO_LIB ?= 1
 ARGS ?= +fastloadmem +mm_MEM_LATENCY=10
 
 debug = $(if $(DEBUG),-debug,)
@@ -22,11 +23,11 @@ logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark).$1.out)
 waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1)
 
 include Makefrag-plsi
-MACRO_LIB ?= $(technology_macro_lib)
+macro_lib = $(if $(MACRO_LIB),$(technology_macro_lib),)
 
-$(gen_dir)/$(shim).v: $(scala_srcs) publish $(MACRO_LIB)
+$(gen_dir)/$(shim).v: $(scala_srcs) publish $(macro_lib)
 	cd $(base_dir) && $(SBT) $(SBT_FLAGS) \
-	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(MACRO_LIB)"
+	"run strober $(DESIGN) $(patsubst $(base_dir)/%,%,$(dir $@)) $(PLATFORM) $(macro_lib)"
 
 $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 	cp $(gen_dir)/$(DESIGN).chain $@

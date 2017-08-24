@@ -66,4 +66,4 @@ abstract class PointerChaserTestSuite(
 }
 
 class PointerChaserZynqTests extends PointerChaserTestSuite(midas.Zynq)
-class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)
+// class PointerChaserCatapultTests extends PointerChaserTestSuite(midas.Catapult)

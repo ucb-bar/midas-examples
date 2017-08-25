@@ -31,10 +31,6 @@ export AR := arm-xilinx-linux-gnueabi-ar
 export CXX := arm-xilinx-linux-gnueabi-g++
 # export CXXFLAGS := $(CXXFLAGS) -static -O2
 endif
-ifeq ($(PLATFORM),catapult)
-export AR := lib
-export CXX := cl
-endif
 
 $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
 	$(simif_cc) $(simif_h) $(header)

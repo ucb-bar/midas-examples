@@ -5,7 +5,6 @@ import chisel3.Module
 import scala.reflect.ClassTag
 import scala.sys.process.{stringSeqToProcess, ProcessLogger}
 import java.io.File
-import midas.{Zynq, Catapult}
 
 abstract class TestSuiteCommon(
     platform: midas.PlatformType,
@@ -21,8 +20,7 @@ abstract class TestSuiteCommon(
   implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
 
   implicit val p = config.Parameters.root((platform match {
-    case Zynq     => new midas.ZynqConfigWithSnapshot
-    case Catapult => new midas.CatapultConfigWithSnapshot
+    case midas.Zynq => new midas.ZynqConfigWithSnapshot
   }).toInstance)
 
   def clean {
@@ -114,20 +112,11 @@ abstract class TutorialSuite[T <: Module : ClassTag](
   runTest("vcs")
 }
 
-class GCDZynqTest extends TutorialSuite(new GCD, Zynq, 3, true)
-class ParityZynqTest extends TutorialSuite(new Parity, Zynq)
-class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, Zynq)
-class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, Zynq)
-class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, Zynq)
-class StackZynqTest extends TutorialSuite(new Stack, Zynq, 8, true)
-class RiscZynqTest extends TutorialSuite(new Risc, Zynq, 64)
-class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, Zynq, 64, true)
-
-class GCDCatapultTest extends TutorialSuite(new GCD, Catapult, 3)
-class ParityCatapultTest extends TutorialSuite(new Parity, Catapult)
-class ShiftRegisterCatapultTest extends TutorialSuite(new ShiftRegister, Catapult)
-class ResetShiftRegisterCatapultTest extends TutorialSuite(new ResetShiftRegister, Catapult)
-class EnableShiftRegisterCatapultTest extends TutorialSuite(new EnableShiftRegister, Catapult)
-class StackCatapultTest extends TutorialSuite(new Stack, Catapult)
-class RiscCatapultTest extends TutorialSuite(new Risc, Catapult, 64)
-class RiscSRAMCatapultTest extends TutorialSuite(new RiscSRAM, Catapult, 64)
+class GCDZynqTest extends TutorialSuite(new GCD, midas.Zynq, 3, true)
+class ParityZynqTest extends TutorialSuite(new Parity, midas.Zynq)
+class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, midas.Zynq)
+class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, midas.Zynq)
+class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, midas.Zynq)
+class StackZynqTest extends TutorialSuite(new Stack, midas.Zynq, 8, true)
+class RiscZynqTest extends TutorialSuite(new Risc, midas.Zynq, 64)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, midas.Zynq, 64, true)

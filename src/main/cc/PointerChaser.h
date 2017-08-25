@@ -83,6 +83,6 @@ private:
   std::vector<endpoint_t*> endpoints;
   std::vector<FpgaModel*> fpga_models;
   uint64_t max_cycles;
-  biguint_t address;
-  biguint_t result; // 64 bit
+  mpz_t address;
+  mpz_t result; // 64 bit
 };

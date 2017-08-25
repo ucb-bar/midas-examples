@@ -68,4 +68,3 @@ abstract class MiniTestSuite(
 }
 
 class MiniZynqTests extends MiniTestSuite(midas.Zynq, true)
-class MiniCatapultTests extends MiniTestSuite(midas.Catapult)

@@ -3,6 +3,8 @@ include Makefile.project
 
 CORE_GENERATOR_ADDON = $(plsi_dir)/src/addons/core-generator/$(DESIGN)
 SYN_FORMAL_ADDON = $(plsi_dir)/src/addons/formal/formality
+OBJ_BIN_DIR = $(plsi_dir)/obj/tools/install
+OBJ_TOOLS_BIN_PTEST = $(OBJ_BIN_DIR)/pconfigure/bin/ptest
 OBJ_TECH_DIR = $(plsi_dir)/obj/technology/$(TECHNOLOGY)
 OBJ_MAP_DIR = $(plsi_dir)/obj/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)
 OBJ_SYN_DIR = $(plsi_dir)/obj/syn-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)-$(SYN_CONFIG)
@@ -14,7 +16,7 @@ TRACE_PAR_DIR = $(plsi_dir)/trace/par-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(T
 technology_make_vars = $(OBJ_TECH_DIR)/makefrags/vars.mk
 technology_macro_lib = $(OBJ_TECH_DIR)/plsi-generated/all.macro_library.json
 -include $(technology_make_vars)
-$(technology_macro_lib): $(plsi_dir)/%:
+$(technology_macro_lib) $(OBJ_TOOLS_BIN_PTEST): $(plsi_dir)/%:
 	cd $(plsi_dir) && ./makeplsi $* CORE_GENERATOR=counter PRIMETIME_PATH_TO_TESTBENCH="counter"
 
 design_files = $(addprefix $(CORE_GENERATOR_ADDON)/src/, $(DESIGN).v $(DESIGN).conf $(DESIGN).macros.json)
@@ -31,7 +33,7 @@ testbench_path = replay/$(DESIGN)
 signoff_syn_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_SYN_DIR))/pt-power/$(benchmark)/stamp
 signoff_par_power = $(patsubst $(plsi_dir)/%,%,$(OBJ_PAR_DIR))/pt-power/$(benchmark)/stamp
 plsi_rules = map-verilog syn-verilog check-syn par-verilog check-par $(signoff_syn_power) $(signoff_par_power)
-$(plsi_rules): $(design_files) $(core_files)
+$(plsi_rules): $(design_files) $(core_files) $(OBJ_TOOLS_BIN_PTEST)
 	cd $(plsi_dir) && ./makeplsi $@ CORE_GENERATOR=$(DESIGN) \
 	PRIMETIME_PATH_TO_TESTBENCH="$(testbench_path)" PRIMETIME_RTL_TRACE=$(PRIMETIME_RTL_TRACE)
 

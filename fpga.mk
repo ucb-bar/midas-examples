@@ -11,9 +11,9 @@ DRIVER ?=
 include Makefrag
 include Makefrag-plsi
 
-strober = $(if $(STROBER),strober,midas)
 verilog = $(gen_dir)/$(shim).v
 header = $(gen_dir)/$(DESIGN)-const.h
+strober = $(if $(STROBER),strober,midas)
 macro_lib = $(if $(MACRO_LIB),$(technology_macro_lib),)
 
 $(verilog) $(header): $(scala_srcs) publish $(macro_lib)

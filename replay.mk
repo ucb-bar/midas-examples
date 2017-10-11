@@ -10,7 +10,7 @@ include Makefrag
 SAMPLE ?= $(out_dir)/$(DESIGN).sample
 LOGFILE ?=
 WAVEFORM ?=
-MACRO_LIB ?= 1
+MACRO_LIB ?=
 
 sample = $(abspath $(SAMPLE))
 benchmark = $(notdir $(basename $(SAMPLE)))
@@ -41,8 +41,7 @@ vcs-rtl: $(gen_dir)/$(DESIGN)-rtl
 
 replay-rtl: $(gen_dir)/$(DESIGN)-rtl
 	mkdir -p $(out_dir)
-	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose \
-	+waveform=$(call waveform,vpd) 2> $(call logfile,vcs)
+	cd $(gen_dir) && ./$(notdir $<) +sample=$(sample) +verbose +waveform=$(call waveform,vpd) 2> $(call logfile,vcs)
 
 # Find match points
 fm_match = $(rsrc_dir)/replay/fm-match.py

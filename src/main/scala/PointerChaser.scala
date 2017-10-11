@@ -1,4 +1,4 @@
-package strober
+package midas
 package examples
 
 import Chisel._

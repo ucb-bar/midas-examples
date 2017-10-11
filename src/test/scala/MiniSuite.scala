@@ -1,4 +1,4 @@
-package strober
+package midas
 package examples
 
 import chisel3.Module
@@ -9,7 +9,7 @@ import java.io.File
 abstract class MiniTestSuite(
     platform: midas.PlatformType,
     plsi: Boolean = false,
-    debug: Boolean = true, //false,
+    debug: Boolean = false,
     latency: Int = 8,
     tracelen: Int = 128,
     N: Int = 10) extends TestSuiteCommon(platform, plsi) {

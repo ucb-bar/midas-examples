@@ -1,4 +1,4 @@
-package strober.examples
+package midas.examples
 
 import chisel3._
 import chisel3.util._

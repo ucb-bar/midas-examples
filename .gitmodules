@@ -18,7 +18,7 @@
 	url = git@github.com:ucb-bar/midas-zynq.git
 [submodule "midas"]
 	path = midas
-	url = git@github.com:ucb-bar/midas.git
+	url = git@github.com:ucb-bar/midas-release.git
 [submodule "barstools"]
 	path = barstools
 	url = https://github.com/ucb-bar/barstools.git

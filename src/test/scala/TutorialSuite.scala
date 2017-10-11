@@ -15,7 +15,7 @@ abstract class TestSuiteCommon(
   lazy val genDir = new File(new File(new File("generated-src"), platformName), target)
   lazy val outDir = new File(new File(new File("output"), platformName), target)
   val lib = new File("plsi/obj/technology/saed32/plsi-generated/all.macro_library.json")
-  if (plsi) assert(Seq("make", "-f", "replay.mk", lib.getAbsolutePath).! == 0)
+  if (plsi) assert(Seq("make", "-f", "replay.mk", lib.getAbsolutePath, "MACRO_LIB=1").! == 0)
 
   implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
 
@@ -32,9 +32,9 @@ abstract class TestSuiteCommon(
 
   def compile(b: String, debug: Boolean = false) {
     if (isCmdAvailable(b)) {
-      assert(Seq("make", s"$target-$b",
-                s"PLATFORM=$platformName",
-                 "DEBUG=%s".format(if (debug) "1" else "")).! == 0)
+      assert(Seq("make",
+                 s"$target-$b%s".format(if (debug) "-debug" else ""),
+                 s"PLATFORM=$platformName").! == 0)
     }
   }
 
@@ -45,9 +45,9 @@ abstract class TestSuiteCommon(
           logFile: Option[File] = None,
           waveform: Option[File] = None,
           args: Seq[String] = Nil) = {
-    val cmd = Seq("make", s"$target-$backend-test",
+    val cmd = Seq("make",
+      s"$target-$backend-test%s".format(if (debug) "-debug" else ""),
       s"PLATFORM=$platformName",
-      "DEBUG=%s".format(if (debug) "1" else ""),
       "SAMPLE=%s".format(sample map toStr getOrElse ""),
       "LOADMEM=%s".format(loadmem map toStr getOrElse ""),
       "LOGFILE=%s".format(logFile map toStr getOrElse ""),

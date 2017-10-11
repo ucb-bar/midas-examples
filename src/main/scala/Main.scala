@@ -17,7 +17,7 @@ object StroberExamples extends App {
     case "PointerChaser" =>
       new PointerChaser()(root((new PointerChaserConfig).toInstance))
     case _ =>
-      Class.forName(s"strober.examples.${modName}")
+      Class.forName(s"midas.examples.${modName}")
            .getConstructors.head
            .newInstance()
            .asInstanceOf[chisel3.Module]

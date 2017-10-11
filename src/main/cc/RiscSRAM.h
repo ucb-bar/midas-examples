@@ -1,3 +1,5 @@
+//See LICENSE for license details.
+
 #include "Risc.h"
 
 class RiscSRAM_t: public Risc_t

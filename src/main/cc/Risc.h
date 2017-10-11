@@ -1,3 +1,5 @@
+//See LICENSE for license details.
+
 #include "simif.h"
 
 typedef std::vector< uint32_t > app_t;

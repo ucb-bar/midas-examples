@@ -1,3 +1,5 @@
+//See LICENSE for license details.
+
 #include "simif.h"
 
 class ShiftRegister_t: virtual simif_t

@@ -1,3 +1,5 @@
+//See LICENSE for license details.
+
 #include "simif_emul.h"
 #include "ResetShiftRegister.h"
 

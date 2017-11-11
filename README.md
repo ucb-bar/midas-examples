@@ -16,7 +16,7 @@ This repository demonstrates an example use of [MIDAS](https://github.com/ucb-ba
 ## <a name="step0"></a> STEP 0: Get Started
 To initiate the project, run the following commands:
 
-    $ git clone https://github.com/donggyukim/strober-examples.git
+    $ git clone https://github.com/ucb-bar/midas-examples
     $ cd strober-example
     # initialize the submodules
     $ ./setup
@@ -30,13 +30,13 @@ First of all, you need to write simulation drivers. Examples are given in [src/m
 
 For Verilator tests, run:
 
-     $ make <design>-verilator-tests [STROBER=1] [MACRO_LIB=1] [LOADMEM=<hexfile>] [ARGS="<simulation specific arguments>"]
+     $ make <design>-verilator-test [STROBER=1] [MACRO_LIB=1] [LOADMEM=<hexfile>] [ARGS="<simulation specific arguments>"]
 
 Chisel generated files and test binaries are in `generated-src`, while log files, waveform files, sample snapshot files are in `output`. VCD files are not dumped by default, but you can get VCD files with `<design>-verilator-tests-debug` as the `make` target.
 
 For VCS tests, run:
 
-     $ make <design>-vcs-tests [STROBER=1] [MACRO_LIB=1] [LOADMEM=<hexfile>] [ARGS="<testbench specific arguments>"]
+     $ make <design>-vcs-test [STROBER=1] [MACRO_LIB=1] [LOADMEM=<hexfile>] [ARGS="<testbench specific arguments>"]
 
 You can get VPD files with `<design>-vcs-tests-debug` as the `make` target.
 

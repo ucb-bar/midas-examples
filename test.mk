@@ -20,7 +20,7 @@ loadmem = $(if $(LOADMEM),+loadmem=$(abspath $(LOADMEM)),)
 benchmark = $(notdir $(basename $(if $(LOADMEM),$(notdir $(LOADMEM)),$(DESIGN))))
 sample = $(if $(SAMPLE),$(abspath $(SAMPLE)),$(out_dir)/$(benchmark).sample)
 logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark).$1.out)
-waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1)
+waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1.$2)
 
 include Makefrag-plsi
 macro_lib = $(if $(MACRO_LIB),$(technology_macro_lib),)
@@ -40,7 +40,7 @@ verilator-debug: $(gen_dir)/V$(DESIGN)-debug
 verilator-test verilator-test-debug: verilator-test%: $(gen_dir)/V$(DESIGN)%
 	mkdir -p $(out_dir)
 	cd $(gen_dir) && ./$(notdir $<) $(ARGS) $(loadmem) +dramsim +sample=$(sample) \
-	+waveform=$(call waveform,vcd) 2> $(call logfile,verilator)
+	+waveform=$(call waveform,verilator,vcd) 2> $(call logfile,verilator)
 
 # Compile VCS
 $(gen_dir)/$(DESIGN) $(gen_dir)/$(DESIGN)-debug: $(gen_dir)/$(DESIGN)%: \
@@ -53,7 +53,7 @@ vcs-debug: $(gen_dir)/$(DESIGN)-debug
 vcs-test vcs-test-debug: vcs-test%: $(gen_dir)/$(DESIGN)%
 	mkdir -p $(out_dir)
 	cd $(gen_dir) && ./$(notdir $<) $(ARGS) $(loadmem) +dramsim +sample=$(sample) \
-	+waveform=$(call waveform,vpd) 2> $(call logfile,vcs)
+	+waveform=$(call waveform,vcs,vpd) 2> $(call logfile,vcs)
 
 mostlyclean:
 	rm -rf $(gen_dir)/V$(DESIGN) $(gen_dir)/V$(DESIGN).csrc

@@ -4,7 +4,7 @@
 
 DESIGN ?= Tile
 PLATFORM ?= zynq
-STROBER ?= 1
+STROBER ?=
 MACRO_LIB ?=
 DRIVER ?=
 

@@ -14,8 +14,8 @@ MACRO_LIB ?=
 
 sample = $(abspath $(SAMPLE))
 benchmark = $(notdir $(basename $(SAMPLE)))
-logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark).$1.out)
-waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark).$1)
+logfile = $(if $(LOGFILE),$(abspath $(LOGFILE)),$(out_dir)/$(benchmark)-replay.$1.out)
+waveform = $(if $(WAVEFORM),$(abspath $(WAVEFORM)),$(out_dir)/$(benchmark)-replay.$1)
 
 include Makefrag-plsi
 macro_lib = $(if $(MACRO_LIB),$(technology_macro_lib),)

@@ -7,11 +7,11 @@ PLATFORM ?= zynq
 
 include Makefrag
 
+STROBER ?=
 LOADMEM ?=
 SAMPLE ?=
 LOGFILE ?=
 WAVEFORM ?=
-STROBER ?=
 MACRO_LIB ?= 1
 ARGS ?= +fastloadmem +mm_MEM_LATENCY=10
 

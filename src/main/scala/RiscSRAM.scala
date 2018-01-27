@@ -6,6 +6,7 @@ import chisel3._
 import chisel3.util._
 
 class RiscSRAM extends Module {
+  import Chisel._ // FIXME: due to a chisel bug of mem read en
   val io = IO(new Bundle {
     val isWr   = Input(Bool())
     val wrAddr = Input(UInt(8.W))

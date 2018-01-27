@@ -10,24 +10,17 @@ lazy val commonSettings = Seq(
     Resolver.mavenLocal)
 )
 
-lazy val firrtl     = project
-lazy val chisel     = project dependsOn firrtl
-lazy val hardfloat  = (project in file("rocket-chip/hardfloat"))
-  .settings(commonSettings)
-  .dependsOn(chisel)
-lazy val rocketchip = (project in file("rocket-chip"))
-  .settings(commonSettings)
-  .dependsOn(hardfloat)
+lazy val rocketchip = RootProject(file("rocket-chip"))
 lazy val mdf        = RootProject(file("barstools/mdf/scalalib"))
 lazy val barstools  = (project in file("barstools/macros"))
   .settings(commonSettings)
-  .dependsOn(chisel, mdf)
+  .dependsOn(mdf, rocketchip)
 lazy val midas      = project
   .settings(commonSettings)
-  .dependsOn(rocketchip, barstools)
+  .dependsOn(barstools)
 lazy val mini       = (project in file("riscv-mini"))
   .settings(commonSettings)
-  .dependsOn(rocketchip)
+  .dependsOn(midas)
 lazy val root       = (project in file("."))
   .settings(commonSettings)
   .dependsOn(midas, mini)

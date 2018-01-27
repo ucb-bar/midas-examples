@@ -2,6 +2,7 @@ package midas
 package examples
 
 import chisel3.Module
+import freechips.rocketchip.config.Parameters.root
 import scala.reflect.ClassTag
 import scala.sys.process.{stringSeqToProcess, ProcessLogger}
 import java.io.File
@@ -19,7 +20,7 @@ abstract class TestSuiteCommon(
 
   implicit def toStr(f: File): String = f.toString replace (File.separator, "/")
 
-  implicit val p = config.Parameters.root((platform match {
+  implicit val p = root((platform match {
     case midas.Zynq => new midas.ZynqConfigWithSnapshot
   }).toInstance)
 

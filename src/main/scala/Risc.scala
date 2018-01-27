@@ -9,11 +9,11 @@ import chisel3.util._
 class Risc extends Module {
   val io = IO(new Bundle {
     val isWr   = Input(Bool())
-    val wrAddr = Input(UInt(width=8))
-    val wrData = Input(UInt(width=32))
+    val wrAddr = Input(UInt(8.W))
+    val wrData = Input(UInt(32.W))
     val boot   = Input(Bool())
     val valid  = Output(Bool())
-    val out    = Output(UInt(width=32))
+    val out    = Output(UInt(32.W))
   })
   val file = Mem(256, UInt(32.W))
   val code = Mem(256, UInt(32.W))

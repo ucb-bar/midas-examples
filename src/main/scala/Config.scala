@@ -5,7 +5,7 @@ package examples
 
 import midas._
 import midas.widgets._
-import config._
+import freechips.rocketchip.config._
 import junctions._
 
 class PointerChaserConfig extends Config((site, here, up) => {

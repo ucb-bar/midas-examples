@@ -16,7 +16,7 @@ scala_srcs = $(foreach module, $(modules), \
 	$(shell find $(base_dir)/$(module)/$(src_path) -name "*.scala"))
 
 SBT ?= sbt
-SBT_FLAGS ?=
+SBT_FLAGS ?= -J-Xmx16G -J-Xss8M -J-XX:MaxPermSize=256M -J-XX:MaxMetaspaceSize=512M
 
 shim := FPGATop
 

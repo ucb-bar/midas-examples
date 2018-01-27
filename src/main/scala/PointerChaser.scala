@@ -5,7 +5,7 @@ package examples
 
 import Chisel._
 import junctions._
-import config.{Parameters, Field}
+import freechips.rocketchip.config.{Parameters, Field}
 
 case object MemSize extends Field[Int]
 case object NMemoryChannels extends Field[Int]

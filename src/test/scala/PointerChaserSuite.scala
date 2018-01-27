@@ -2,6 +2,7 @@ package midas
 package examples
 
 import chisel3.Module
+import freechips.rocketchip.config.Parameters.root
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import scala.sys.process.stringSeqToProcess
@@ -18,7 +19,7 @@ abstract class PointerChaserTestSuite(
   import ExecutionContext.Implicits.global
 
   val target = "PointerChaser"
-  val tp = config.Parameters.root((new PointerChaserConfig).toInstance)
+  val tp = root((new PointerChaserConfig).toInstance)
 
   val script = new File("scripts", "generate_memory_init.py")
   val loadmem = new File("init.hex")

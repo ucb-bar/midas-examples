@@ -4,7 +4,8 @@ package midas
 package examples
 
 import midas._
-import config.Parameters.root
+import chisel3.core.UserModule
+import freechips.rocketchip.config.Parameters.root
 import java.io.File
 
 object StroberExamples extends App {
@@ -20,10 +21,10 @@ object StroberExamples extends App {
       Class.forName(s"midas.examples.${modName}")
            .getConstructors.head
            .newInstance()
-           .asInstanceOf[chisel3.Module]
+           .asInstanceOf[UserModule]
   }
   def midasParams = root((platform match {
-    case "zynq"     => new midas.ZynqConfig
+    case "zynq"  => new midas.ZynqConfig
   }).toInstance)
   args.head match {
     case "midas" =>

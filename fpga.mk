@@ -27,13 +27,40 @@ $(out_dir)/$(DESIGN).chain: $(gen_dir)/$(shim).v
 
 # Compile driver
 ifeq ($(PLATFORM),zynq)
-export AR := arm-xilinx-linux-gnueabi-ar
-export CXX := arm-xilinx-linux-gnueabi-g++
-# export CXXFLAGS := $(CXXFLAGS) -static -O2
+host = arm-xilinx-linux-gnueabi
+
+# Compile gmp
+GMP_VERSION ?= 6.1.2
+gmp_src_dir := $(base_dir)/output/$(PLATFORM)/gmp-$(GMP_VERSION)
+gmp_build_dir := $(gmp_src_dir)/build
+gmp_install_dir := $(gmp_src_dir)/install
+gmp_lib := $(gmp_install_dir)/lib/libgmp.so
+gmp := $(out_dir)/libgmp.so.10
+
+$(base_dir)/output/$(PLATFORM)/gmp-$(GMP_VERSION).tar.bz2:
+	mkdir -p $(dir $@)
+	cd $(dir $@) && wget https://gmplib.org/download/gmp/gmp-$(GMP_VERSION).tar.bz2
+
+$(gmp_src_dir): $(base_dir)/output/$(PLATFORM)/gmp-$(GMP_VERSION).tar.bz2
+	cd $(dir $<) && tar -xf $<
+
+$(gmp_lib): $(gmp_src_dir)
+	mkdir -p $(gmp_build_dir)
+	cd $(gmp_build_dir) && \
+	../configure --prefix=$(gmp_install_dir) --host=$(host) && \
+	$(MAKE) && $(MAKE) install
+
+$(gmp): $(gmp_lib)
+	cp $< $@
+
+export AR := $(host)-ar
+export CXX := $(host)-g++
+export CXXFLAGS := $(CXXFLAGS) -I$(gmp_install_dir)/include
+export LDFLAGS := -L$(gmp_install_dir)/lib -Wl,-rpath,/usr/local/lib
 endif
 
 $(out_dir)/$(DESIGN)-$(PLATFORM): $(driver_dir)/$(DESIGN)-$(PLATFORM).cc \
-	$(simif_cc) $(simif_h) $(header)
+	$(simif_cc) $(simif_h) $(header) $(gmp)
 	mkdir -p $(out_dir)/build
 	cp $(header) $(out_dir)/build/
 	$(MAKE) -C $(simif_dir) $(PLATFORM) DESIGN=$(DESIGN) \

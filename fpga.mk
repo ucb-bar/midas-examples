@@ -44,7 +44,7 @@ $(PLATFORM): $(out_dir)/$(DESIGN)-$(PLATFORM) $(out_dir)/$(DESIGN).chain
 ifeq ($(PLATFORM),zynq)
 # Generate bitstream
 board     ?= zedboard
-board_dir := $(base_dir)/midas-$(PLATFORM)/$(board)
+board_dir := $(base_dir)/platforms/$(PLATFORM)/$(board)
 bitstream := fpga-images-$(board)/boot.bin
 
 $(board_dir)/src/verilog/$(DESIGN)/$(shim).v: $(verilog)

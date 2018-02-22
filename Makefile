@@ -109,6 +109,11 @@ mostlyclean: $(design_mostlyclean)
 
 clean: $(design_clean)
 
+realclean: clean
+	rm -rf publish
+	rm -rf $(base_dir)/ivy2
+	find . -name target | xargs rm -rf
+
 .PHONY: $(verilator) $(verilator_test) $(vcs) $(vcs_test) $(driver) $(fpga)
 .PHONY: $(vcs_rtl) $(replay_rtl) $(vcs_syn) $(replay_syn) $(vcs_par) $(replay_par)
-.PHONY: $(design_mostlyclean) $(design_clean) mostlyclean clean
+.PHONY: $(design_mostlyclean) $(design_clean) mostlyclean clean realclean

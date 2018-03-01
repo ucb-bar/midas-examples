@@ -68,4 +68,4 @@ abstract class MiniTestSuite(
   runTests("vcs", mini.BmarkTests)
 }
 
-class MiniZynqTests extends MiniTestSuite(midas.Zynq, true)
+class MiniZynqTests extends MiniTestSuite(midas.Zynq)

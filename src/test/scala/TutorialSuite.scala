@@ -113,11 +113,11 @@ abstract class TutorialSuite[T <: Module : ClassTag](
   runTest("vcs")
 }
 
-class GCDZynqTest extends TutorialSuite(new GCD, midas.Zynq, 3, true)
+class GCDZynqTest extends TutorialSuite(new GCD, midas.Zynq, 3)
 class ParityZynqTest extends TutorialSuite(new Parity, midas.Zynq)
 class ShiftRegisterZynqTest extends TutorialSuite(new ShiftRegister, midas.Zynq)
 class ResetShiftRegisterZynqTest extends TutorialSuite(new ResetShiftRegister, midas.Zynq)
 class EnableShiftRegisterZynqTest extends TutorialSuite(new EnableShiftRegister, midas.Zynq)
-class StackZynqTest extends TutorialSuite(new Stack, midas.Zynq, 8, true)
+class StackZynqTest extends TutorialSuite(new Stack, midas.Zynq, 8)
 class RiscZynqTest extends TutorialSuite(new Risc, midas.Zynq, 64)
-class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, midas.Zynq, 64, true)
+class RiscSRAMZynqTest extends TutorialSuite(new RiscSRAM, midas.Zynq, 64)

@@ -5,7 +5,6 @@ package examples
 
 import midas._
 import chisel3.core.UserModule
-import freechips.rocketchip.config.Parameters.root
 import java.io.File
 
 object StroberExamples extends App {
@@ -14,18 +13,18 @@ object StroberExamples extends App {
   lazy val platform = args(3)
   def dut = modName match {
     case "Tile"  =>
-      new mini.Tile(root((new mini.MiniConfig).toInstance))
+      new mini.Tile((new mini.MiniConfig).toInstance)
     case "PointerChaser" =>
-      new PointerChaser()(root((new PointerChaserConfig).toInstance))
+      new PointerChaser()((new PointerChaserConfig).toInstance)
     case _ =>
       Class.forName(s"midas.examples.${modName}")
            .getConstructors.head
            .newInstance()
            .asInstanceOf[UserModule]
   }
-  def midasParams = root((platform match {
+  def midasParams = (platform match {
     case "zynq"  => new midas.ZynqConfig
-  }).toInstance)
+  }).toInstance
   args.head match {
     case "midas" =>
       MidasCompiler(dut, new File(dirPath))(midasParams)

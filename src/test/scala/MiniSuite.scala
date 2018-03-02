@@ -2,7 +2,6 @@ package midas
 package examples
 
 import chisel3.Module
-import freechips.rocketchip.config.Parameters.root
 import scala.concurrent.{Future, Await, ExecutionContext}
 import scala.reflect.ClassTag
 import java.io.File
@@ -18,7 +17,7 @@ abstract class MiniTestSuite(
   import ExecutionContext.Implicits.global
 
   val target = "Tile"
-  val tp = root((new mini.MiniConfig).toInstance)
+  val tp = (new mini.MiniConfig).toInstance
 
   def runTests(backend: String, testType: mini.TestType) {
     compile(backend, debug)

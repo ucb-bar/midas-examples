@@ -8,7 +8,7 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-site" % "1.3.1")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.14.6")
 
-addSbtPlugin("com.simplytyped" % "sbt-antlr4" % "0.8.0")
+addSbtPlugin("com.simplytyped" % "sbt-antlr4" % "0.8.1")
 
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.7.0")
 

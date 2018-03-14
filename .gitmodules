@@ -7,9 +7,6 @@
 [submodule "firrtl"]
 	path = firrtl
 	url = git@github.com:ucb-bar/firrtl.git
-[submodule "rocket-chip"]
-	path = rocket-chip
-	url = git@github.com:ucb-bar/rocket-chip.git
 [submodule "midas-zynq"]
 	path = platforms/zynq
 	url = git@github.com:ucb-bar/midas-zynq.git

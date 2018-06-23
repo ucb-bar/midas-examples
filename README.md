@@ -16,10 +16,10 @@ This repository demonstrates an example use of [MIDAS](https://github.com/ucb-ba
 ## <a name="step0"></a> STEP 0: Get Started
 To initiate the project, run the following commands:
 
-    $ git clone https://github.com/ucb-bar/midas-examples
-    $ cd strober-example
+    $ git clone https://github.com/ucb-bar/midas-examples.git
+    $ cd midas-examples
     # initialize the submodules
-    $ ./setup
+    $ ./setup.sh
     # publish chisel & firrtl to local maven
     $ make publishLocal
 

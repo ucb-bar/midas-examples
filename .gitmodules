@@ -1,24 +1,24 @@
 [submodule "riscv-mini"]
 	path = riscv-mini
-	url = git@github.com:ucb-bar/riscv-mini.git
+	url = https://github.com/ucb-bar/riscv-mini.git
 [submodule "fpga-zynq"]
 	path = fpga-zynq
-	url = git@github.com:donggyukim/fpga-zynq.git
+	url = https://github.com/ucb-bar/fpga-zynq.git
 [submodule "firrtl"]
 	path = firrtl
-	url = git@github.com:ucb-bar/firrtl.git
+	url = https://github.com/freechipsproject/firrtl.git
 [submodule "chisel3"]
 	path = chisel
-	url = git@github.com:ucb-bar/chisel3.git
+	url = https://github.com/freechipsproject/chisel3.git
 [submodule "rocket-chip"]
 	path = rocket-chip
-	url = git@github.com:ucb-bar/rocket-chip.git
+	url = https://github.com/freechipsproject/rocket-chip.git
 [submodule "midas-zynq"]
 	path = platforms/zynq
-	url = git@github.com:ucb-bar/midas-zynq.git
+	url = https://github.com/ucb-bar/midas-zynq.git
 [submodule "midas"]
 	path = midas
-	url = git@github.com:ucb-bar/midas-release.git
+	url = https://github.com/ucb-bar/midas-release.git
 [submodule "barstools"]
 	path = barstools
 	url = https://github.com/ucb-bar/barstools.git

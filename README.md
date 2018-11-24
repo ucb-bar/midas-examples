@@ -1,5 +1,5 @@
-# MIDAS Examples
-This repository demonstrates an example use of [MIDAS](https://github.com/ucb-bar/midas-release) for simple RTL designs including:
+# MIDAS/Strober Examples
+This repository demonstrates an example use of [MIDAS/Strober](https://github.com/ucb-bar/midas-release) for simple RTL designs including:
 + [Chisel tutorial](https://github.com/ucb-bar/chisel-tutorial)
   + GCD, Parity, ShiftRegister, EnableShiftRegister, ResetShiftRegister, Stack, Risc
 + More simple examples:
@@ -24,6 +24,16 @@ To initiate the project, run the following commands:
     $ make publishLocal
 
 With the following `make` commands, you can enable RTL state snapshotting with `STROBER=1`. Also, `MACRO_LIB=1` is required for power modeling to transform technology-independent macro blocks to technology-dependent macro blocks.
+
+## <a name="hammer"></a> Use HAMMER for the Strober Power Modeling
+
+For power modeling, we need to use commercial CAD tools and we expect you have these tools installed in your machine. Instead of manually-written TCL scripts, the ASIC backend flow is driven by automatically-generated TCL scripts by [HAMMER](https://github.com/ucb-bar/hammer.git). To use HAMMER, we need to set proper environment variables.
+
+First, edit `sourceme-hammer.sh` for your tool environment. Before executing `make` commands in the following steps, run:
+
+    $ source sourceme-hammer.sh
+    
+If you want to use the Strober power modeling but do not correctly set the variables in `sourceme-hammer.sh`, you will see error messages, and therefore, make sure all the variables are correct in your environment. When you run HAMMER at the first time, it will install prerequisite tools, which may take hours.
 
 ## <a name="step1"></a> STEP 1: Run Verilator/VCS Tests
 First of all, you need to write simulation drivers. Examples are given in [src/main/cc](src/main/cc). To increase code reuse for tests and [FPGA simulation](step2), write a header file with virtual base class `simif_t`(`src/main/cc/<design>.h`). Also, add your design in [Makefile](Makefile) in the main directory. For Verilator/VCS tests, just write a wrapper and the main function with `simif_emul_t`(`src/main/cc/<design>-emul.cc`). 

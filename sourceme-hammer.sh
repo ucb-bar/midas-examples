@@ -24,3 +24,5 @@ export VCS_VERSION="<your VCS version>"
 # You're supposed to know where are these license files
 export MGLS_LICENSE_FILE="<your license path>"
 export SNPSLMD_LICENSE_FILE="<your license path>"
+# Set this variable if you want to share HAMMER tools across multiple projects
+export OBJ_TOOLS_DIR=

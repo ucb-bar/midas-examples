@@ -36,7 +36,7 @@ First, edit `sourceme-hammer.sh` for your tool environment. Before executing `ma
 If you want to use the Strober power modeling but do not correctly set the variables in `sourceme-hammer.sh`, you will see error messages, and therefore, make sure all the variables are correct in your environment. When you run HAMMER at the first time, it will install prerequisite tools, which may take hours.
 
 ## <a name="step1"></a> STEP 1: Run Verilator/VCS Tests
-First of all, you need to write simulation drivers. Examples are given in [src/main/cc](src/main/cc). To increase code reuse for tests and [FPGA simulation](step2), write a header file with virtual base class `simif_t`(`src/main/cc/<design>.h`). Also, add your design in [Makefile](Makefile) in the main directory. For Verilator/VCS tests, just write a wrapper and the main function with `simif_emul_t`(`src/main/cc/<design>-emul.cc`). 
+First of all, you need to write simulation drivers. Examples are given in [src/main/cc](src/main/cc). To increase code reuse for tests and [FPGA simulation](#step2), write a header file with virtual base class `simif_t`(`src/main/cc/<design>.h`). Also, add your design in [Makefile](Makefile) in the main directory. For Verilator/VCS tests, just write a wrapper and the main function with `simif_emul_t`(`src/main/cc/<design>-emul.cc`). 
 
 For Verilator tests, run:
 
@@ -53,7 +53,7 @@ You can get VPD files with `<design>-vcs-tests-debug` as the `make` target.
 We can also take advantage of `sbt` for tests. Test wrappers are written in [src/test/scala](src/test/scala). For individual tests, run `sbt testOnly <test name>`. For integration tests, run `sbt test`.
 
 ## <a name="step2"></a> STEP 2: Run FPGA Simulation
-First, write a wrapper and the main function with `simif_zynq_t`(`src/main/cc/<design>-zynq.cc`) by reusing the header file in [Verilator/VCS tests](step1).
+First, write a wrapper and the main function with `simif_zynq_t`(`src/main/cc/<design>-zynq.cc`) by reusing the header file in [Verilator/VCS tests](#step1).
 
 To generate `boot.bin` for FPGA Simulation, run:
 
@@ -79,7 +79,7 @@ To execute simulation in the FPGA board, run:
     $ ./<design>-zynq [+loadmem=<hexfile>] [+sample=<sample file>]
 
 ## <a name="step3"></a> STEP 3: Replay RTL Sample Snapshots (Optional for Strober)
-If you enable state snapshotting in [STEP 1](step1) or [STEP 2](step2), you will get random RTL state snapshots at the end of simulation (`<design>.sample` by default). To replay RTL sample snapshots, run:
+If you enable state snapshotting in [STEP 1](#step1) or [STEP 2](#step2), you will get random RTL state snapshots at the end of simulation (`<design>.sample` by default). To replay RTL sample snapshots, run:
 
     $ make <design>-replay-rtl SAMPLE=<sample file> [MACRO_LIB=1]
     

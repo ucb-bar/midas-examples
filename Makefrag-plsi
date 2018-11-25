@@ -3,7 +3,11 @@ include Makefile.project
 
 CORE_GENERATOR_ADDON = $(plsi_dir)/src/addons/core-generator/$(DESIGN)
 SYN_FORMAL_ADDON = $(plsi_dir)/src/addons/formal/formality
+ifeq ($(OBJ_TOOLS_DIR),)
 OBJ_BIN_DIR = $(plsi_dir)/obj/tools/install
+else
+OBJ_BIN_DIR = $(OBJ_TOOLS_DIR)/install
+endif
 OBJ_TOOLS_BIN_PTEST = $(OBJ_BIN_DIR)/pconfigure/bin/ptest
 OBJ_TECH_DIR = $(plsi_dir)/obj/technology/$(TECHNOLOGY)
 OBJ_MAP_DIR = $(plsi_dir)/obj/map-$(DESIGN)-$(CORE_CONFIG)-$(SOC_CONFIG)-$(TECHNOLOGY)-$(MAP_CONFIG)

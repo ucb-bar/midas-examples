@@ -12,7 +12,7 @@ export MACRO_LIB ?=
 
 # Desings
 designs := GCD Parity ShiftRegister ResetShiftRegister EnableShiftRegister \
-	Stack Risc RiscSRAM PointerChaser Tile
+	InstrumentationWidgetDemo Stack Risc RiscSRAM PointerChaser Tile
 
 # Tests
 verilator = $(addsuffix -verilator, $(designs))
